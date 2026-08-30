@@ -1,0 +1,153 @@
+/* The pet cards and the About tab, from design/dashboard-*.html and
+   design/pet-about-*.html. Only one layout is ever mounted, so the same class
+   names carry the two shapes. */
+
+.av {
+  border-radius: 50%;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 600;
+  color: var(--ink);
+  background: #dee5ea;
+}
+.av.b {
+  background: #e4e8de;
+}
+.av.c {
+  background: #ebdfe0;
+}
+
+.nm {
+  display: block;
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.sub {
+  display: block;
+  color: var(--faint);
+}
+
+/* ============ desktop: a grid of cards ============ */
+.shell-desktop .pets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 16px;
+  margin-top: 22px;
+}
+.shell-desktop .pet {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: 198px;
+}
+.shell-desktop .pet:hover {
+  border-color: var(--ink);
+}
+.shell-desktop .pet .top {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.shell-desktop .av {
+  width: 46px;
+  height: 46px;
+  font-size: 17px;
+}
+.shell-desktop .nm {
+  font-size: 19px;
+}
+.shell-desktop .sub {
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+.shell-desktop .pet.add {
+  border-style: dashed;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--ink-2);
+}
+.shell-desktop .pet.add:hover {
+  color: var(--ink);
+}
+.shell-desktop .pet.add .pl {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.shell-desktop .pet.add .tx {
+  font-size: 13.5px;
+}
+
+/* ============ mobile: rows ============ */
+.shell-mobile .pets {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+.shell-mobile .pet {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 15px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.shell-mobile .pet:last-child {
+  border-bottom: 0;
+}
+.shell-mobile .av {
+  width: 42px;
+  height: 42px;
+  font-size: 16px;
+}
+.shell-mobile .mid {
+  flex: 1;
+  min-width: 0;
+}
+.shell-mobile .nm {
+  font-size: 17px;
+}
+.shell-mobile .sub {
+  font-size: 12px;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.addpet {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 15px;
+  border: 1px dashed var(--rule);
+  border-radius: 2px;
+  margin-top: 12px;
+  color: var(--ink-2);
+}
+.addpet .pl {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px dashed var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 500;
+  flex: none;
+}
+.addpet .tx {
+  font-size: 14.5px;
+}
