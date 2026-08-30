@@ -35,6 +35,11 @@ class PetCard(PetOut):
 class Dashboard(BaseModel):
     ledger: list[DueItem]
     pets: list[PetCard]
+    # The summary line, as drawn. Archived pets are counted but never listed.
+    active_pets: int
+    overdue: int
+    due_within_30_days: int
+    archived_pets: int
 
 
 LEDGER = """select entry_id, pet_id, pet_name, title, due_on, days_until, is_overdue
@@ -53,3 +58,12 @@ PET_CARDS = """select {columns},
        ) d on true
        where p.archived_at is null
        order by p.created_at"""
+
+# `days_until` is the view's, so "within thirty days" is a window on a number
+# Postgres worked out, not a second opinion about what due means.
+COUNTS = """select
+       (select count(*) from pets where archived_at is null)     as active_pets,
+       (select count(*) from pets where archived_at is not null) as archived_pets,
+       (select count(*) from due_items where is_overdue)         as overdue,
+       (select count(*) from due_items
+         where not is_overdue and days_until <= 30)              as due_within_30_days"""

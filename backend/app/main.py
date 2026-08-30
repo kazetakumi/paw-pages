@@ -210,9 +210,11 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
     """
     ledger = await conn.fetch(due.LEDGER)
     cards = await conn.fetch(due.PET_CARDS.format(columns=PET_COLUMNS))
+    counts = await conn.fetchrow(due.COUNTS)
     return due.Dashboard(
         ledger=[due.DueItem(**dict(row)) for row in ledger],
         pets=[due.PetCard(**dict(row)) for row in cards],
+        **dict(counts),
     )
 
 

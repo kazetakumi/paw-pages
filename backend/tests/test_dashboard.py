@@ -193,3 +193,72 @@ async def test_a_pet_with_nothing_logged_has_no_next_due_and_no_last_logged(sign
 
     assert (card["next_due_on"], card["last_logged_on"]) == (None, None)
     assert card["next_due_is_overdue"] is False
+
+
+@pytest.fixture
+async def archive(app, signed_in):
+    """Ticket 08 owns archiving; this is the row the endpoint will write."""
+
+    async def _archive(pet_id: str) -> None:
+        async with app.state.pool.acquire() as conn:
+            await conn.execute(
+                "update pets set archived_at = now(), archived_reason = 'passed_away'"
+                " where id = $1::uuid",
+                pet_id,
+            )
+
+    return _archive
+
+
+async def test_the_summary_counts_active_pets_overdue_items_and_what_is_due_within_thirty_days(
+    signed_in, add_pet, log, archive
+):
+    biscuit = await add_pet("Biscuit")
+    momo = await add_pet("Momo", "cat")
+    pepper = await add_pet("Pepper")
+    await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
+    await log(momo, "Deworming", days_from_today(-400), days_from_today(7))
+    await log(pepper, "DHPP booster", days_from_today(-400), days_from_today(23))
+    # On the far side of thirty days, so it counts towards neither.
+    await log(pepper, "Grooming", days_from_today(-400), days_from_today(31))
+    toffee = await add_pet("Toffee")
+    await log(toffee, "Nail trim", days_from_today(-400), days_from_today(-2))
+    await archive(toffee)
+
+    board = (await signed_in.get("/dashboard")).json()
+
+    assert board["active_pets"] == 3
+    assert board["overdue"] == 1
+    assert board["due_within_30_days"] == 2
+    assert board["archived_pets"] == 1
+
+
+async def test_an_archived_pet_takes_its_overdue_item_off_the_ledger_and_out_of_the_counts(
+    signed_in, add_pet, log, archive
+):
+    """The exclusion lives in the view, so no endpoint has to remember it."""
+    toffee = await add_pet("Toffee")
+    await log(toffee, "Rabies booster", days_from_today(-400), days_from_today(-46))
+    await archive(toffee)
+
+    board = (await signed_in.get("/dashboard")).json()
+
+    assert board["ledger"] == []
+    assert [pet["name"] for pet in board["pets"]] == []
+    assert (board["active_pets"], board["overdue"], board["archived_pets"]) == (0, 0, 1)
+
+
+async def test_the_home_screen_gets_all_of_it_from_one_request(signed_in, add_pet, log):
+    biscuit = await add_pet("Biscuit")
+    await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
+
+    board = (await signed_in.get("/dashboard")).json()
+
+    assert set(board) == {
+        "ledger",
+        "pets",
+        "active_pets",
+        "overdue",
+        "due_within_30_days",
+        "archived_pets",
+    }
