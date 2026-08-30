@@ -111,3 +111,94 @@ async def test_a_pet_with_no_date_of_birth_has_no_age(signed_in):
 
     assert pet["date_of_birth"] is None
     assert (pet["age_years"], pet["age_months"]) == (None, None)
+
+
+async def test_every_identity_field_can_be_added_later(signed_in):
+    created = await signed_in.post("/pets", json={"name": "Biscuit", "species": "dog"})
+    later = {key: value for key, value in IDENTITY.items() if key not in ("name", "species")}
+
+    patched = await signed_in.patch(f"/pets/{created.json()['id']}", json=later)
+
+    assert patched.status_code == 200
+    assert {key: patched.json()[key] for key in later} == later
+
+
+async def test_a_correction_touches_only_the_fields_it_sends(signed_in):
+    created = await signed_in.post("/pets", json=IDENTITY)
+
+    patched = await signed_in.patch(f"/pets/{created.json()['id']}", json={"breed": "Indie"})
+
+    assert patched.json()["breed"] == "Indie"
+    assert patched.json()["colour"] == IDENTITY["colour"]
+    assert patched.json()["slug"] == created.json()["slug"]
+
+
+async def test_approximate_with_no_date_of_birth_is_rejected_by_the_field(signed_in):
+    rejected = await signed_in.post(
+        "/pets", json={"name": "Biscuit", "species": "dog", "dob_is_approx": True}
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "dob_is_approx"
+    assert "constraint" not in rejected.text.lower()
+
+
+async def test_clearing_the_date_of_birth_while_still_approximate_is_rejected(signed_in):
+    created = await signed_in.post("/pets", json=IDENTITY)
+
+    rejected = await signed_in.patch(
+        f"/pets/{created.json()['id']}", json={"date_of_birth": None}
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "dob_is_approx"
+
+
+async def test_a_name_the_database_would_refuse_comes_back_named(signed_in):
+    rejected = await signed_in.post("/pets", json={"name": "   ", "species": "dog"})
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "name"
+
+
+async def test_a_species_past_its_length_cap_comes_back_named(signed_in):
+    rejected = await signed_in.post("/pets", json={"name": "Pip", "species": "x" * 41})
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "species"
+
+
+async def test_a_date_of_birth_in_the_future_comes_back_named(signed_in):
+    rejected = await signed_in.post(
+        "/pets", json={"name": "Pip", "species": "dog", "date_of_birth": "2099-01-01"}
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "date_of_birth"
+
+
+async def test_a_second_handler_can_neither_read_nor_update_the_first_handlers_pet(
+    signed_in, seed_handler, as_handler
+):
+    """Proved by RLS: nothing below carries a `where handler_id = ...`."""
+    mine = (await signed_in.post("/pets", json=IDENTITY)).json()
+    await seed_handler("Bela", "bela@example.com")
+    await signed_in.post("/auth/signin", json={"email": "bela@example.com", "password": "x"})
+
+    assert (await signed_in.get("/pets")).json() == []
+    assert (await signed_in.get(f"/pets/{mine['id']}")).status_code == 404
+    assert (await signed_in.patch(f"/pets/{mine['id']}", json={"name": "Stolen"})).status_code == 404
+
+
+async def test_a_second_handler_cannot_delete_the_first_handlers_pet(
+    signed_in, seed_handler, as_handler
+):
+    """No delete endpoint in this slice, so the policy is checked at the seam
+    every pet endpoint hangs off."""
+    mine = (await signed_in.post("/pets", json=IDENTITY)).json()
+    bela = await seed_handler("Bela", "bela@example.com")
+
+    async with as_handler(bela) as conn:
+        assert await conn.execute("delete from pets where id = $1", mine["id"]) == "DELETE 0"
+
+    assert (await signed_in.get(f"/pets/{mine['id']}")).status_code == 200

@@ -109,7 +109,7 @@ def constraint_error(error: asyncpg.IntegrityConstraintViolationError) -> HTTPEx
     """A rejection from Postgres, pinned to the field that caused it."""
     if isinstance(error, asyncpg.NotNullViolationError):
         return HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
             {"field": error.column_name, "message": "This cannot be empty."},
         )
     name = error.constraint_name or ""
@@ -119,4 +119,4 @@ def constraint_error(error: asyncpg.IntegrityConstraintViolationError) -> HTTPEx
         column = re.fullmatch(r"pets_(.+)_check", name)
         field = column.group(1) if column else "name"
         message = "That value is not allowed."
-    return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, {"field": field, "message": message})
+    return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"field": field, "message": message})

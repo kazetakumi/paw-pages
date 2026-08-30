@@ -38,7 +38,7 @@ async def one_field_at_a_time(request: Request, error: RequestValidationError) -
     """
     first = error.errors()[0]
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"detail": {"field": str(first["loc"][-1]), "message": first["msg"]}},
     )
 
