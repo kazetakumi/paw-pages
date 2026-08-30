@@ -449,3 +449,12 @@
   background: #fff;
   border-color: var(--ink);
 }
+
+.about .lede {
+  color: var(--ink-2);
+  margin: 0 0 22px;
+  max-width: 52ch;
+}
+.shell-desktop .about .greeting {
+  margin-top: 22px;
+}
