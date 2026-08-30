@@ -37,6 +37,17 @@ class SignInIn(BaseModel):
     password: str
 
 
+class PasswordResetIn(BaseModel):
+    email: str
+
+
+class PasswordResetConfirmIn(BaseModel):
+    # The token the emailed link carried. It passes straight through to Supabase
+    # Auth and is never stored — it is not a session and never becomes one.
+    access_token: str
+    password: str
+
+
 class HandlerOut(BaseModel):
     id: str
     name: str
@@ -124,6 +135,30 @@ async def signin(body: SignInIn, request: Request, response: Response) -> Handle
     except supabase_auth.AuthError:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email or password is wrong.")
     return await start_session(request, response, tokens)
+
+
+@app.post("/auth/password-reset", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset(body: PasswordResetIn, request: Request) -> None:
+    """Ask Supabase Auth to email a link.
+
+    Always 204: whether an address is registered here is not ours to tell.
+    """
+    try:
+        await supabase_auth.request_password_reset(request.app.state.auth_client, body.email)
+    except supabase_auth.AuthError:
+        pass
+
+
+@app.post("/auth/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset_confirm(body: PasswordResetConfirmIn, request: Request) -> None:
+    try:
+        await supabase_auth.set_password(
+            request.app.state.auth_client, body.access_token, body.password
+        )
+    except supabase_auth.AuthError:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "That reset link has expired. Request a new one."
+        )
 
 
 @app.post("/auth/signout", status_code=status.HTTP_204_NO_CONTENT)

@@ -71,6 +71,7 @@ def auth_stub(app) -> SupabaseAuthStub:
 @pytest.fixture(autouse=True)
 async def clean_slate(app):
     yield
+    app.state.auth_stub.reset()
     async with app.state.pool.acquire() as conn:
         await conn.execute("truncate auth.users cascade")
 
