@@ -26,7 +26,7 @@ describe("signing up", () => {
   it("shows the API's message when the email is already registered", async () => {
     server.use(
       http.post("http://localhost:8000/auth/signup", () =>
-        HttpResponse.json({ detail: "That email is already registered." }, { status: 409 }),
+        HttpResponse.json({ detail: "User already registered" }, { status: 400 }),
       ),
     );
 
@@ -36,6 +36,6 @@ describe("signing up", () => {
     await userEvent.type(screen.getByLabelText("Password"), "correct horse");
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("That email is already registered.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("User already registered");
   });
 });
