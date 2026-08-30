@@ -530,7 +530,8 @@
 }
 
 /* ============ the public-page switch, from design/pet-about-*.html ============ */
-.pubsect {
+/* Any About section that follows another one. */
+.apart {
   margin-top: 40px;
 }
 .pub {

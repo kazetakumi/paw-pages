@@ -90,13 +90,13 @@ function AboutDesktop({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
 
       {!form && (
         <>
-          <div className="sect pubsect">
+          <div className="sect apart">
             <h2>Photo</h2>
             <span className="line" />
           </div>
           {photo}
 
-          <div className="sect pubsect">
+          <div className="sect apart">
             <h2>Public page</h2>
             <span className="line" />
           </div>
@@ -177,13 +177,13 @@ function AboutMobile({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
 
       {!form && (
         <>
-          <div className="sect pubsect">
+          <div className="sect apart">
             <h2>Photo</h2>
             <span className="line" />
           </div>
           {photo}
 
-          <div className="sect pubsect">
+          <div className="sect apart">
             <h2>Public page</h2>
             <span className="line" />
           </div>
