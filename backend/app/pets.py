@@ -26,6 +26,16 @@ Species = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, 
 Breed = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
 Colour = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
 Sex = Literal["male", "female"]
+# The three the `archived_reason` check allows, and no fourth. A rejection here
+# is a named field on the confirm panel rather than a constraint violation.
+ArchiveReason = Literal["passed_away", "rehomed", "other"]
+
+
+class ArchiveIn(BaseModel):
+    """Why the pet is being archived. There is no archiving without a reason:
+    the `archive_is_complete` constraint says the two columns travel together."""
+
+    reason: ArchiveReason
 
 
 class PetIn(BaseModel):

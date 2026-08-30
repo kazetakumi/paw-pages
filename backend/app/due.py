@@ -42,14 +42,28 @@ class PetCard(PetOut):
     last_logged_on: date | None
 
 
+class ArchivedPet(BaseModel):
+    """An archived pet as the home screen keeps it: findable, out of the way.
+
+    Why and when, and nothing a card would need — an archived pet has no next
+    due date, because `due_items` has no row for it.
+    """
+
+    id: UUID
+    name: str
+    archived_reason: str
+    archived_on: date
+
+
 class Dashboard(BaseModel):
     ledger: list[DueItem]
     pets: list[PetCard]
-    # The summary line, as drawn. Archived pets are counted but never listed.
+    # The summary line, as drawn. Archived pets are counted, never carded.
     active_pets: int
     overdue: int
     due_within_30_days: int
     archived_pets: int
+    archived: list[ArchivedPet]
 
 
 # `due_items` owns due and overdue; the join back to `entries` only fetches
@@ -81,3 +95,8 @@ COUNTS = """select
        (select count(*) from due_items where is_overdue)         as overdue,
        (select count(*) from due_items
          where not is_overdue and days_until <= 30)              as due_within_30_days"""
+
+# A calendar date, like every other date the API sends: when it was archived is
+# something a handler reads, not an instant anything is compared against.
+ARCHIVED = """select id, name, archived_reason, archived_at::date as archived_on
+       from pets where archived_at is not null order by created_at"""

@@ -242,9 +242,11 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
     ledger = await conn.fetch(due.LEDGER.format(where=""))
     cards = await conn.fetch(due.PET_CARDS.format(columns=PET_COLUMNS))
     counts = await conn.fetchrow(due.COUNTS)
+    archived = await conn.fetch(due.ARCHIVED)
     return due.Dashboard(
         ledger=[due.DueItem(**dict(row)) for row in ledger],
         pets=[due.PetCard(**dict(row)) for row in cards],
+        archived=[due.ArchivedPet(**dict(row)) for row in archived],
         **dict(counts),
     )
 
@@ -318,6 +320,42 @@ async def update_pet(
         )
     except asyncpg.IntegrityConstraintViolationError as error:
         raise pets.constraint_error(error)
+    if row is None:
+        raise NO_SUCH_PET
+    return pets.PetOut(**dict(row))
+
+
+@app.post("/pets/{pet_id}/archive")
+async def archive_pet(
+    pet_id: UUID, body: pets.ArchiveIn, conn: asyncpg.Connection = Depends(db)
+) -> pets.PetOut:
+    """Stop tracking a pet without losing it.
+
+    Two columns, and nothing else: `due_items`, `public_pets` and
+    `public_entries` all carry `archived_at is null`, so the ledger empties and
+    the public page goes dark on this one update. The entries and the photo are
+    not touched — archiving is not a soft delete.
+    """
+    row = await conn.fetchrow(
+        f"update pets set archived_at = now(), archived_reason = $2"
+        f" where id = $1 returning {PET_COLUMNS}",
+        pet_id,
+        body.reason,
+    )
+    if row is None:
+        raise NO_SUCH_PET
+    return pets.PetOut(**dict(row))
+
+
+@app.post("/pets/{pet_id}/restore")
+async def restore_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
+    """Undo it. Both columns clear together, and everything the views hid comes
+    back with them — same slug, same entries, same photo."""
+    row = await conn.fetchrow(
+        f"update pets set archived_at = null, archived_reason = null"
+        f" where id = $1 returning {PET_COLUMNS}",
+        pet_id,
+    )
     if row is None:
         raise NO_SUCH_PET
     return pets.PetOut(**dict(row))

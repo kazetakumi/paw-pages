@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMe, getPet, updatePet, Unauthorized, type Handler, type Pet } from "../api";
 import { ageOf, formatDate, summaryOf } from "../pets/pet";
+import { ArchivePanel } from "../pets/ArchivePanel";
 import { PetAvatar } from "../pets/PetAvatar";
 import { PetForm } from "../pets/PetForm";
 import { PhotoControl } from "../pets/PhotoControl";
@@ -16,6 +17,7 @@ type LayoutProps = {
   form: ReactNode;
   photo: ReactNode;
   publicPage: ReactNode;
+  archive: ReactNode;
 };
 
 function Value({ text }: { text: string | null }) {
@@ -23,7 +25,7 @@ function Value({ text }: { text: string | null }) {
 }
 
 /** Above the breakpoint: a label column, the age its own aside. */
-function AboutDesktop({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
+function AboutDesktop({ pet, onEdit, form, photo, publicPage, archive }: LayoutProps) {
   return (
     <div className="about">
       <Link className="back" to="/home">
@@ -101,6 +103,12 @@ function AboutDesktop({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
             <span className="line" />
           </div>
           {publicPage}
+
+          <div className="sect apart">
+            <h2>Archive</h2>
+            <span className="line" />
+          </div>
+          {archive}
         </>
       )}
     </div>
@@ -108,7 +116,7 @@ function AboutDesktop({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
 }
 
 /** Below it: the label and the value on one line, the age under the date. */
-function AboutMobile({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
+function AboutMobile({ pet, onEdit, form, photo, publicPage, archive }: LayoutProps) {
   return (
     <div className="about">
       <div className="crumbs">
@@ -188,6 +196,12 @@ function AboutMobile({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
             <span className="line" />
           </div>
           {publicPage}
+
+          <div className="sect apart">
+            <h2>Archive</h2>
+            <span className="line" />
+          </div>
+          {archive}
         </>
       )}
     </div>
@@ -223,6 +237,7 @@ export default function PetAbout() {
         publicPage={
           <PublicPageSwitch pet={pet} onChanged={(saved) => setRecord({ handler, pet: saved })} />
         }
+        archive={<ArchivePanel pet={pet} />}
         form={
           editing ? (
             <PetForm

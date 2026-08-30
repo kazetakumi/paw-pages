@@ -261,6 +261,7 @@ async def test_the_home_screen_gets_all_of_it_from_one_request(signed_in, add_pe
         "overdue",
         "due_within_30_days",
         "archived_pets",
+        "archived",
     }
 
 
