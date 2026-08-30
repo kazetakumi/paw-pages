@@ -273,6 +273,9 @@ function AccountMobile({ account, you, about, data, danger, signout }: LayoutPro
 
   return (
     <div className="account" data-account="mobile">
+      <Link className="back" to="/home">
+        &larr; Home
+      </Link>
       <div className="head">
         <div className="av">{initials(account.name)}</div>
         <div>

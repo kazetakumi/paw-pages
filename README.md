@@ -37,12 +37,15 @@ are not on `PATH`, but nothing in the test run shells out to them — the fixtur
 talks to Postgres with asyncpg.
 
 Nothing else is stubbed: RLS is live, the views are live, the constraints are
-live. The exceptions are the two Supabase HTTP services, each stubbed at the
-httpx transport because neither is ours to test: Supabase Auth in
-`backend/tests/supabase_auth_stub.py`, and Supabase Storage in
-`backend/tests/supabase_storage_stub.py`. The storage stub really holds the
-uploaded bytes, so a test can prove an object was deleted on replace and on
-remove rather than only that a path was cleared.
+live. The exceptions are the three Supabase HTTP services, each stubbed at the
+httpx transport because none is ours to test: Supabase Auth in
+`backend/tests/supabase_auth_stub.py`, Supabase Storage in
+`backend/tests/supabase_storage_stub.py`, and the Supabase Admin API in
+`backend/tests/supabase_admin_stub.py`. The storage stub really holds the
+uploaded bytes, so a test can prove an object was deleted on replace, on remove
+and on account deletion rather than only that a path was cleared. The admin
+stub really deletes the row in `auth.users`, so the cascade down to handlers,
+pets and entries is the real one.
 
 ### Web — the screen, with HTTP stubbed at the network boundary
 
@@ -66,7 +69,7 @@ The dev server proxies `/api/*` to the backend, so the browser only ever talks
 to one origin. Copy `backend/.env.example` to `backend/.env` and fill it in;
 `.env` is gitignored.
 
-## One setting to change in the Supabase dashboard
+## Two settings to change in the Supabase dashboard
 
 The `paw-pages` project has **email confirmation on**. With it on,
 `POST /auth/v1/signup` returns a user and a `confirmation_sent_at` but no
@@ -79,3 +82,13 @@ While you are there, add `http://localhost:5173/reset-password` to
 Supabase Auth to send the reset link back there (`WEB_URL` in `.env`), and
 Supabase drops any redirect that is not allow-listed. Both are dashboard
 settings; neither is in this repo.
+
+## One key to set before account deletion works
+
+`DELETE /me` deletes the auth user through the Supabase Admin API, which is the
+only thing the service-role key is ever used for. Put the project's
+**service_role** key (Dashboard -> Project Settings -> API Keys) into
+`SUPABASE_SERVICE_ROLE_KEY` in `backend/.env`. Without it the endpoint answers
+503 naming that variable and nothing is deleted — not even the photos, because
+the key is checked before anything is destroyed. Everything else on the account
+screen runs under the handler's own token.
