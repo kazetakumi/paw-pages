@@ -192,12 +192,15 @@ async def list_pets(conn: asyncpg.Connection = Depends(db)) -> list[pets.PetOut]
 @app.post("/pets", status_code=status.HTTP_201_CREATED)
 async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
     async def insert(slug: str):
-        return await conn.fetchrow(
-            "insert into pets (handler_id, name, species, slug)"
-            f" values ((select auth.uid()), $1, $2, $3) returning {PET_COLUMNS}",
-            body.name,
-            body.species,
-            slug,
-        )
+        # A savepoint per attempt: a unique violation would otherwise poison
+        # the request transaction and leave nothing to retry into.
+        async with conn.transaction():
+            return await conn.fetchrow(
+                "insert into pets (handler_id, name, species, slug)"
+                f" values ((select auth.uid()), $1, $2, $3) returning {PET_COLUMNS}",
+                body.name,
+                body.species,
+                slug,
+            )
 
     return pets.PetOut(**dict(await pets.claim_slug(body.name, insert)))
