@@ -1,0 +1,223 @@
+/* The feed and the log form, from design/pet-profile-*.html and
+   design/log-entry-*.html. Only one layout is ever mounted, so the same class
+   names carry the two shapes. */
+
+.entries {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.entry {
+  display: flex;
+  border-bottom: 1px solid var(--rule-2);
+}
+.entry:last-child {
+  border-bottom: 0;
+}
+.entry .when {
+  font-family: var(--data);
+  color: var(--faint);
+  white-space: nowrap;
+  flex: none;
+}
+.entry .what {
+  min-width: 0;
+}
+.entry h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.entry .note {
+  color: var(--ink-2);
+  margin: 4px 0 0;
+}
+.entry .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 8px;
+}
+.entry .tag {
+  font-family: var(--data);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--faint);
+}
+.entry .tag.due {
+  color: var(--seal);
+}
+/* Stamp red, only on something actually overdue. */
+.entry .tag.due.overdue {
+  color: var(--stamp);
+  font-weight: 700;
+}
+
+.older {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--rule);
+  border-radius: 2px;
+  margin-top: 12px;
+  padding: 12px;
+  font-family: var(--data);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.older:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.shell-desktop .entry {
+  gap: 26px;
+  padding: 18px 22px;
+}
+.shell-desktop .entry .when {
+  font-size: 12px;
+  width: 92px;
+  padding-top: 3px;
+}
+.shell-desktop .entry h3 {
+  font-size: 17px;
+}
+.shell-desktop .entry .note {
+  font-size: 14px;
+}
+
+.shell-mobile .entry {
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 15px;
+}
+.shell-mobile .entry .when {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.shell-mobile .entry h3 {
+  font-size: 16px;
+}
+.shell-mobile .entry .note {
+  font-size: 13.5px;
+}
+
+.logbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 14px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 2px;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.entry .acts {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+.entry .acts button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.entry .acts button:hover {
+  color: var(--ink);
+}
+
+/* ============ the log form ============ */
+.entryform .row2 {
+  display: flex;
+  gap: 16px;
+}
+.entryform .row2 > * {
+  flex: 1;
+}
+.entryform textarea {
+  width: 100%;
+  font-family: var(--body);
+  font-size: 15px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 9px 11px;
+  min-height: 84px;
+  resize: vertical;
+}
+.entryform textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+}
+.entryform .chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.entryform .chips .hint {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.entryform .chip {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 6px 11px;
+  font-family: var(--body);
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.entryform .chip:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.entryform .due {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: #fbfbf9;
+}
+.entryform .promise {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  border-left: 2px solid var(--seal);
+  padding-left: 12px;
+  margin: 14px 0 0;
+}
+
+/* The card, swapped for the form that corrects it. */
+.entry.editing {
+  display: block;
+  padding: 0;
+}
+.entry.editing .entryform {
+  border: 0;
+  border-radius: 0;
+}
+
+.entryform label .opt {
+  color: var(--faint);
+  letter-spacing: 0.06em;
+}

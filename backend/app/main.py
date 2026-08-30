@@ -3,12 +3,12 @@ from uuid import UUID
 
 import asyncpg
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import pets, session, supabase_auth
+from . import entries, pets, session, supabase_auth
 from .config import settings
 from .db import rls_connection
 
@@ -263,3 +263,113 @@ async def update_pet(
     if row is None:
         raise NO_SUCH_PET
     return pets.PetOut(**dict(row))
+
+
+# ------------------------------------------------------------- entries -----
+# Same story as pets: `db` has already become the caller, so the
+# handler_owns_entries policy is the filter and another handler's entry is
+# absent rather than forbidden.
+
+NO_SUCH_ENTRY = HTTPException(status.HTTP_404_NOT_FOUND, "No such entry.")
+
+
+async def read_entry(entry_id: UUID, conn: asyncpg.Connection) -> entries.EntryOut:
+    row = await conn.fetchrow(
+        f"select {entries.ENTRY_COLUMNS} {entries.ENTRY_SOURCE} where e.id = $1", entry_id
+    )
+    if row is None:
+        raise NO_SUCH_ENTRY
+    return entries.EntryOut(**dict(row))
+
+
+@app.post("/entries", status_code=status.HTTP_201_CREATED)
+async def create_entry(
+    body: entries.EntryIn, conn: asyncpg.Connection = Depends(db)
+) -> entries.EntryOut:
+    fields = body.model_dump()
+    columns = ", ".join(fields)
+    values = ", ".join(f"${n}" for n in range(1, len(fields) + 1))
+    try:
+        entry_id = await conn.fetchval(
+            f"insert into entries ({columns}) values ({values}) returning id", *fields.values()
+        )
+    except asyncpg.IntegrityConstraintViolationError as error:
+        raise entries.constraint_error(error)
+    except asyncpg.InsufficientPrivilegeError:
+        # The insert check on handler_owns_entries: that pet is not theirs.
+        raise NO_SUCH_PET
+    return await read_entry(entry_id, conn)
+
+
+@app.get("/pets/{pet_id}/entries")
+async def pet_feed(
+    pet_id: UUID,
+    cursor: str | None = None,
+    limit: int = Query(default=5, ge=1, le=50),
+    conn: asyncpg.Connection = Depends(db),
+) -> entries.FeedPage:
+    """One page of a pet's record, newest first.
+
+    Keyset, not offset: the row comparison is the same (happened_on desc, id
+    desc) the feed index is built on, so a page cannot gain or drop an entry
+    because something older was logged between two requests.
+    """
+    after = entries.decode_cursor(cursor) if cursor else (None, None)
+    rows = await conn.fetch(
+        f"select {entries.ENTRY_COLUMNS} {entries.ENTRY_SOURCE}"
+        " where e.pet_id = $1"
+        "   and ($2::date is null or (e.happened_on, e.id) < ($2, $3::uuid))"
+        f" {entries.FEED_ORDER} limit $4",
+        pet_id,
+        *after,
+        limit + 1,
+    )
+    page = [entries.EntryOut(**dict(row)) for row in rows[:limit]]
+    return entries.FeedPage(
+        entries=page,
+        next_cursor=entries.encode_cursor(page[-1]) if len(rows) > limit else None,
+    )
+
+
+@app.patch("/entries/{entry_id}")
+async def update_entry(
+    entry_id: UUID, body: entries.EntryPatch, conn: asyncpg.Connection = Depends(db)
+) -> entries.EntryOut:
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        return await read_entry(entry_id, conn)
+
+    assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=2))
+    try:
+        touched = await conn.fetchval(
+            f"update entries set {assignments} where id = $1 returning id",
+            entry_id,
+            *changes.values(),
+        )
+    except asyncpg.IntegrityConstraintViolationError as error:
+        raise entries.constraint_error(error)
+    if touched is None:
+        raise NO_SUCH_ENTRY
+    return await read_entry(entry_id, conn)
+
+
+@app.delete("/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
+    if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
+        raise NO_SUCH_ENTRY
+
+
+@app.get("/entry-titles/recent")
+async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[str]:
+    """The handler's own last titles, one of each, across all their pets.
+
+    There is no global vocabulary here on purpose: a handler is only ever
+    offered words they typed themselves.
+    """
+    rows = await conn.fetch(
+        "select title from ("
+        "  select distinct on (title) title, happened_on, id from entries"
+        "  order by title, happened_on desc, id desc"
+        ") used order by used.happened_on desc, used.id desc limit 4"
+    )
+    return [row["title"] for row in rows]

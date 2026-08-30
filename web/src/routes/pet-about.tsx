@@ -38,6 +38,9 @@ function AboutDesktop({ pet, onEdit, form }: LayoutProps) {
       </div>
 
       <nav className="tabs" aria-label="Pet">
+        <Link className="tab" to={`/pets/${pet.id}`}>
+          Feed
+        </Link>
         <span className="tab on">About</span>
       </nav>
 
@@ -107,6 +110,9 @@ function AboutMobile({ pet, onEdit, form }: LayoutProps) {
       </div>
 
       <nav className="tabs" aria-label="Pet">
+        <Link className="tab" to={`/pets/${pet.id}`}>
+          Feed
+        </Link>
         <span className="tab on">About</span>
       </nav>
 

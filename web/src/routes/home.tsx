@@ -23,7 +23,7 @@ function PetsDesktop({ pets }: { pets: Pet[] }) {
   return (
     <div className="pets">
       {pets.map((pet, index) => (
-        <Link className="pet" key={pet.id} to={`/pets/${pet.id}/about`}>
+        <Link className="pet" key={pet.id} to={`/pets/${pet.id}`}>
           <span className="top">
             <Avatar pet={pet} index={index} />
             <span className="id">
@@ -50,7 +50,7 @@ function PetsMobile({ pets }: { pets: Pet[] }) {
       {pets.length > 0 && (
         <div className="pets">
           {pets.map((pet, index) => (
-            <Link className="pet" key={pet.id} to={`/pets/${pet.id}/about`}>
+            <Link className="pet" key={pet.id} to={`/pets/${pet.id}`}>
               <Avatar pet={pet} index={index} />
               <span className="mid">
                 <span className="nm">{pet.name}</span>
