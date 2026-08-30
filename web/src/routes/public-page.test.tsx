@@ -18,6 +18,7 @@ const biscuit: PublicPet = {
   born: "Mar 2022",
   age_years: 4,
   age_months: 5,
+  has_photo: false,
   updated_on: "2026-08-12",
   entries: [
     { title: "Deworming", happened_on: "2026-08-12", due_on: "2026-11-12" },
@@ -131,5 +132,29 @@ describe("the public page", () => {
     expect(await screen.findByText(/not available/i)).toBeInTheDocument();
     expect(screen.queryByRole("heading")).toBeNull();
     expect(screen.queryAllByRole("link")).toHaveLength(0);
+  });
+});
+
+describe("a public page's photo", () => {
+  it("renders it from our own API, keyed on the slug and never on Supabase", async () => {
+    published({ ...biscuit, has_photo: true });
+
+    const { container } = renderRoute(page);
+
+    expect(await screen.findByRole("img", { name: "Biscuit" })).toHaveAttribute(
+      "src",
+      `http://localhost:8000/public/pets/${biscuit.slug}/photo`,
+    );
+    expect(container.innerHTML).not.toMatch(/supabase/i);
+  });
+
+  it("shows the initial-letter avatar when there is no photo", async () => {
+    published(biscuit);
+
+    renderRoute(page);
+
+    expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+    expect(screen.getByText("B")).toBeInTheDocument();
   });
 });

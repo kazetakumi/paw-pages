@@ -19,6 +19,7 @@ const created = {
   colour: null,
   slug: "biscuit-a4f2",
   is_public: false,
+  has_photo: false,
   age_years: null,
   age_months: null,
 };

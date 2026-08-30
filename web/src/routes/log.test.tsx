@@ -20,6 +20,7 @@ const biscuit: Pet = {
   colour: "Tan & white",
   slug: "biscuit-a4f2",
   is_public: false,
+  has_photo: false,
   age_years: 4,
   age_months: 5,
 };
@@ -32,6 +33,7 @@ const momo: Pet = {
   breed: null,
   slug: "momo-9k2p",
   is_public: false,
+  has_photo: false,
 };
 
 /** Everything the log form loads, plus the feed it lands on afterwards. */

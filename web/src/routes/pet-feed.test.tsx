@@ -20,6 +20,7 @@ const biscuit: PetRecord = {
   colour: "Tan & white",
   slug: "biscuit-a4f2",
   is_public: false,
+  has_photo: false,
   age_years: 4,
   age_months: 5,
   due_items: [],
@@ -365,5 +366,23 @@ describe("a pet's feed", () => {
       "Rabies booster",
       "Rabies booster",
     ]);
+  });
+});
+
+describe("a pet's photo on the feed", () => {
+  it("shows the photo from our own API in place of the letter", async () => {
+    signedInWith([{ entries: [], next_cursor: null }]);
+    server.use(
+      http.get(`http://localhost:8000/pets/${biscuit.id}`, () =>
+        HttpResponse.json({ ...biscuit, has_photo: true, due_items: [] }),
+      ),
+    );
+
+    renderRoute(feed);
+
+    expect(await screen.findByRole("img", { name: "Biscuit" })).toHaveAttribute(
+      "src",
+      `http://localhost:8000/pets/${biscuit.id}/photo`,
+    );
   });
 });

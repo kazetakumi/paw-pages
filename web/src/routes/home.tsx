@@ -9,7 +9,8 @@ import {
   type PetCard,
 } from "../api";
 import { Ledger } from "../entries/due";
-import { formatDate, formatDayMonth, initial, summaryOf } from "../pets/pet";
+import { formatDate, formatDayMonth, summaryOf } from "../pets/pet";
+import { PetAvatar } from "../pets/PetAvatar";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
@@ -19,12 +20,7 @@ import "../entries/entries.css";
 const TINTS = ["a", "b", "c"];
 
 function Avatar({ pet, index }: { pet: PetCard; index: number }) {
-  // No photo yet, so the initial is the portrait.
-  return (
-    <span className={`av ${TINTS[index % TINTS.length]}`} aria-hidden="true">
-      {initial(pet.name)}
-    </span>
-  );
+  return <PetAvatar pet={pet} tint={TINTS[index % TINTS.length]} />;
 }
 
 /** Above the breakpoint: a grid of cards, each closing with its two dates. */

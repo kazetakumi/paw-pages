@@ -16,7 +16,8 @@ import {
 } from "../api";
 import { Attention } from "../entries/due";
 import { EntryForm } from "../entries/EntryForm";
-import { formatDate, initial, summaryOf } from "../pets/pet";
+import { formatDate, summaryOf } from "../pets/pet";
+import { PetAvatar } from "../pets/PetAvatar";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
@@ -84,9 +85,7 @@ function FeedDesktop({ pet, children }: LayoutProps) {
         &larr; Home
       </Link>
       <div className="phead">
-        <span className="av" aria-hidden="true">
-          {initial(pet.name)}
-        </span>
+        <PetAvatar pet={pet} />
         <div className="id">
           <h1>{pet.name}</h1>
           <div className="meta">{summaryOf(pet)}</div>
@@ -113,9 +112,7 @@ function FeedMobile({ pet, children }: LayoutProps) {
         </Link>
       </div>
       <div className="hero">
-        <span className="av" aria-hidden="true">
-          {initial(pet.name)}
-        </span>
+        <PetAvatar pet={pet} />
         <div>
           <h1>{pet.name}</h1>
           <div className="meta">{summaryOf(pet)}</div>

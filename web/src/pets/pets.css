@@ -630,3 +630,61 @@
 .pub .shows .no {
   color: var(--faint);
 }
+
+/* ---- the photo control, on the About tab ---------------------------------
+   The picker is the control; the portrait above it is the preview, so there is
+   no second copy of the same image on the screen. */
+.photo .hint {
+  display: block;
+  color: var(--faint);
+  font-size: 13px;
+}
+.photo .file {
+  font-family: var(--body);
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 100%;
+}
+.photo .rm {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
+}
+.photo .rm:hover {
+  color: var(--stamp);
+}
+.photo .problem {
+  font-size: 13px;
+  color: var(--stamp);
+  margin: 6px 0 0;
+}
+img.av {
+  object-fit: cover;
+}
+
+.shell-desktop .photo .row .v {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.shell-desktop .photo .hint {
+  margin-left: auto;
+}
+
+.shell-mobile .photo {
+  padding: 14px 16px;
+}
+.shell-mobile .photo .hint {
+  margin: 4px 0 12px;
+}
+.shell-mobile .photo .rm {
+  display: block;
+  margin-top: 14px;
+}
