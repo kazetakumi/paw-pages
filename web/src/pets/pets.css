@@ -472,6 +472,37 @@
 .head {
   margin-bottom: 34px;
 }
+.shell-desktop .head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+/* Below the breakpoint the same control floats over the list instead, so a
+   handler never has to scroll back up to log something. */
+.fab {
+  position: sticky;
+  bottom: 20px;
+  margin-top: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 2px;
+  font-family: var(--body);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 15px 18px;
+  box-shadow: 0 8px 24px rgba(19, 32, 46, 0.22);
+}
+.fab .plus {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+}
 .fline {
   display: flex;
   justify-content: space-between;

@@ -264,6 +264,32 @@ describe("the home screen", () => {
     expect(await screen.findByText("1 archived pet")).toBeInTheDocument();
   });
 
+  it("reaches the log form from the header above the breakpoint", async () => {
+    signedInWith({ pets: [biscuit] });
+    setViewportWidth(1200);
+
+    const { container } = renderRoute("/home");
+
+    const log = await screen.findByRole("link", { name: "Log an entry" });
+
+    expect(log).toHaveAttribute("href", "/log");
+    expect(container.querySelector('[data-log="desktop"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-log="mobile"]')).toBeNull();
+  });
+
+  it("reaches the log form from the button that floats over the list below it", async () => {
+    signedInWith({ pets: [biscuit] });
+    setViewportWidth(390);
+
+    const { container } = renderRoute("/home");
+
+    const log = await screen.findByRole("link", { name: /Log an entry/ });
+
+    expect(log).toHaveAttribute("href", "/log");
+    expect(container.querySelector('[data-log="mobile"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-log="desktop"]')).toBeNull();
+  });
+
   it("asks for the ledger, the cards and the counts once", async () => {
     const calls = signedInWith({ ledger: [rabies], pets: [biscuit], overdue: 1 });
 

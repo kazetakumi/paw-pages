@@ -112,7 +112,8 @@ function Tally({ board }: { board: Dashboard }) {
 
 export default function Home() {
   const [record, setRecord] = useState<{ handler: Handler; board: Dashboard } | null>(null);
-  const Pets = useIsDesktop() ? PetsDesktop : PetsMobile;
+  const isDesktop = useIsDesktop();
+  const Pets = isDesktop ? PetsDesktop : PetsMobile;
 
   useEffect(() => {
     // A 401 is the app's business, not this screen's: see App.tsx.
@@ -131,8 +132,17 @@ export default function Home() {
   return (
     <Shell name={record.handler.name}>
       <div className="head">
-        <h1 className="greeting">Your pets</h1>
-        <Tally board={board} />
+        <div>
+          <h1 className="greeting">Your pets</h1>
+          <Tally board={board} />
+        </div>
+        {/* Above the breakpoint it sits in the header beside the heading;
+            below it, it floats over the list at the bottom of the screen. */}
+        {isDesktop && (
+          <Link className="btn" to="/log" data-log="desktop">
+            Log an entry
+          </Link>
+        )}
       </div>
       <Ledger items={board.ledger} />
       <div className="sect">
@@ -145,6 +155,14 @@ export default function Home() {
         <p className="archived">
           {board.archived_pets} archived {board.archived_pets === 1 ? "pet" : "pets"}
         </p>
+      )}
+      {!isDesktop && (
+        <Link className="fab" to="/log" data-log="mobile">
+          <span className="plus" aria-hidden="true">
+            +
+          </span>{" "}
+          Log an entry
+        </Link>
       )}
     </Shell>
   );
