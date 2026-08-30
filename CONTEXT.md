@@ -19,7 +19,7 @@ Source of truth, in order:
 | `board/board.html` | The ten tickets and their dependency chain |
 | `board/NN-*.html` | One ticket: what to build, acceptance criteria, done means |
 | `design/*.html` | The eight screens, desktop and mobile, as drawn |
-| `supabase/migrations/*.sql` | The live schema. **Do not change it. No migration 0004.** |
+| `supabase/migrations/*.sql` | The live schema. **Do not change it.** 0004 repaired the storage policies; there is no further migration to write. |
 
 ## Stack, fixed
 
@@ -54,7 +54,10 @@ Do not add a state library, a component library, an ORM or a migration tool.
 8. **Due and overdue are computed in the database**, in the `due_items` view.
    Neither the backend nor the frontend reimplements them.
 9. **The schema does not change.** If you think you need a migration, you have
-   misread the ticket — stop and say so.
+   misread the ticket — stop and say so. The one exception already happened:
+   0004 repaired 0003's five storage policies, every one of which denied
+   everyone because `name` inside the subquery bound to `pets.name` rather than
+   `storage.objects.name`. Do not reopen that.
 
 ## Domain language
 
@@ -95,7 +98,7 @@ web/
   src/routes/     one module per route
   src/test/       MSW handlers, fixtures, setup
   package.json
-supabase/migrations/   the three migrations — read-only
+supabase/migrations/   the four migrations — read-only
 ```
 
 ## Routes
@@ -143,7 +146,7 @@ The design files in `design/` are the specification — match them.
 Only these two. Nothing below them.
 
 **Seam 1 — the HTTP API against a real Postgres.** FastAPI's test client against
-a throwaway Postgres with all three migrations applied, authenticated as a
+a throwaway Postgres with every migration applied, authenticated as a
 seeded handler. Nothing stubbed: RLS live, views live, constraints live. The
 only external thing stubbed is the Supabase Auth **HTTP client** — Supabase Auth
 itself is deliberately not tested.
@@ -163,7 +166,7 @@ No Docker on this machine. Tests run against a local PostgreSQL 17 at
 `localhost:5432` (superuser `postgres`, password `postgres`).
 
 Because plain Postgres is not Supabase, the test fixture applies
-`backend/tests/supabase_shim.sql` before the three migrations. The shim creates
+`backend/tests/supabase_shim.sql` before the migrations. The shim creates
 the minimum Supabase surface the migrations reference and nothing more:
 
 - roles `anon`, `authenticated`, `service_role`
@@ -190,7 +193,7 @@ COOKIE_SECURE=false   # true in production
 ```
 
 The Supabase project is `paw-pages` (`ywfmrpmvfcaokzavcuzx`, ap-south-1). All
-three migrations are already applied there. Do not apply migrations to it.
+four migrations are already applied there. Do not apply migrations to it.
 
 ## Working agreement
 

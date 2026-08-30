@@ -7,7 +7,7 @@ schema reference, and `board/` holds the ten tickets.
 ```
 backend/   FastAPI + asyncpg, managed by uv
 web/       Vite + React + TypeScript
-supabase/  the three migrations — read-only
+supabase/  the four migrations — read-only
 ```
 
 ## Running the tests
@@ -17,7 +17,7 @@ supabase/  the three migrations — read-only
 Tests need a local PostgreSQL 17 at `localhost:5432` (superuser `postgres`,
 password `postgres`). There is no Docker here and no Supabase CLI: the fixture
 creates a throwaway database per run, applies `backend/tests/supabase_shim.sql`
-and then the three migrations in `supabase/migrations/` unmodified, and drops
+and then every migration in `supabase/migrations/` unmodified, and drops
 the database at the end.
 
 ```

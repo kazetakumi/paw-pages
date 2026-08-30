@@ -27,7 +27,7 @@ ADMIN_DSN = os.environ.get(
 
 @pytest.fixture(scope="session")
 async def database_url():
-    """A throwaway database with the shim and all three migrations applied."""
+    """A throwaway database with the shim and every migration applied."""
     name = f"paw_pages_test_{secrets.token_hex(6)}"
     admin = await asyncpg.connect(ADMIN_DSN)
     await admin.execute(f'create database "{name}"')
