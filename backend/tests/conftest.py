@@ -64,12 +64,14 @@ async def app(database_url):
 def auth_stub(app) -> SupabaseAuthStub:
     stub = app.state.auth_stub
     stub.access_token_lifetime = 3600
+    stub.hide_existing_users = False
     return stub
 
 
 @pytest.fixture(autouse=True)
 async def clean_slate(app):
     yield
+    app.state.auth_stub.reset()
     async with app.state.pool.acquire() as conn:
         await conn.execute("truncate auth.users cascade")
 

@@ -37,12 +37,28 @@ class SignInIn(BaseModel):
     password: str
 
 
+class PasswordResetIn(BaseModel):
+    email: str
+
+
+class PasswordResetConfirmIn(BaseModel):
+    # The token the emailed link carried. It passes straight through to Supabase
+    # Auth and is never stored — it is not a session and never becomes one.
+    access_token: str
+    password: str
+
+
 class HandlerOut(BaseModel):
     id: str
     name: str
 
 
 NOT_SIGNED_IN = HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in.")
+
+EMAIL_TAKEN = HTTPException(
+    status.HTTP_409_CONFLICT,
+    {"field": "email", "message": "That email already has an account. Sign in instead."},
+)
 
 
 async def claims(request: Request, response: Response) -> dict:
@@ -100,7 +116,13 @@ async def signup(body: SignUpIn, request: Request, response: Response) -> Handle
             request.app.state.auth_client, body.name, body.email, body.password
         )
     except supabase_auth.AuthError as error:
+        if error.is_email_taken:
+            raise EMAIL_TAKEN
         raise HTTPException(status.HTTP_400_BAD_REQUEST, error.message)
+    # With email-enumeration protection on, Supabase hides a repeat signup behind
+    # a 200 carrying a decoy user with no identities rather than an error.
+    if tokens.get("user", {}).get("identities") == []:
+        raise EMAIL_TAKEN
     return await start_session(request, response, tokens)
 
 
@@ -113,6 +135,38 @@ async def signin(body: SignInIn, request: Request, response: Response) -> Handle
     except supabase_auth.AuthError:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email or password is wrong.")
     return await start_session(request, response, tokens)
+
+
+@app.post("/auth/password-reset", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset(body: PasswordResetIn, request: Request) -> None:
+    """Ask Supabase Auth to email a link.
+
+    Always 204: whether an address is registered here is not ours to tell.
+    """
+    try:
+        await supabase_auth.request_password_reset(
+            request.app.state.auth_client, body.email, f"{settings.web_url}/reset-password"
+        )
+    except supabase_auth.AuthError:
+        pass
+
+
+@app.post("/auth/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
+async def password_reset_confirm(body: PasswordResetConfirmIn, request: Request) -> None:
+    try:
+        await supabase_auth.set_password(
+            request.app.state.auth_client, body.access_token, body.password
+        )
+    except supabase_auth.AuthError:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "That reset link has expired. Request a new one."
+        )
+
+
+@app.post("/auth/signout", status_code=status.HTTP_204_NO_CONTENT)
+async def signout(response: Response) -> None:
+    """Drop the cookie. No session to check first: signing out twice is fine."""
+    session.clear(response)
 
 
 @app.get("/me")

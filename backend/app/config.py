@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     database_url: str
     session_secret: str
     cookie_secure: bool = True
+    # Where the emailed reset link comes back to.
+    web_url: str = "http://localhost:5173"
 
 
 settings = Settings()
