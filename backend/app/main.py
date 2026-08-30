@@ -337,3 +337,19 @@ async def update_entry(
 async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
     if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
         raise NO_SUCH_ENTRY
+
+
+@app.get("/entry-titles/recent")
+async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[str]:
+    """The handler's own last titles, one of each, across all their pets.
+
+    There is no global vocabulary here on purpose: a handler is only ever
+    offered words they typed themselves.
+    """
+    rows = await conn.fetch(
+        "select title from ("
+        "  select distinct on (title) title, happened_on, id from entries"
+        "  order by title, happened_on desc, id desc"
+        ") used order by used.happened_on desc, used.id desc limit 4"
+    )
+    return [row["title"] for row in rows]

@@ -99,3 +99,31 @@ async def test_an_entry_can_be_edited_and_deleted_after_saving(signed_in, biscui
 
     assert deleted.status_code == 204
     assert (await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"] == []
+
+
+async def test_recent_titles_are_the_handlers_own_distinct_last_four_across_all_pets(
+    signed_in, biscuit
+):
+    momo = (await signed_in.post("/pets", json={"name": "Momo", "species": "cat"})).json()["id"]
+    # oldest first, so the expected order is the reverse of this
+    logged = [
+        (biscuit, "Rabies booster", "2024-01-10"),
+        (momo, "Grooming", "2024-02-10"),
+        (biscuit, "Deworming", "2024-03-10"),
+        (momo, "Rabies booster", "2024-04-10"),
+        (biscuit, "Vet visit", "2024-05-10"),
+        (momo, "Nail trim", "2024-06-10"),
+    ]
+    for pet_id, title, happened_on in logged:
+        await signed_in.post(
+            "/entries", json={"pet_id": pet_id, "title": title, "happened_on": happened_on}
+        )
+
+    titles = (await signed_in.get("/entry-titles/recent")).json()
+
+    assert titles == ["Nail trim", "Vet visit", "Rabies booster", "Deworming"]
+    assert len(titles) == len(set(titles))
+
+
+async def test_a_handler_with_no_entries_gets_no_titles_to_suggest(signed_in):
+    assert (await signed_in.get("/entry-titles/recent")).json() == []
