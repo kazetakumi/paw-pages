@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import due, entries, pets, public, session, supabase_auth, supabase_storage
+from . import due, entries, handler, pets, public, session, supabase_auth, supabase_storage
 from .config import settings
 from .db import anon_connection, rls_connection
 
@@ -81,11 +81,6 @@ class PasswordResetConfirmIn(BaseModel):
     password: str
 
 
-class HandlerOut(BaseModel):
-    id: str
-    name: str
-
-
 NOT_SIGNED_IN = HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in.")
 
 EMAIL_TAKEN = HTTPException(
@@ -135,15 +130,25 @@ async def anon_db(request: Request):
         yield conn
 
 
-async def read_handler(conn: asyncpg.Connection) -> HandlerOut:
+# Everything the account screen opens with, in one row. The two counts are
+# subqueries with no `where handler_id = ...`: the same policies that filter
+# `handlers` filter `pets` and `entries`, so they can only count the caller's.
+HANDLER_COLUMNS = """id, name, created_at::date as joined_on,
+       date_of_birth, gender, nationality,
+       extract(year from age(date_of_birth))::int as age,
+       (select count(*) from pets) as pet_count,
+       (select count(*) from entries) as entry_count"""
+
+
+async def read_handler(conn: asyncpg.Connection, email: str) -> handler.HandlerOut:
     # No `where id = ...`: the handler_reads_self policy is the filter.
-    row = await conn.fetchrow("select id, name from handlers")
+    row = await conn.fetchrow(f"select {HANDLER_COLUMNS} from handlers")
     if row is None:
         raise NOT_SIGNED_IN
-    return HandlerOut(id=str(row["id"]), name=row["name"])
+    return handler.HandlerOut(**dict(row), email=email)
 
 
-async def start_session(request: Request, response: Response, tokens: dict) -> HandlerOut:
+async def start_session(request: Request, response: Response, tokens: dict) -> handler.HandlerOut:
     if not tokens.get("access_token"):
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY,
@@ -153,11 +158,11 @@ async def start_session(request: Request, response: Response, tokens: dict) -> H
     async with rls_connection(
         request.app.state.pool, session.claims_of(tokens["access_token"])
     ) as conn:
-        return await read_handler(conn)
+        return await read_handler(conn, session.claims_of(tokens["access_token"])["email"])
 
 
 @app.post("/auth/signup", status_code=status.HTTP_201_CREATED)
-async def signup(body: SignUpIn, request: Request, response: Response) -> HandlerOut:
+async def signup(body: SignUpIn, request: Request, response: Response) -> handler.HandlerOut:
     try:
         tokens = await supabase_auth.sign_up(
             request.app.state.auth_client, body.name, body.email, body.password
@@ -174,7 +179,7 @@ async def signup(body: SignUpIn, request: Request, response: Response) -> Handle
 
 
 @app.post("/auth/signin")
-async def signin(body: SignInIn, request: Request, response: Response) -> HandlerOut:
+async def signin(body: SignInIn, request: Request, response: Response) -> handler.HandlerOut:
     try:
         tokens = await supabase_auth.sign_in(
             request.app.state.auth_client, body.email, body.password
@@ -217,8 +222,28 @@ async def signout(response: Response) -> None:
 
 
 @app.get("/me")
-async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
-    return await read_handler(conn)
+async def me(
+    conn: asyncpg.Connection = Depends(db), payload: dict = Depends(claims)
+) -> handler.HandlerOut:
+    return await read_handler(conn, payload["email"])
+
+
+@app.patch("/me")
+async def update_me(
+    body: handler.HandlerPatch,
+    conn: asyncpg.Connection = Depends(db),
+    payload: dict = Depends(claims),
+) -> handler.HandlerOut:
+    """What the app calls them, and the three optional fields.
+
+    No `where id = ...`: the handler_updates_self policy is the filter, so the
+    only row this can reach is the caller's own.
+    """
+    changes = body.model_dump(exclude_unset=True)
+    if changes:
+        assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=1))
+        await conn.execute(f"update handlers set {assignments}", *changes.values())
+    return await read_handler(conn, payload["email"])
 
 
 # Everything a pet shows on any screen. `age_*` is derived by the database on
