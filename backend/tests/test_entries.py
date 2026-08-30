@@ -185,3 +185,92 @@ async def test_a_cursor_says_nothing_about_the_row_it_points_at(signed_in, biscu
 
     assert "2024" not in cursor
     assert (await signed_in.get(f"/pets/{biscuit}/entries?cursor=nonsense")).status_code == 400
+
+
+async def test_a_second_handler_can_neither_read_update_nor_delete_the_first_handlers_entries(
+    signed_in, biscuit, seed_handler
+):
+    """Proved by RLS: nothing in the entry endpoints carries an ownership filter."""
+    mine = (
+        await signed_in.post(
+            "/entries", json={"pet_id": biscuit, "title": "Rabies booster", "happened_on": TODAY}
+        )
+    ).json()
+    await seed_handler("Bela", "bela@example.com")
+    await signed_in.post("/auth/signin", json={"email": "bela@example.com", "password": "x"})
+
+    assert (await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"] == []
+    assert (await signed_in.get("/entry-titles/recent")).json() == []
+    assert (
+        await signed_in.patch(f"/entries/{mine['id']}", json={"title": "Stolen"})
+    ).status_code == 404
+    assert (await signed_in.delete(f"/entries/{mine['id']}")).status_code == 404
+
+
+async def test_an_entry_cannot_be_filed_against_another_handlers_pet(
+    signed_in, biscuit, seed_handler
+):
+    await seed_handler("Bela", "bela@example.com")
+    await signed_in.post("/auth/signin", json={"email": "bela@example.com", "password": "x"})
+
+    refused = await signed_in.post(
+        "/entries", json={"pet_id": biscuit, "title": "Rabies booster", "happened_on": TODAY}
+    )
+
+    assert refused.status_code == 404
+
+
+async def test_the_first_handlers_entry_survives_the_second_handlers_attempt(
+    signed_in, biscuit, seed_handler
+):
+    mine = (
+        await signed_in.post(
+            "/entries", json={"pet_id": biscuit, "title": "Rabies booster", "happened_on": TODAY}
+        )
+    ).json()
+    await seed_handler("Bela", "bela@example.com")
+    await signed_in.post("/auth/signin", json={"email": "bela@example.com", "password": "x"})
+    await signed_in.delete(f"/entries/{mine['id']}")
+    await signed_in.post("/auth/signin", json={"email": "akhil@example.com", "password": "x"})
+
+    feed = (await signed_in.get(f"/pets/{biscuit}/entries")).json()
+
+    assert [e["title"] for e in feed["entries"]] == ["Rabies booster"]
+
+
+async def test_a_due_date_that_has_passed_comes_back_overdue_from_the_database(
+    signed_in, biscuit
+):
+    """The flag is read off the due_items view — the one definition of overdue.
+    Nothing in the API or the browser works it out again."""
+    passed = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Rabies booster",
+            "happened_on": "2024-01-10",
+            "due_on": "2024-02-10",
+        },
+    )
+    standing = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Deworming",
+            "happened_on": TODAY,
+            "due_on": (date.today() + timedelta(days=90)).isoformat(),
+        },
+    )
+    plain = await signed_in.post(
+        "/entries", json={"pet_id": biscuit, "title": "Grooming", "happened_on": TODAY}
+    )
+
+    assert passed.json()["is_overdue"] is True
+    assert standing.json()["is_overdue"] is False
+    assert plain.json()["is_overdue"] is False
+
+    feed = (await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"]
+
+    assert [e["title"] for e in feed][0] in ("Deworming", "Grooming")
+    assert [e["title"] for e in feed][-1] == "Rabies booster"
+    assert {e["title"]: e["is_overdue"] for e in feed}["Rabies booster"] is True
