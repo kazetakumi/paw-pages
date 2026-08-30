@@ -1,0 +1,59 @@
+from datetime import date, timedelta
+
+import pytest
+
+TODAY = date.today().isoformat()
+YESTERDAY = (date.today() - timedelta(days=1)).isoformat()
+
+
+@pytest.fixture
+async def signed_in(client, seed_handler):
+    await seed_handler("Akhil", "akhil@example.com")
+    await client.post("/auth/signin", json={"email": "akhil@example.com", "password": "x"})
+    return client
+
+
+@pytest.fixture
+async def biscuit(signed_in):
+    created = await signed_in.post("/pets", json={"name": "Biscuit", "species": "dog"})
+    return created.json()["id"]
+
+
+async def test_an_entry_saves_from_a_date_and_a_title_alone(signed_in, biscuit):
+    created = await signed_in.post(
+        "/entries", json={"pet_id": biscuit, "title": "Nail trim", "happened_on": TODAY}
+    )
+
+    assert created.status_code == 201
+    entry = created.json()
+    assert (entry["title"], entry["happened_on"]) == ("Nail trim", TODAY)
+    assert (entry["due_on"], entry["vet"], entry["note"]) == (None, None, None)
+
+    feed = await signed_in.get(f"/pets/{biscuit}/entries")
+    assert [e["title"] for e in feed.json()["entries"]] == ["Nail trim"]
+
+
+async def test_a_happened_on_in_the_future_comes_back_named_not_as_a_500(signed_in, biscuit):
+    rejected = await signed_in.post(
+        "/entries",
+        json={"pet_id": biscuit, "title": "Rabies booster", "happened_on": "2099-01-01"},
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "happened_on"
+    assert "constraint" not in rejected.text.lower()
+
+
+async def test_a_due_on_before_happened_on_comes_back_named(signed_in, biscuit):
+    rejected = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Rabies booster",
+            "happened_on": TODAY,
+            "due_on": YESTERDAY,
+        },
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "due_on"

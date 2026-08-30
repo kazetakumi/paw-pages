@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import pets, session, supabase_auth
+from . import entries, pets, session, supabase_auth
 from .config import settings
 from .db import rls_connection
 
@@ -263,3 +263,49 @@ async def update_pet(
     if row is None:
         raise NO_SUCH_PET
     return pets.PetOut(**dict(row))
+
+
+# ------------------------------------------------------------- entries -----
+# Same story as pets: `db` has already become the caller, so the
+# handler_owns_entries policy is the filter and another handler's entry is
+# absent rather than forbidden.
+
+NO_SUCH_ENTRY = HTTPException(status.HTTP_404_NOT_FOUND, "No such entry.")
+
+
+async def read_entry(entry_id: UUID, conn: asyncpg.Connection) -> entries.EntryOut:
+    row = await conn.fetchrow(
+        f"select {entries.ENTRY_COLUMNS} {entries.ENTRY_SOURCE} where e.id = $1", entry_id
+    )
+    if row is None:
+        raise NO_SUCH_ENTRY
+    return entries.EntryOut(**dict(row))
+
+
+@app.post("/entries", status_code=status.HTTP_201_CREATED)
+async def create_entry(
+    body: entries.EntryIn, conn: asyncpg.Connection = Depends(db)
+) -> entries.EntryOut:
+    fields = body.model_dump()
+    columns = ", ".join(fields)
+    values = ", ".join(f"${n}" for n in range(1, len(fields) + 1))
+    try:
+        entry_id = await conn.fetchval(
+            f"insert into entries ({columns}) values ({values}) returning id", *fields.values()
+        )
+    except asyncpg.IntegrityConstraintViolationError as error:
+        raise entries.constraint_error(error)
+    except asyncpg.InsufficientPrivilegeError:
+        # The insert check on handler_owns_entries: that pet is not theirs.
+        raise NO_SUCH_PET
+    return await read_entry(entry_id, conn)
+
+
+@app.get("/pets/{pet_id}/entries")
+async def pet_feed(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> entries.FeedPage:
+    rows = await conn.fetch(
+        f"select {entries.ENTRY_COLUMNS} {entries.ENTRY_SOURCE}"
+        f" where e.pet_id = $1 {entries.FEED_ORDER}",
+        pet_id,
+    )
+    return entries.FeedPage(entries=[entries.EntryOut(**dict(r)) for r in rows], next_cursor=None)
