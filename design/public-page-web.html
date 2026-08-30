@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biscuit — Paw Pages</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E;
+    --ink-2:#4E5A67;
+    --faint:#8D97A1;
+    --paper:#E9EAE5;
+    --card:#FFFFFF;
+    --rule:#DCE0E4;
+    --rule-2:#EDEFF1;
+    --seal:#2E6B4F;
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;
+    padding:52px 22px 70px;min-height:100vh}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+  /* ============ the card ============ */
+  .doc{width:100%;max-width:620px;background:var(--card);
+    border:1px solid #CFD3D7;border-radius:3px;overflow:hidden;
+    box-shadow:0 14px 44px rgba(19,32,46,.10)}
+
+  .kicker{font-family:var(--data);font-size:9.5px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--faint);padding:22px 30px 0}
+
+  .idblock{padding:18px 30px 26px;display:flex;align-items:center;gap:20px}
+  .av{width:96px;height:96px;border-radius:50%;flex:none;background:#DEE5EA;
+        display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:36px;font-weight:600;color:var(--ink)}
+  h1{font-family:var(--display);font-size:36px;font-weight:600;letter-spacing:-.025em;
+    margin:0 0 4px;line-height:1.05}
+  .meta{font-size:14.5px;color:var(--ink-2)}
+  .meta .dot{color:var(--rule);margin:0 8px}
+
+  /* facts strip */
+  .strip{display:grid;grid-template-columns:repeat(4,1fr);
+    border-top:1px solid var(--rule-2);border-bottom:1px solid var(--rule-2)}
+  .cell{padding:15px 18px;border-right:1px solid var(--rule-2)}
+  .cell:last-child{border-right:0}
+  .cell .k{font-family:var(--data);font-size:9px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--faint);display:block;margin-bottom:4px}
+  .cell .v{font-size:14.5px}
+
+  /* the record */
+  .recwrap{padding:26px 30px 30px}
+  .sect{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+  .sect h2{font-family:var(--data);font-size:10.5px;font-weight:700;letter-spacing:.15em;
+    text-transform:uppercase;margin:0;white-space:nowrap}
+  .sect .line{flex:1;height:1px;background:var(--rule)}
+  .sect .n{font-family:var(--data);font-size:10px;color:var(--faint)}
+
+  .rec{border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+  .r{display:grid;grid-template-columns:112px 1fr auto;gap:18px;align-items:baseline;
+    padding:14px 18px;border-bottom:1px solid var(--rule-2)}
+  .r:last-child{border-bottom:0}
+  .r .d{font-family:var(--data);font-size:12px;color:var(--ink-2);white-space:nowrap}
+  .r .w{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .r .nx{font-family:var(--data);font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--seal);border:1px solid #C9DBD1;border-radius:2px;padding:3px 8px;white-space:nowrap}
+  .r .nx.past{color:var(--ink-2);border-color:var(--rule)}
+
+  .foot{padding:18px 30px 24px;border-top:1px solid var(--rule-2);
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .foot .up{font-family:var(--data);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--faint)}
+  .foot .mk{margin-left:auto;font-family:var(--display);font-size:11px;font-weight:700;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+  .foot .mk .p2{color:#C3C8CD}
+
+  .under{max-width:620px;margin-top:18px;font-size:12.5px;color:var(--faint);
+    text-align:center;line-height:1.6}
+
+  @media (max-width:620px){
+    body{padding:26px 16px 50px}
+    .kicker{padding:18px 20px 0}
+    .idblock{padding:14px 20px 20px;gap:15px}
+    .av{width:76px;height:76px;font-size:29px}
+    h1{font-size:28px}
+    .strip{grid-template-columns:1fr 1fr}
+    .cell:nth-child(2n){border-right:0}
+    .cell:nth-child(-n+2){border-bottom:1px solid var(--rule-2)}
+    .recwrap{padding:22px 20px 24px}
+    .r{grid-template-columns:1fr;gap:5px}
+    .r .nx{justify-self:start}
+    .foot{padding:16px 20px 20px}
+  }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <div class="kicker">Pet record</div>
+
+  <div class="idblock">
+    <div class="av">B</div>
+    <div>
+      <h1>Biscuit</h1>
+      <div class="meta">Indian Pariah <span class="dot">·</span> male <span class="dot">·</span> 4 yrs 5 mo</div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="cell"><span class="k">Species</span><span class="v">Dog</span></div>
+    <div class="cell"><span class="k">Breed</span><span class="v">Indian Pariah</span></div>
+    <div class="cell"><span class="k">Colour</span><span class="v">Tan &amp; white</span></div>
+    <div class="cell"><span class="k">Born</span><span class="v">Mar 2022</span></div>
+  </div>
+
+  <div class="recwrap">
+    <div class="sect"><h2>Record</h2><span class="line"></span><span class="n">5 entries</span></div>
+    <div class="rec">
+
+      <div class="r">
+        <span class="d">12 AUG 2026</span>
+        <span class="w">Deworming</span>
+        <span class="nx">Next 12 Nov 2026</span>
+      </div>
+
+      <div class="r">
+        <span class="d">02 JUN 2026</span>
+        <span class="w">Vet visit</span>
+        <span></span>
+      </div>
+
+      <div class="r">
+        <span class="d">20 APR 2026</span>
+        <span class="w">DHPP booster</span>
+        <span class="nx">Next 20 Apr 2029</span>
+      </div>
+
+      <div class="r">
+        <span class="d">18 MAR 2026</span>
+        <span class="w">Grooming</span>
+        <span></span>
+      </div>
+
+      <div class="r">
+        <span class="d">14 JUL 2025</span>
+        <span class="w">Rabies booster</span>
+        <span class="nx past">Next 14 Jul 2026</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="up">Last updated 12 Aug 2026</span>
+    <span class="mk">Paw<span class="p2">Pages</span></span>
+  </div>
+
+</div>
+
+<p class="under">Shared by Biscuit's owner. Notes, contact details and clinic names are not shown.</p>
+
+</body>
+</html>

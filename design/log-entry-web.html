@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paw Pages — Log an entry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E;
+    --ink-2:#4E5A67;
+    --faint:#8D97A1;
+    --paper:#F2F3EF;
+    --card:#FFFFFF;
+    --rule:#DCE0E4;
+    --rule-2:#EDEFF1;
+    --stamp:#B23A24;
+    --stamp-wash:#FBF1EE;
+    --seal:#2E6B4F;
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+  /* ============ top bar ============ */
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(242,243,239,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+  .topbar .in{max-width:1060px;margin:0 auto;padding:0 28px;height:58px;
+    display:flex;align-items:center;gap:26px}
+  .wordmark{font-family:var(--display);font-weight:700;font-size:15px;
+    letter-spacing:.16em;text-transform:uppercase;margin-right:auto}
+  .wordmark .p2{color:var(--faint)}
+  .topnav{display:flex;gap:22px;font-size:13.5px;color:var(--ink-2)}
+  .topnav a.on{color:var(--ink);font-weight:600}
+  .who{display:flex;align-items:center;gap:9px;padding-left:22px;
+    border-left:1px solid var(--rule);font-size:13.5px;color:var(--ink-2)}
+  .who .chip{width:27px;height:27px;border-radius:50%;background:var(--ink);color:#fff;
+    font-family:var(--display);font-size:11px;font-weight:600;
+    display:flex;align-items:center;justify-content:center;letter-spacing:.04em}
+
+  /* ============ page ============ */
+  .page{max-width:660px;margin:0 auto;padding:30px 28px 120px}
+  .back{font-family:var(--data);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);display:inline-block;margin-bottom:22px}
+  .back:hover{color:var(--ink)}
+  h1{font-family:var(--display);font-size:31px;font-weight:600;letter-spacing:-.02em;margin:0 0 7px}
+  .lede{color:var(--ink-2);font-size:15.5px;margin:0 0 30px;max-width:52ch}
+
+  /* ============ the sheet ============ */
+  .sheet{background:var(--card);border:1px solid var(--rule);border-radius:2px}
+  .block{padding:24px 28px;border-bottom:1px solid var(--rule-2)}
+  .block:last-of-type{border-bottom:0}
+  .blabel{font-family:var(--data);font-size:10.5px;font-weight:700;letter-spacing:.15em;
+    text-transform:uppercase;color:var(--ink);margin:0 0 15px;display:flex;
+    align-items:baseline;gap:9px}
+  .blabel .opt{font-weight:400;letter-spacing:.08em;color:var(--faint)}
+
+  /* ruled fields, like a printed card */
+  .field{border-bottom:1px solid var(--rule);padding-bottom:2px;transition:border-color .15s}
+  .field:focus-within{border-bottom-color:var(--ink);box-shadow:0 1px 0 0 var(--ink)}
+  .field input,.field textarea{
+    width:100%;border:0;background:transparent;padding:9px 0;
+    font-family:var(--body);font-size:17px;color:var(--ink);resize:none;
+  }
+  .field input:focus,.field textarea:focus{outline:none}
+  .field input::placeholder,.field textarea::placeholder{color:#B9C0C7}
+  .field.date input{font-family:var(--data);font-size:15px;letter-spacing:.02em}
+  .hint{font-size:12.5px;color:var(--faint);margin-top:9px}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+
+  /* chips */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .chip-b{
+    font-family:var(--data);font-size:11px;letter-spacing:.05em;
+    border:1px solid var(--rule);background:#fff;color:var(--ink-2);
+    padding:6px 11px;border-radius:2px;cursor:pointer;
+  }
+  .chip-b:hover{border-color:var(--ink);color:var(--ink)}
+  .chip-b.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .chips .lbl{font-family:var(--data);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--faint);align-self:center;margin-right:4px}
+
+  /* pet picker */
+  .pets{display:flex;gap:9px;flex-wrap:wrap}
+  .petb{display:flex;align-items:center;gap:10px;padding:8px 15px 8px 8px;
+    border:1px solid var(--rule);background:#fff;border-radius:2px;cursor:pointer;
+    font-family:var(--body);font-size:15px;color:var(--ink-2)}
+  .petb:hover{border-color:var(--ink)}
+  .petb .av{width:30px;height:30px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:12px;font-weight:600;color:var(--ink)}
+  .petb .av.a{background:#DEE5EA} .petb .av.b{background:#E4E8DE} .petb .av.c{background:#EBDFE0}
+  .petb.on{border-color:var(--ink);color:var(--ink);font-weight:600;
+    box-shadow:inset 0 0 0 1px var(--ink)}
+
+  /* next-due block reads as the consequential one */
+  .due-block{background:#FAFBF9}
+  .due-off{display:flex;align-items:center;gap:9px;margin-top:14px;
+    font-size:13.5px;color:var(--ink-2);cursor:pointer}
+  .due-off input{width:15px;height:15px;accent-color:var(--ink)}
+
+  .consequence{
+    margin-top:16px;border-left:2px solid var(--rule);padding:2px 0 2px 14px;
+    font-size:13.5px;color:var(--ink-2);
+  }
+  .consequence b{font-family:var(--data);font-size:12px;font-weight:700;color:var(--ink)}
+
+  /* actions */
+  .actions{display:flex;align-items:center;gap:12px;padding:20px 28px;
+    border-top:1px solid var(--rule);background:#FCFCFB}
+  .btn{display:inline-flex;align-items:center;
+    font-family:var(--body);font-size:14px;font-weight:600;
+    background:var(--ink);color:#fff;border:1px solid var(--ink);
+    padding:11px 20px;border-radius:2px;cursor:pointer}
+  .btn:hover{background:#000}
+  .btn.ghost{background:transparent;color:var(--ink-2);border-color:transparent}
+  .btn.ghost:hover{color:var(--ink);background:#F2F3EF}
+  .actions .sp{margin-left:auto}
+
+  @media (max-width:680px){
+    .topbar .in{padding:0 18px}.topnav{display:none}
+    .page{padding:24px 18px 80px}
+    .block{padding:20px 18px}.actions{padding:16px 18px}
+    .two{grid-template-columns:1fr;gap:20px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="in">
+    <a class="wordmark" href="dashboard-web.html">Paw<span class="p2">Pages</span></a>
+    <nav class="topnav">
+      <a href="dashboard-web.html">Home</a>
+      <a href="#">Pets</a>
+      <a href="account-web.html">Account</a>
+    </nav>
+    <div class="who"><span class="chip">AK</span>Akhil</div>
+  </div>
+</header>
+
+<div class="page">
+
+  <a class="back" href="dashboard-web.html">← Home</a>
+
+  <h1>Log an entry</h1>
+  <p class="lede">Anything worth remembering — a shot, a vet visit, a deworming tablet,
+  a grooming appointment.</p>
+
+  <form class="sheet" onsubmit="return false">
+
+    <div class="block">
+      <p class="blabel">Pet</p>
+      <div class="pets">
+        <button type="button" class="petb on"><span class="av a">B</span>Biscuit</button>
+        <button type="button" class="petb"><span class="av b">M</span>Momo</button>
+        <button type="button" class="petb"><span class="av c">P</span>Pepper</button>
+      </div>
+    </div>
+
+    <div class="block">
+      <p class="blabel">What happened</p>
+      <div class="field">
+        <input type="text" value="Rabies booster" placeholder="Rabies booster, nail trim, limping…">
+      </div>
+      <div class="chips">
+        <span class="lbl">You've used</span>
+        <button type="button" class="chip-b">Rabies booster</button>
+        <button type="button" class="chip-b">Deworming</button>
+        <button type="button" class="chip-b">Grooming</button>
+        <button type="button" class="chip-b">Vet visit</button>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="two">
+        <div>
+          <p class="blabel">Date</p>
+          <div class="field date"><input type="date" value="2026-08-29"></div>
+          <div class="chips">
+            <button type="button" class="chip-b on">Today</button>
+            <button type="button" class="chip-b">Yesterday</button>
+          </div>
+        </div>
+        <div>
+          <p class="blabel">Vet or clinic <span class="opt">optional</span></p>
+          <div class="field"><input type="text" placeholder="Dr. Menon, Anvayaa Clinic"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block due-block">
+      <p class="blabel">Next one due <span class="opt">optional</span></p>
+      <div class="two">
+        <div>
+          <div class="field date"><input type="date" value="2027-08-29"></div>
+          <div class="chips">
+            <span class="lbl">Set to</span>
+            <button type="button" class="chip-b">+1 mo</button>
+            <button type="button" class="chip-b">+3 mo</button>
+            <button type="button" class="chip-b">+6 mo</button>
+            <button type="button" class="chip-b on">+1 yr</button>
+            <button type="button" class="chip-b">+3 yr</button>
+          </div>
+          <label class="due-off"><input type="checkbox"> Nothing due after this</label>
+        </div>
+        <div>
+          <div class="consequence">
+            <b>29 AUG 2027</b><br>
+            Biscuit's rabies booster appears under Due &amp; overdue on your home screen,
+            and stays there until you log the next one. Paw Pages won't email you.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <p class="blabel">Notes <span class="opt">optional</span></p>
+      <div class="field">
+        <textarea rows="3" placeholder="Batch number, how she took it, what the vet said"></textarea>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn ghost" href="dashboard-web.html">Cancel</a>
+      <span class="sp"></span>
+      <button type="submit" class="btn">Save</button>
+    </div>
+
+  </form>
+
+</div>
+
+</body>
+</html>

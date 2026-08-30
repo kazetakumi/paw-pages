@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paw Pages — a record for every pet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E;
+    --ink-2:#4E5A67;
+    --faint:#8D97A1;
+    --paper:#F2F3EF;
+    --paper-2:#E9EAE5;
+    --card:#FFFFFF;
+    --rule:#DCE0E4;
+    --rule-2:#EDEFF1;
+    --stamp:#B23A24;
+    --stamp-wash:#FBF1EE;
+    --seal:#2E6B4F;
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+  .wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+  /* ============ top ============ */
+  .topbar{border-bottom:1px solid var(--rule)}
+  .topbar .in{max-width:1060px;margin:0 auto;padding:0 28px;height:64px;
+    display:flex;align-items:center;gap:22px}
+  .wordmark{font-family:var(--display);font-weight:700;font-size:15px;
+    letter-spacing:.16em;text-transform:uppercase;margin-right:auto}
+  .wordmark .p2{color:var(--faint)}
+  .tlink{font-size:14px;color:var(--ink-2)}
+  .tlink:hover{color:var(--ink)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--body);font-size:14px;font-weight:600;
+    background:var(--ink);color:#fff;border:1px solid var(--ink);
+    padding:11px 19px;border-radius:2px;cursor:pointer;white-space:nowrap}
+  .btn:hover{background:#000}
+  .btn.ghost{background:transparent;color:var(--ink);border-color:var(--rule)}
+  .btn.ghost:hover{border-color:var(--ink);background:#fff}
+  .btn.lg{font-size:15.5px;padding:14px 24px}
+
+  /* ============ hero ============ */
+  .hero{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:64px;
+    align-items:center;padding:82px 0 88px}
+  .eyebrow{font-family:var(--data);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:20px}
+  h1{font-family:var(--display);font-size:60px;line-height:1.02;letter-spacing:-.035em;
+    font-weight:600;margin:0 0 22px}
+  h1 .b{display:block;color:var(--ink-2)}
+  .lede{font-size:19px;line-height:1.6;color:var(--ink-2);max-width:44ch;margin:0 0 32px}
+  .cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .fine{font-family:var(--data);font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);margin-top:20px}
+
+  /* the record card — the hero image is the product */
+  .doc{background:var(--card);border:1px solid #CFD3D7;border-radius:3px;overflow:hidden;
+    box-shadow:0 18px 50px rgba(19,32,46,.12)}
+  .doc .kicker{font-family:var(--data);font-size:9px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--faint);padding:16px 20px 0}
+  .doc .id{display:flex;align-items:center;gap:13px;padding:12px 20px 16px}
+  .doc .av{width:52px;height:52px;border-radius:50%;flex:none;background:#DEE5EA;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:20px;font-weight:600}
+  .doc .nm{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.015em;
+    line-height:1.15}
+  .doc .sub{font-size:12.5px;color:var(--faint)}
+  .doc .rec{border-top:1px solid var(--rule-2)}
+  .doc .r{display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:baseline;
+    padding:11px 20px;border-bottom:1px solid var(--rule-2);position:relative}
+  .doc .r:last-child{border-bottom:0}
+  .doc .r .d{font-family:var(--data);font-size:10.5px;color:var(--faint);white-space:nowrap}
+  .doc .r .w{font-size:14.5px;font-weight:500}
+  .doc .r.over{background:var(--stamp-wash)}
+  .doc .r.over .d{color:var(--stamp);font-weight:700}
+  .doc .foot{padding:12px 20px 14px;border-top:1px solid var(--rule-2);
+    font-family:var(--data);font-size:9px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--faint);display:flex}
+  .doc .foot .mk{margin-left:auto;font-family:var(--display);font-weight:700;letter-spacing:.15em}
+
+  /* the one stamp on the page */
+  .stamp{position:absolute;right:16px;top:50%;transform:translateY(-50%) rotate(-6deg);
+    font-family:var(--data);font-weight:700;font-size:10.5px;letter-spacing:.14em;
+    color:var(--stamp);border:2px solid var(--stamp);border-radius:3px;
+    padding:4px 9px 3px;line-height:1;opacity:.88;
+    box-shadow:inset 0 0 0 1px rgba(178,58,36,.22);pointer-events:none}
+
+  /* ============ sections ============ */
+  section{padding:74px 0;border-top:1px solid var(--rule)}
+  .shead{display:flex;align-items:baseline;gap:16px;margin-bottom:14px}
+  .shead .no{font-family:var(--data);font-size:10.5px;letter-spacing:.14em;color:var(--faint)}
+  h2{font-family:var(--display);font-size:33px;font-weight:600;letter-spacing:-.025em;margin:0}
+  .sub{font-size:17px;color:var(--ink-2);max-width:56ch;margin:0 0 34px}
+
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:start}
+
+  /* entry list sample */
+  .list{background:var(--card);border:1px solid var(--rule);border-radius:2px;overflow:hidden}
+  .li{display:grid;grid-template-columns:104px 1fr;gap:16px;align-items:baseline;
+    padding:14px 18px;border-bottom:1px solid var(--rule-2)}
+  .li:last-child{border-bottom:0}
+  .li .d{font-family:var(--data);font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+  .li .t{font-size:15.5px}
+  .li .t b{font-family:var(--display);font-weight:600}
+  .li .t span{color:var(--faint);font-size:13.5px;display:block}
+
+  /* plain-truths list */
+  .truths{list-style:none;padding:0;margin:0}
+  .truths li{padding:16px 0 16px 34px;border-bottom:1px solid var(--rule);position:relative;
+    font-size:16.5px;color:var(--ink-2)}
+  .truths li:last-child{border-bottom:0}
+  .truths li b{color:var(--ink);font-weight:600}
+  .truths li::before{content:"";position:absolute;left:0;top:26px;
+    width:16px;height:1px;background:var(--faint)}
+
+  /* mini public page */
+  .mini{background:var(--card);border:1px solid var(--rule);border-radius:2px;padding:20px}
+  .mini .u{font-family:var(--data);font-size:11.5px;color:var(--ink-2);
+    border:1px solid var(--rule);background:#FAFBF9;border-radius:2px;
+    padding:9px 11px;margin-bottom:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mini .yes,.mini .no{display:flex;gap:9px;padding:7px 0;font-size:14.5px}
+  .mini .yes{color:var(--ink)}
+  .mini .no{color:var(--faint)}
+  .mini .mk{font-family:var(--data);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    flex:none;width:30px}
+  .mini .yes .mk{color:var(--seal)}
+
+  /* closing */
+  .close{text-align:center;padding:88px 0 96px;border-top:1px solid var(--rule)}
+  .close h2{font-size:40px;margin-bottom:14px}
+  .close p{font-size:18px;color:var(--ink-2);margin:0 0 30px}
+
+  footer{border-top:1px solid var(--rule);background:var(--paper-2)}
+  footer .in{max-width:1060px;margin:0 auto;padding:26px 28px;
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  footer .wordmark{font-size:12px;margin-right:auto}
+  footer a{font-size:13.5px;color:var(--ink-2)}
+  footer a:hover{color:var(--ink)}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr;gap:44px;padding:58px 0 64px}
+    h1{font-size:44px}
+    .two{grid-template-columns:1fr;gap:34px}
+  }
+  @media (max-width:620px){
+    .wrap,.topbar .in,footer .in{padding-left:18px;padding-right:18px}
+    h1{font-size:35px}
+    .lede{font-size:17px}
+    h2{font-size:26px}
+    .close h2{font-size:30px}
+    section{padding:52px 0}
+    .cta .btn{flex:1}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="in">
+    <span class="wordmark">Paw<span class="p2">Pages</span></span>
+    <a class="tlink" href="signin-web.html">Sign in</a>
+    <a class="btn" href="signup-web.html">Create an account</a>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Pet records</div>
+      <h1>One page per pet.<span class="b">Every date on it.</span></h1>
+      <p class="lede">Shots, vet visits, deworming, grooming — each logged with the day it
+      happened and the day the next one is due. Open Paw Pages and you can see what's
+      overdue in one look.</p>
+      <div class="cta">
+        <a class="btn lg" href="signup-web.html">Create an account</a>
+        <a class="btn lg ghost" href="dashboard-web.html">See an example</a>
+      </div>
+      <div class="fine">Works in your browser · Nothing to install</div>
+    </div>
+
+    <div class="doc">
+      <div class="kicker">Pet record</div>
+      <div class="id">
+        <div class="av">B</div>
+        <div>
+          <div class="nm">Biscuit</div>
+          <div class="sub">Indian Pariah · male · 4 yrs</div>
+        </div>
+      </div>
+      <div class="rec">
+        <div class="r"><span class="d">12 AUG 2026</span><span class="w">Deworming</span></div>
+        <div class="r"><span class="d">02 JUN 2026</span><span class="w">Vet visit</span></div>
+        <div class="r"><span class="d">20 APR 2026</span><span class="w">DHPP booster</span></div>
+        <div class="r over">
+          <span class="d">14 JUL 2026</span><span class="w">Rabies booster</span>
+          <span class="stamp">OVERDUE</span>
+        </div>
+      </div>
+      <div class="foot">
+        <span>Updated 12 Aug 2026</span>
+        <span class="mk">PawPages</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="shead"><span class="no">01</span><h2>Not just the shots</h2></div>
+    <p class="sub">A page holds anything worth remembering about a pet. Type whatever
+    the thing was — the app doesn't make you pick from a list.</p>
+    <div class="two">
+      <div class="list">
+        <div class="li"><span class="d">12 AUG 2026</span>
+          <span class="t"><b>Deworming</b><span>Half tablet, took it in cheese.</span></span></div>
+        <div class="li"><span class="d">02 JUN 2026</span>
+          <span class="t"><b>Vet visit</b><span>Limping on the back right leg. Nothing found.</span></span></div>
+        <div class="li"><span class="d">20 APR 2026</span>
+          <span class="t"><b>DHPP booster</b><span>Batch 4471-B. Next due Apr 2029.</span></span></div>
+        <div class="li"><span class="d">18 MAR 2026</span>
+          <span class="t"><b>Grooming</b><span>Full clip and nails.</span></span></div>
+      </div>
+      <div>
+        <ul class="truths">
+          <li><b>A date for what happened</b>, and optionally a date for the next one.</li>
+          <li><b>A note in your own words</b> — batch numbers, what the vet said, how she took it.</li>
+          <li><b>A photo and the basics</b> — breed, colour, sex, when they were born.</li>
+          <li><b>Pets who've passed on stay</b>, archived, with their history intact.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="shead"><span class="no">02</span><h2>It won't chase you</h2></div>
+    <p class="sub">No emails. No notifications. No red dot on your phone at 7am.
+    Due dates sit at the top of your home screen, and overdue ones are stamped.
+    That's the whole system — and it means Paw Pages never needs your phone number.</p>
+    <div class="two">
+      <div class="list">
+        <div class="li"><span class="d">14 JUL 2026</span>
+          <span class="t"><b>Biscuit</b> — Rabies booster <span>Overdue by 46 days</span></span></div>
+        <div class="li"><span class="d">05 SEP 2026</span>
+          <span class="t"><b>Momo</b> — Deworming <span>In 7 days</span></span></div>
+        <div class="li"><span class="d">21 SEP 2026</span>
+          <span class="t"><b>Pepper</b> — DHPP booster <span>In 23 days</span></span></div>
+      </div>
+      <div>
+        <ul class="truths">
+          <li>Every pet's due dates, <b>on one screen</b>, oldest problem first.</li>
+          <li>Overdue is <b>impossible to miss</b> and stays until you deal with it.</li>
+          <li>Archived pets <b>stop counting</b>. Nothing nags you about a dog you've buried.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="shead"><span class="no">03</span><h2>Hand someone the link</h2></div>
+    <p class="sub">Switch a pet's page on and you get a URL you can send to a kennel,
+    a sitter, or your sister. It shows the pet and the record — nothing about you.</p>
+    <div class="two">
+      <div class="mini">
+        <div class="u">pawpages.app/p/biscuit-a4f2</div>
+        <div class="yes"><span class="mk">Shows</span> Photo, name, breed, colour, age</div>
+        <div class="yes"><span class="mk"></span> Every entry — the date and what it was</div>
+        <div class="no"><span class="mk">Never</span> Your name, email or phone number</div>
+        <div class="no"><span class="mk"></span> Your notes, or which vet you use</div>
+      </div>
+      <div>
+        <ul class="truths">
+          <li>Off by default. <b>You turn it on per pet</b>, and off again whenever.</li>
+          <li>Archiving a pet <b>takes their page offline</b> the same moment.</li>
+          <li>Deleting your account <b>kills every link</b> immediately.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="close wrap">
+  <h2>Start with one pet.</h2>
+  <p>Add them, log the last shot you remember, and you're already ahead of the paper card.</p>
+  <a class="btn lg" href="signup-web.html">Create an account</a>
+</div>
+
+<footer>
+  <div class="in">
+    <span class="wordmark">Paw<span class="p2">Pages</span></span>
+    <a href="signin-web.html">Sign in</a>
+    <a href="signup-web.html">Create an account</a>
+    <a href="public-page-web.html">Example pet page</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paw Pages — Your account (mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E;
+    --ink-2:#4E5A67;
+    --faint:#8D97A1;
+    --paper:#F2F3EF;
+    --card:#FFFFFF;
+    --rule:#DCE0E4;
+    --rule-2:#EDEFF1;
+    --stamp:#B23A24;
+    --stamp-wash:#FBF1EE;
+    --seal:#2E6B4F;
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#E6E7E2;font-family:var(--body)}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  .device{position:relative;width:100%;max-width:412px;margin:0 auto;min-height:100vh;
+    background:var(--paper);color:var(--ink);font-size:15px;line-height:1.5;
+    -webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+  @media (min-width:520px){
+    body{padding:34px 0}
+    .device{min-height:844px;height:844px;overflow:hidden;
+      border:1px solid #C9CBC5;border-radius:34px;
+      box-shadow:0 22px 60px rgba(19,32,46,.16)}
+  }
+
+  .top{flex:none;display:flex;align-items:center;gap:10px;
+    padding:14px 16px 12px;background:var(--paper);border-bottom:1px solid var(--rule)}
+  .bk{display:flex;align-items:center;gap:6px;font-size:14.5px;color:var(--ink-2)}
+  .bk svg{width:15px;height:15px}
+
+  .scroll{flex:1;overflow-y:auto;padding:0 0 40px}
+
+  /* ---- head ---- */
+  .head{display:flex;align-items:center;gap:14px;padding:20px 18px 20px;
+    border-bottom:1px solid var(--rule);margin-bottom:26px}
+  .av{width:54px;height:54px;border-radius:50%;flex:none;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:.03em}
+  h1{font-family:var(--display);font-size:25px;font-weight:600;letter-spacing:-.02em;
+    margin:0 0 3px;line-height:1.1}
+  .since{font-family:var(--data);font-size:10px;letter-spacing:.06em;color:var(--faint);
+    line-height:1.5}
+
+  .body{padding:0 18px}
+
+  .sect{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+  .sect h2{font-family:var(--data);font-size:10px;font-weight:700;letter-spacing:.15em;
+    text-transform:uppercase;margin:0;white-space:nowrap}
+  .sect .line{flex:1;height:1px;background:var(--rule)}
+  .sect .opt{font-family:var(--data);font-size:9.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--faint);white-space:nowrap}
+
+  .card{background:var(--card);border:1px solid var(--rule);border-radius:2px;margin-bottom:34px}
+  .row{display:flex;align-items:center;gap:14px;padding:14px 15px;
+    border-bottom:1px solid var(--rule-2)}
+  .row:last-child{border-bottom:0}
+  .row .mid{flex:1;min-width:0}
+  .row .k{font-family:var(--data);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);display:block;margin-bottom:3px}
+  .row .v{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+  .row .v.mono{font-family:var(--data);font-size:12.5px}
+  .row .v.empty{color:#B9C0C7}
+  .row .sub{font-size:11.5px;color:var(--faint);margin-top:2px;display:block}
+  .act{flex:none;font-family:var(--data);font-size:9.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-2);border:1px solid var(--rule);background:#fff;
+    padding:6px 10px;border-radius:2px;white-space:nowrap}
+
+  /* ---- archived ---- */
+  .arow{display:flex;align-items:center;gap:12px;padding:13px 15px;
+    border-bottom:1px solid var(--rule-2)}
+  .arow:last-child{border-bottom:0}
+  .pav{width:36px;height:36px;border-radius:50%;flex:none;background:#E7E4DE;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:14px;font-weight:600;color:var(--faint)}
+  .arow .mid{flex:1;min-width:0}
+  .arow .nm{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em;display:block}
+  .arow .why{font-family:var(--data);font-size:9.5px;letter-spacing:.05em;color:var(--faint);
+    margin-top:2px;display:block}
+
+  /* ---- data ---- */
+  .blk{background:var(--card);border:1px solid var(--rule);border-radius:2px;
+    padding:16px 15px;margin-bottom:34px}
+  .blk h3{font-family:var(--display);font-size:16px;font-weight:600;margin:0 0 5px}
+  .blk p{font-size:13.5px;color:var(--ink-2);margin:0 0 14px}
+  .btn{display:block;width:100%;text-align:center;
+    font-family:var(--body);font-size:14px;font-weight:600;
+    background:transparent;color:var(--ink);border:1px solid var(--rule);
+    padding:12px;border-radius:2px}
+  .btn.warn{color:var(--stamp);border-color:#DEC3BB}
+  .blk.danger{border-color:#E9D2CB;background:var(--stamp-wash)}
+  .blk.danger h3{color:var(--stamp)}
+  .kills{list-style:none;padding:0;margin:0 0 14px;font-size:13px;color:var(--ink-2)}
+  .kills li{padding:3px 0 3px 16px;position:relative}
+  .kills li::before{content:"—";position:absolute;left:0;color:var(--faint)}
+
+  .out{text-align:center;margin:4px 0 0}
+  .out a{font-size:14px;color:var(--ink-2);border-bottom:1px solid var(--rule);padding-bottom:1px}
+</style>
+</head>
+<body>
+
+<div class="device">
+
+  <div class="top">
+    <a class="bk" href="dashboard-mobile.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Home
+    </a>
+  </div>
+
+  <div class="scroll">
+
+    <div class="head">
+      <div class="av">AK</div>
+      <div>
+        <h1>Your account</h1>
+        <div class="since">Keeping records since 02 Jul 2025<br>3 pets · 47 entries</div>
+      </div>
+    </div>
+
+    <div class="body">
+
+      <div class="sect"><h2>You</h2><span class="line"></span></div>
+      <div class="card">
+        <div class="row">
+          <span class="mid"><span class="k">Name</span><span class="v">Akhil</span></span>
+          <button class="act">Change</button>
+        </div>
+        <div class="row">
+          <span class="mid"><span class="k">Email</span>
+            <span class="v mono">akhil@example.com</span>
+            <span class="sub">Used to sign in and reset your password.</span></span>
+          <button class="act">Change</button>
+        </div>
+        <div class="row">
+          <span class="mid"><span class="k">Password</span>
+            <span class="v mono">••••••••</span>
+            <span class="sub">Last changed 02 Jul 2025.</span></span>
+          <button class="act">Change</button>
+        </div>
+      </div>
+
+      <div class="sect"><h2>About you</h2><span class="line"></span><span class="opt">Optional</span></div>
+      <div class="card">
+        <div class="row">
+          <span class="mid"><span class="k">Date of birth</span>
+            <span class="v mono">14 Aug 1994</span>
+            <span class="sub">You are 32. Worked out from this, never stored.</span></span>
+          <button class="act">Change</button>
+        </div>
+        <div class="row">
+          <span class="mid"><span class="k">Gender</span><span class="v">Male</span></span>
+          <button class="act">Change</button>
+        </div>
+        <div class="row">
+          <span class="mid"><span class="k">Nationality</span><span class="v empty">Not set</span></span>
+          <button class="act">Add</button>
+        </div>
+      </div>
+
+      <div class="sect"><h2>Archived pets</h2><span class="line"></span></div>
+      <div class="card">
+        <div class="arow">
+          <span class="pav">T</span>
+          <span class="mid">
+            <span class="nm">Toffee</span>
+            <span class="why">Passed away · archived 14 Feb 2026</span>
+          </span>
+          <button class="act">Restore</button>
+        </div>
+      </div>
+
+      <div class="sect"><h2>Your data</h2><span class="line"></span></div>
+      <div class="blk">
+        <h3>Download everything</h3>
+        <p>A single file with every pet, every entry and every photo, exactly as
+        you entered them. Yours to keep, whatever happens to this account.</p>
+        <button class="btn">Download my data</button>
+      </div>
+
+      <div class="sect"><h2>Delete account</h2><span class="line"></span></div>
+      <div class="blk danger">
+        <h3>Delete your account</h3>
+        <p>This cannot be undone. Download your data first if you want to keep it.</p>
+        <ul class="kills">
+          <li>Your name, email and everything under About you</li>
+          <li>Your 3 pets and 1 archived pet</li>
+          <li>All 47 entries and their notes</li>
+          <li>Every photo you have uploaded</li>
+          <li>Every public page — links stop working immediately</li>
+        </ul>
+        <button class="btn warn">Delete my account</button>
+      </div>
+
+      <p class="out"><a href="signin-mobile.html">Sign out</a></p>
+
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
