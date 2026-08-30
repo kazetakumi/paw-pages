@@ -19,3 +19,17 @@ async def rls_connection(pool: asyncpg.Pool, claims: dict):
                 "select set_config('request.jwt.claims', $1, true)", json.dumps(claims)
             )
             yield conn
+
+
+@asynccontextmanager
+async def anon_connection(pool: asyncpg.Pool):
+    """A connection that is nobody, for the length of one transaction.
+
+    The same shape as `rls_connection`, minus the claims there is no caller to
+    set. `anon` has no policy on `pets` or `entries`, so the only rows it can
+    reach at all are the ones `public_pets` and `public_entries` hand over.
+    """
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            await conn.execute("set local role anon")
+            yield conn

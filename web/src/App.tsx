@@ -7,6 +7,7 @@ import Log from "./routes/log";
 import PetAbout from "./routes/pet-about";
 import PetFeed from "./routes/pet-feed";
 import PetNew from "./routes/pet-new";
+import PublicPage from "./routes/public-page";
 import ResetPassword from "./routes/reset-password";
 import SignIn from "./routes/signin";
 import SignUp from "./routes/signup";
@@ -32,6 +33,8 @@ export function AppRoutes() {
         <Route path="/pets/new" element={<PetNew />} />
         <Route path="/pets/:id" element={<PetFeed />} />
         <Route path="/pets/:id/about" element={<PetAbout />} />
+        {/* No account, no cookie, no Shell: a document a visitor was handed. */}
+        <Route path="/p/:slug" element={<PublicPage />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

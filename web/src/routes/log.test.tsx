@@ -19,6 +19,7 @@ const biscuit: Pet = {
   dob_is_approx: true,
   colour: "Tan & white",
   slug: "biscuit-a4f2",
+  is_public: false,
   age_years: 4,
   age_months: 5,
 };
@@ -30,6 +31,7 @@ const momo: Pet = {
   species: "cat",
   breed: null,
   slug: "momo-9k2p",
+  is_public: false,
 };
 
 /** Everything the log form loads, plus the feed it lands on afterwards. */

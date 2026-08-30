@@ -8,9 +8,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import due, entries, pets, session, supabase_auth
+from . import due, entries, pets, public, session, supabase_auth
 from .config import settings
-from .db import rls_connection
+from .db import anon_connection, rls_connection
 
 
 @asynccontextmanager
@@ -105,6 +105,12 @@ async def db(request: Request, payload: dict = Depends(claims)):
         yield conn
 
 
+async def anon_db(request: Request):
+    """The visitor's connection: no cookie, no claims, no policy of its own."""
+    async with anon_connection(request.app.state.pool) as conn:
+        yield conn
+
+
 async def read_handler(conn: asyncpg.Connection) -> HandlerOut:
     # No `where id = ...`: the handler_reads_self policy is the filter.
     row = await conn.fetchrow("select id, name from handlers")
@@ -193,7 +199,7 @@ async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
 
 # Everything a pet shows on any screen. `age_*` is derived by the database on
 # every read rather than stored, so it cannot go stale.
-PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug,
+PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug, is_public,
        extract(year  from age(date_of_birth))::int as age_years,
        extract(month from age(date_of_birth))::int as age_months"""
 
@@ -423,3 +429,25 @@ async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[st
         ") used order by used.happened_on desc, used.id desc limit 4"
     )
     return [row["title"] for row in rows]
+
+
+# -------------------------------------------------------------- public -----
+
+# The one answer to a slug that is absent, private or archived alike. All three
+# are simply a row `public_pets` does not return, so nothing here has to work at
+# telling them apart — there is only ever one branch to take.
+NO_SUCH_PAGE = HTTPException(status.HTTP_404_NOT_FOUND, "No such page.")
+
+
+@app.get("/public/pets/{slug}")
+async def public_page(slug: str, conn: asyncpg.Connection = Depends(anon_db)) -> public.PublicPet:
+    """One pet as a visitor sees it. Unauthenticated, and read as `anon`.
+
+    Both views are read on the one connection inside `anon_db`'s transaction,
+    so the entries always belong to the pet that was found.
+    """
+    pet = await conn.fetchrow(public.PET, slug)
+    if pet is None:
+        raise NO_SUCH_PAGE
+    rows = await conn.fetch(public.ENTRIES, slug)
+    return public.PublicPet(**dict(pet), entries=[public.PublicEntry(**dict(r)) for r in rows])

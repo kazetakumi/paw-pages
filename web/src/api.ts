@@ -85,11 +85,14 @@ export type Pet = {
   dob_is_approx: boolean;
   colour: string | null;
   slug: string;
+  /** Off until the handler throws the switch. The slug above is claimed at
+   *  insert either way, so switching off and on again keeps the same URL. */
+  is_public: boolean;
   age_years: number | null;
   age_months: number | null;
 };
 
-export type PetFields = Omit<Pet, "id" | "slug" | "age_years" | "age_months">;
+export type PetFields = Omit<Pet, "id" | "slug" | "is_public" | "age_years" | "age_months">;
 
 export const listPets = () => request<Pet[]>("GET", "/pets");
 
@@ -99,6 +102,11 @@ export const createPet = (fields: PetFields) => request<Pet>("POST", "/pets", fi
 
 export const updatePet = (id: string, fields: PetFields) =>
   request<Pet>("PATCH", `/pets/${id}`, fields);
+
+/** The public-page switch. Its own call, because publishing a pet is not a
+ *  correction to one and the identity form has no business carrying it. */
+export const setPetPublic = (id: string, isPublic: boolean) =>
+  request<Pet>("PATCH", `/pets/${id}`, { is_public: isPublic });
 
 /** An entry as the API returns it. `is_overdue` is computed by the database in
  *  the `due_items` view — nothing here works out what overdue means. */
@@ -175,3 +183,26 @@ export const getDashboard = () => request<Dashboard>("GET", "/dashboard");
 /** Dealt with elsewhere: the item leaves the ledger, the entry stays. */
 export const markDone = (entryId: string) =>
   request<Entry>("POST", `/entries/${entryId}/mark-done`);
+
+/** One line of a public record. No note, no vet, no id: the API never sends
+ *  them, and no is_overdue either — the public page makes no accusation. */
+export type PublicEntry = { title: string; happened_on: string; due_on: string | null };
+
+/** A pet as a visitor holding the link sees it. `born` is already coarsened to
+ *  a month and a year by the database; the exact date never leaves it. */
+export type PublicPet = {
+  slug: string;
+  name: string;
+  species: string;
+  breed: string | null;
+  colour: string | null;
+  sex: string | null;
+  born: string | null;
+  age_years: number | null;
+  age_months: number | null;
+  updated_on: string;
+  entries: PublicEntry[];
+};
+
+export const getPublicPage = (slug: string) =>
+  request<PublicPet>("GET", `/public/pets/${slug}`);

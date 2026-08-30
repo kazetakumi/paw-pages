@@ -50,6 +50,7 @@ class PetPatch(BaseModel):
     date_of_birth: date | None = None
     dob_is_approx: bool | None = None
     colour: Colour | None = None
+    is_public: bool | None = None
 
 
 class PetOut(BaseModel):
@@ -62,6 +63,9 @@ class PetOut(BaseModel):
     dob_is_approx: bool
     colour: str | None
     slug: str
+    # Off until the handler throws the switch; the slug above is claimed at
+    # insert either way, so turning it off and on again keeps the same URL.
+    is_public: bool
     # Derived by the database from date_of_birth on every read, never stored,
     # so it cannot go stale and nobody is ever asked to correct it.
     age_years: int | None
