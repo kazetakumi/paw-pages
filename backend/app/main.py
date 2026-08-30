@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
+from uuid import UUID
 
 import asyncpg
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from . import pets, session, supabase_auth
@@ -26,6 +29,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Paw Pages", lifespan=lifespan)
 
 
+@app.exception_handler(RequestValidationError)
+async def one_field_at_a_time(request: Request, error: RequestValidationError) -> JSONResponse:
+    """A rejected field, shaped the way every other field error in the API is.
+
+    The screen shows it beside the input it belongs to instead of dumping a
+    list of loc/msg pairs at the handler.
+    """
+    first = error.errors()[0]
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": {"field": str(first["loc"][-1]), "message": first["msg"]}},
+    )
+
+
 class SignUpIn(BaseModel):
     name: str
     email: str
@@ -43,7 +60,7 @@ class PasswordResetIn(BaseModel):
 
 class PasswordResetConfirmIn(BaseModel):
     # The token the emailed link carried. It passes straight through to Supabase
-    # Auth and is never stored � it is not a session and never becomes one.
+    # Auth and is never stored — it is not a session and never becomes one.
     access_token: str
     password: str
 
@@ -176,9 +193,14 @@ async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
 
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
-# caller, so the handler_owns_pets policy is the filter.
+# caller, so the handler_owns_pets policy is the filter. A pet another handler
+# owns is not forbidden, it is absent — which is a 404.
 
-PET_COLUMNS = "id, name, species, slug"
+PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug,
+       extract(year  from age(date_of_birth))::int as age_years,
+       extract(month from age(date_of_birth))::int as age_months"""
+
+NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
 
 
 @app.get("/pets")
@@ -191,16 +213,53 @@ async def list_pets(conn: asyncpg.Connection = Depends(db)) -> list[pets.PetOut]
 
 @app.post("/pets", status_code=status.HTTP_201_CREATED)
 async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
+    fields = body.model_dump()
+    columns = ", ".join(fields)
+    values = ", ".join(f"${n}" for n in range(2, len(fields) + 2))
+
     async def insert(slug: str):
         # A savepoint per attempt: a unique violation would otherwise poison
         # the request transaction and leave nothing to retry into.
         async with conn.transaction():
             return await conn.fetchrow(
-                "insert into pets (handler_id, name, species, slug)"
-                f" values ((select auth.uid()), $1, $2, $3) returning {PET_COLUMNS}",
-                body.name,
-                body.species,
+                f"insert into pets (handler_id, slug, {columns})"
+                f" values ((select auth.uid()), $1, {values}) returning {PET_COLUMNS}",
                 slug,
+                *fields.values(),
             )
 
-    return pets.PetOut(**dict(await pets.claim_slug(body.name, insert)))
+    try:
+        row = await pets.claim_slug(body.name, insert)
+    except asyncpg.IntegrityConstraintViolationError as error:
+        raise pets.constraint_error(error)
+    return pets.PetOut(**dict(row))
+
+
+@app.get("/pets/{pet_id}")
+async def read_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
+    row = await conn.fetchrow(f"select {PET_COLUMNS} from pets where id = $1", pet_id)
+    if row is None:
+        raise NO_SUCH_PET
+    return pets.PetOut(**dict(row))
+
+
+@app.patch("/pets/{pet_id}")
+async def update_pet(
+    pet_id: UUID, body: pets.PetPatch, conn: asyncpg.Connection = Depends(db)
+) -> pets.PetOut:
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        return await read_pet(pet_id, conn)
+
+    assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=2))
+    try:
+        row = await conn.fetchrow(
+            f"update pets set {assignments} where id = $1 returning {PET_COLUMNS}",
+            pet_id,
+            *changes.values(),
+        )
+    except asyncpg.IntegrityConstraintViolationError as error:
+        raise pets.constraint_error(error)
+    if row is None:
+        raise NO_SUCH_PET
+    return pets.PetOut(**dict(row))
