@@ -45,7 +45,9 @@ function signedIn(titles: string[] = []) {
       return HttpResponse.json({ id: "e1", is_overdue: false, ...body }, { status: 201 });
     }),
     ...[biscuit, momo].flatMap((pet) => [
-      http.get(`http://localhost:8000/pets/${pet.id}`, () => HttpResponse.json(pet)),
+      http.get(`http://localhost:8000/pets/${pet.id}`, () =>
+        HttpResponse.json({ ...pet, due_items: [] }),
+      ),
       http.get(`http://localhost:8000/pets/${pet.id}/entries`, () =>
         HttpResponse.json({ entries: [], next_cursor: null }),
       ),

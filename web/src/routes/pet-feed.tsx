@@ -1,16 +1,20 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  createEntry,
   deleteEntry,
   getMe,
   getPet,
   listEntries,
+  markDone,
   Unauthorized,
   updateEntry,
+  type DueItem,
   type Entry,
   type Handler,
-  type Pet,
+  type PetRecord,
 } from "../api";
+import { Attention } from "../entries/due";
 import { EntryForm } from "../entries/EntryForm";
 import { formatDate, initial, summaryOf } from "../pets/pet";
 import { Shell } from "../shell/Shell";
@@ -59,7 +63,7 @@ function EntryCard({
   );
 }
 
-function Tabs({ pet }: { pet: Pet }) {
+function Tabs({ pet }: { pet: PetRecord }) {
   return (
     <nav className="tabs" aria-label="Pet">
       <span className="tab on">Feed</span>
@@ -70,7 +74,7 @@ function Tabs({ pet }: { pet: Pet }) {
   );
 }
 
-type LayoutProps = { pet: Pet; children: ReactNode };
+type LayoutProps = { pet: PetRecord; children: ReactNode };
 
 /** Above the breakpoint: the log button sits in the pet's header. */
 function FeedDesktop({ pet, children }: LayoutProps) {
@@ -128,13 +132,15 @@ function FeedMobile({ pet, children }: LayoutProps) {
 
 export default function PetFeed() {
   const { id = "" } = useParams();
-  const [record, setRecord] = useState<{ handler: Handler; pet: Pet } | null>(null);
+  const [record, setRecord] = useState<{ handler: Handler; pet: PetRecord } | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   // The API's cursor, held as it came and handed straight back. A pet with
   // years of history opens on what is recent; the rest arrives on request.
   const [older, setOlder] = useState<string | null>(null);
   // The entry being corrected, swapped for its card until it is saved.
   const [editing, setEditing] = useState<Entry | null>(null);
+  // The outstanding item being settled, swapped for the form it pre-fills.
+  const [logging, setLogging] = useState<DueItem | null>(null);
   const Feed = useIsDesktop() ? FeedDesktop : FeedMobile;
 
   useEffect(() => {
@@ -161,12 +167,67 @@ export default function PetFeed() {
     setEntries((shown) => shown.filter((one) => one.id !== entry.id));
   }
 
+  /** Both ways of closing a due date end here: the pet, re-read, so the panel
+   *  and the feed still say the same thing about it. */
+  async function reload() {
+    const [pet, page] = await Promise.all([getPet(id), listEntries(id)]);
+    setRecord((was) => was && { ...was, pet });
+    setEntries(page.entries);
+    setOlder(page.next_cursor);
+  }
+
+  async function done(item: DueItem) {
+    const entry = await markDone(item.entry_id);
+    setRecord((was) =>
+      was && {
+        ...was,
+        pet: {
+          ...was.pet,
+          due_items: was.pet.due_items.filter((one) => one.entry_id !== item.entry_id),
+        },
+      },
+    );
+    setEntries((shown) => shown.map((one) => (one.id === entry.id ? entry : one)));
+  }
+
   if (!record) return null;
   const { pet } = record;
 
   return (
     <Shell name={record.handler.name}>
       <Feed pet={pet}>
+        {pet.due_items.length > 0 && (
+          <>
+            <div className="sect">
+              <h2>Needs attention</h2>
+              <span className="line" />
+              <span className="n">{pet.due_items.length}</span>
+            </div>
+            {pet.due_items.map((item) =>
+              logging?.entry_id === item.entry_id ? (
+                <div className="attention logging" key={item.entry_id}>
+                  <EntryForm
+                    pets={[pet]}
+                    entry={{ pet_id: item.pet_id, title: item.title, vet: item.vet }}
+                    save={(fields) => createEntry(fields, item.entry_id)}
+                    onSaved={() => {
+                      setLogging(null);
+                      return reload();
+                    }}
+                    onCancel={() => setLogging(null)}
+                  />
+                </div>
+              ) : (
+                <Attention
+                  key={item.entry_id}
+                  item={item}
+                  onLogNext={() => setLogging(item)}
+                  onMarkDone={() => done(item)}
+                />
+              ),
+            )}
+          </>
+        )}
         <div className="sect">
           <h2>History</h2>
           <span className="line" />
