@@ -12,7 +12,7 @@ import pytest  # noqa: E402
 
 from app import main  # noqa: E402
 from app.config import settings  # noqa: E402
-from app.db import rls_connection  # noqa: E402
+from app.db import anon_connection, rls_connection  # noqa: E402
 from tests.supabase_auth_stub import SupabaseAuthStub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -120,3 +120,13 @@ def as_handler(app):
         return rls_connection(app.state.pool, {"sub": handler_id, "role": "authenticated"})
 
     return _as
+
+
+@pytest.fixture
+def as_visitor(app):
+    """The same per-request transaction `GET /public/pets/{slug}` opens.
+
+    No claims, because a visitor has none: the public page hangs off this and
+    nothing else.
+    """
+    return lambda: anon_connection(app.state.pool)
