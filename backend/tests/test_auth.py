@@ -1,3 +1,6 @@
+import re
+
+
 async def test_signup_creates_the_handler_row_through_the_trigger(client, auth_stub):
     response = await client.post(
         "/auth/signup",
@@ -120,3 +123,20 @@ async def test_a_decoy_signup_response_is_the_same_field_level_error_not_a_5xx(
 
     assert 400 <= response.status_code < 500
     assert response.json()["detail"]["field"] == "email"
+
+
+async def test_the_session_cookie_outlives_the_browser_window(client, seed_handler):
+    """Closing the browser must not sign a handler out.
+
+    A cookie with no Max-Age dies with the window; this one has to be persistent,
+    and long enough that checking a due date next month costs no password.
+    """
+    await seed_handler("Akhil", "akhil@example.com")
+
+    response = await client.post(
+        "/auth/signin", json={"email": "akhil@example.com", "password": "correct horse"}
+    )
+
+    max_age = re.search(r"Max-Age=(\d+)", response.headers["set-cookie"])
+    assert max_age is not None, "a session cookie would be gone when the browser closes"
+    assert int(max_age.group(1)) >= 14 * 24 * 60 * 60
