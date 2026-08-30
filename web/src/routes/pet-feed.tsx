@@ -103,6 +103,9 @@ export default function PetFeed() {
   const { id = "" } = useParams();
   const [record, setRecord] = useState<{ handler: Handler; pet: Pet } | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  // The API's cursor, held as it came and handed straight back. A pet with
+  // years of history opens on what is recent; the rest arrives on request.
+  const [older, setOlder] = useState<string | null>(null);
   const Feed = useIsDesktop() ? FeedDesktop : FeedMobile;
 
   useEffect(() => {
@@ -111,11 +114,18 @@ export default function PetFeed() {
       .then(([handler, pet, page]) => {
         setRecord({ handler, pet });
         setEntries(page.entries);
+        setOlder(page.next_cursor);
       })
       .catch((error) => {
         if (!(error instanceof Unauthorized)) throw error;
       });
   }, [id]);
+
+  async function showOlder() {
+    const page = await listEntries(id, older);
+    setEntries((shown) => [...shown, ...page.entries]);
+    setOlder(page.next_cursor);
+  }
 
   if (!record) return null;
 
@@ -134,6 +144,11 @@ export default function PetFeed() {
               <EntryCard key={entry.id} entry={entry} />
             ))}
           </div>
+        )}
+        {older && (
+          <button className="older" type="button" onClick={showOlder}>
+            Show older entries
+          </button>
         )}
       </Feed>
     </Shell>

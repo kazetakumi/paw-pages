@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
 import { setViewportWidth } from "../test/setup";
@@ -59,14 +60,22 @@ const rabies = entry({
 const feed = `/pets/${biscuit.id}`;
 
 function signedInWith(pages: { entries: Entry[]; next_cursor: string | null }[]) {
-  let call = 0;
+  const asked: (string | null)[] = [];
   server.use(
     http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
     http.get(`http://localhost:8000/pets/${biscuit.id}`, () => HttpResponse.json(biscuit)),
-    http.get(`http://localhost:8000/pets/${biscuit.id}/entries`, () =>
-      HttpResponse.json(pages[Math.min(call++, pages.length - 1)]),
-    ),
+    // The stub keys off the cursor it was handed, so a screen that dropped one
+    // or invented one would get the wrong page rather than the next.
+    http.get(`http://localhost:8000/pets/${biscuit.id}/entries`, ({ request }) => {
+      const cursor = new URL(request.url).searchParams.get("cursor");
+      asked.push(cursor);
+      const page = pages.find((_, index) =>
+        index === 0 ? cursor === null : pages[index - 1]!.next_cursor === cursor,
+      );
+      return page ? HttpResponse.json(page) : new HttpResponse(null, { status: 400 });
+    }),
   );
+  return asked;
 }
 
 describe("a pet's feed", () => {
@@ -140,5 +149,37 @@ describe("a pet's feed", () => {
       "href",
       `/log?pet=${biscuit.id}`,
     );
+  });
+
+  it("keeps older entries behind a control and pages them in by cursor", async () => {
+    const asked = signedInWith([
+      { entries: [deworming], next_cursor: "b3BhcXVl" },
+      { entries: [vetVisit, rabies], next_cursor: null },
+    ]);
+
+    renderRoute(feed);
+
+    expect(await screen.findByRole("heading", { name: "Deworming" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Vet visit" })).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: /older/i }));
+
+    expect(await screen.findByRole("heading", { name: "Vet visit" })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
+      "Deworming",
+      "Vet visit",
+      "Rabies booster",
+    ]);
+    expect(asked).toEqual([null, "b3BhcXVl"]);
+    expect(screen.queryByRole("button", { name: /older/i })).toBeNull();
+  });
+
+  it("offers nothing to expand when the whole record already fits", async () => {
+    signedInWith([{ entries: [deworming, vetVisit], next_cursor: null }]);
+
+    renderRoute(feed);
+
+    expect(await screen.findByRole("heading", { name: "Deworming" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /older/i })).toBeNull();
   });
 });
