@@ -82,3 +82,82 @@ async def test_a_closed_due_date_leaves_the_ledger_however_far_past_it_is(signed
     await signed_in.post(f"/entries/{entry_id}/mark-done")
 
     assert (await signed_in.get("/dashboard")).json()["ledger"] == []
+
+
+async def test_mark_done_leaves_the_entry_in_the_history(signed_in, add_pet, log):
+    biscuit = await add_pet("Biscuit")
+    entry_id = await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
+
+    marked = await signed_in.post(f"/entries/{entry_id}/mark-done")
+
+    assert marked.status_code == 200
+    assert marked.json()["is_overdue"] is False
+
+    feed = (await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"]
+
+    assert [(e["title"], e["due_on"]) for e in feed] == [
+        ("Rabies booster", days_from_today(-46))
+    ]
+    assert feed[0]["is_overdue"] is False
+
+
+async def test_marking_an_entry_with_no_due_date_done_is_not_a_500(signed_in, add_pet, log):
+    biscuit = await add_pet("Biscuit")
+    entry_id = await log(biscuit, "Grooming", days_from_today(-1))
+
+    refused = await signed_in.post(f"/entries/{entry_id}/mark-done")
+
+    assert refused.status_code == 404
+
+
+async def test_logging_the_next_one_creates_the_entry_and_closes_the_old_due_date_together(
+    signed_in, add_pet, log
+):
+    biscuit = await add_pet("Biscuit")
+    outstanding = await log(
+        biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46)
+    )
+
+    created = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Rabies booster",
+            "happened_on": days_from_today(0),
+            "due_on": days_from_today(365),
+            "closes_entry_id": outstanding,
+        },
+    )
+
+    assert created.status_code == 201
+
+    ledger = (await signed_in.get("/dashboard")).json()["ledger"]
+
+    assert [item["entry_id"] for item in ledger] == [created.json()["id"]]
+    assert ledger[0]["is_overdue"] is False
+    assert len((await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"]) == 2
+
+
+async def test_a_rejected_next_one_closes_nothing(signed_in, add_pet, log):
+    """One request, one transaction: the old due date only closes if the new
+    entry actually saved."""
+    biscuit = await add_pet("Biscuit")
+    outstanding = await log(
+        biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46)
+    )
+
+    rejected = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Rabies booster",
+            "happened_on": "2099-01-01",
+            "closes_entry_id": outstanding,
+        },
+    )
+
+    assert rejected.status_code == 422
+
+    ledger = (await signed_in.get("/dashboard")).json()["ledger"]
+
+    assert [item["entry_id"] for item in ledger] == [outstanding]

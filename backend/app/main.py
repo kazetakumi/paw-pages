@@ -295,11 +295,23 @@ async def read_entry(entry_id: UUID, conn: asyncpg.Connection) -> entries.EntryO
     return entries.EntryOut(**dict(row))
 
 
+async def close_due_date(entry_id: UUID, conn: asyncpg.Connection) -> None:
+    """Stop an entry's due date standing. Nothing does this automatically:
+    free-text titles mean the app cannot know two entries are the same series."""
+    closed = await conn.fetchval(
+        "update entries set due_closed_at = now()"
+        " where id = $1 and due_on is not null returning id",
+        entry_id,
+    )
+    if closed is None:
+        raise NO_SUCH_ENTRY
+
+
 @app.post("/entries", status_code=status.HTTP_201_CREATED)
 async def create_entry(
     body: entries.EntryIn, conn: asyncpg.Connection = Depends(db)
 ) -> entries.EntryOut:
-    fields = body.model_dump()
+    fields = body.model_dump(exclude=entries.NOT_COLUMNS)
     columns = ", ".join(fields)
     values = ", ".join(f"${n}" for n in range(1, len(fields) + 1))
     try:
@@ -311,6 +323,10 @@ async def create_entry(
     except asyncpg.InsufficientPrivilegeError:
         # The insert check on handler_owns_entries: that pet is not theirs.
         raise NO_SUCH_PET
+    # The request is already one transaction, so "log the next one" saves the
+    # new entry and closes the old due date together or does neither.
+    if body.closes_entry_id is not None:
+        await close_due_date(body.closes_entry_id, conn)
     return await read_entry(entry_id, conn)
 
 
@@ -369,18 +385,6 @@ async def update_entry(
 @app.delete("/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
     if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
-        raise NO_SUCH_ENTRY
-
-
-async def close_due_date(entry_id: UUID, conn: asyncpg.Connection) -> None:
-    """Stop an entry's due date standing. Nothing does this automatically:
-    free-text titles mean the app cannot know two entries are the same series."""
-    closed = await conn.fetchval(
-        "update entries set due_closed_at = now()"
-        " where id = $1 and due_on is not null returning id",
-        entry_id,
-    )
-    if closed is None:
         raise NO_SUCH_ENTRY
 
 
