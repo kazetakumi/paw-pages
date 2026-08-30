@@ -41,6 +41,9 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
         self.access_token_lifetime = 3600
         self._refresh_tokens: dict[str, tuple[str, str]] = {}
 
+    def forget_refresh_tokens(self) -> None:
+        self._refresh_tokens.clear()
+
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content or b"{}")
         if request.url.path == "/auth/v1/signup":

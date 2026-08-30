@@ -12,6 +12,7 @@ import pytest  # noqa: E402
 
 from app import main  # noqa: E402
 from app.config import settings  # noqa: E402
+from app.db import rls_connection  # noqa: E402
 from tests.supabase_auth_stub import SupabaseAuthStub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -76,7 +77,9 @@ async def clean_slate(app):
 @pytest.fixture
 async def client(app):
     async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app), base_url="http://api.test"
+        # https, because a Secure cookie is not sent back over plain http.
+        transport=httpx.ASGITransport(app=app),
+        base_url="https://api.test",
     ) as http:
         yield http
 
@@ -101,3 +104,17 @@ async def seed_handler(app):
             )
 
     return _seed
+
+
+@pytest.fixture
+def as_handler(app):
+    """The same per-request transaction the API opens, for the RLS tests.
+
+    Ticket 01 has no endpoint that reads pets, so the two-handler isolation is
+    proved on the dependency every later endpoint will hang off.
+    """
+
+    def _as(handler_id: str):
+        return rls_connection(app.state.pool, {"sub": handler_id, "role": "authenticated"})
+
+    return _as
