@@ -64,12 +64,17 @@ async def request_password_reset(
     )
 
 
-async def set_password(client: httpx.AsyncClient, access_token: str, password: str) -> dict:
-    """Spend the recovery token the emailed link carried."""
+async def update_user(client: httpx.AsyncClient, access_token: str, changes: dict) -> dict:
+    """Change the email or the password of whoever the token says they are.
+
+    The token is always a user's own — the recovery token the emailed link
+    carried, or the handler's live session token from the account screen.
+    Never a service key: changing your own credentials is not an admin act.
+    """
     return await _send(
         client,
         "PUT",
         "/auth/v1/user",
-        json={"password": password},
+        json=changes,
         headers={"Authorization": f"Bearer {access_token}"},
     )

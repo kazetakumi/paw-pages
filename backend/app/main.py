@@ -76,8 +76,16 @@ class PasswordResetIn(BaseModel):
 
 class PasswordResetConfirmIn(BaseModel):
     # The token the emailed link carried. It passes straight through to Supabase
-    # Auth and is never stored — it is not a session and never becomes one.
+    # Auth and is never stored â€” it is not a session and never becomes one.
     access_token: str
+    password: str
+
+
+class EmailIn(BaseModel):
+    email: str
+
+
+class PasswordIn(BaseModel):
     password: str
 
 
@@ -206,8 +214,8 @@ async def password_reset(body: PasswordResetIn, request: Request) -> None:
 @app.post("/auth/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
 async def password_reset_confirm(body: PasswordResetConfirmIn, request: Request) -> None:
     try:
-        await supabase_auth.set_password(
-            request.app.state.auth_client, body.access_token, body.password
+        await supabase_auth.update_user(
+            request.app.state.auth_client, body.access_token, {"password": body.password}
         )
     except supabase_auth.AuthError:
         raise HTTPException(
@@ -249,6 +257,47 @@ async def update_me(
     return await read_handler(conn, payload["email"])
 
 
+@app.patch("/me/email")
+async def update_my_email(
+    body: EmailIn,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> handler.HandlerOut:
+    """The address lives in auth.users, so this is Supabase Auth's to change —
+    asked with the handler's own token, the way any other handler would."""
+    try:
+        await supabase_auth.update_user(
+            request.app.state.auth_client, token, {"email": body.email}
+        )
+    except supabase_auth.AuthError as error:
+        if error.is_email_taken:
+            raise EMAIL_TAKEN
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            {"field": "email", "message": error.message},
+        )
+    # The claims in the cookie still say the old address until the token is
+    # refreshed, so the new one is what this reports.
+    return await read_handler(conn, body.email)
+
+
+@app.patch("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+async def update_my_password(
+    body: PasswordIn, request: Request, token: str = Depends(access_token)
+) -> None:
+    """A password can be rotated whenever a handler thinks it is compromised."""
+    try:
+        await supabase_auth.update_user(
+            request.app.state.auth_client, token, {"password": body.password}
+        )
+    except supabase_auth.AuthError as error:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            {"field": "password", "message": error.message},
+        )
+
+
 # Everything a pet shows on any screen. `age_*` is derived by the database on
 # every read rather than stored, so it cannot go stale.
 PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug, is_public,
@@ -282,7 +331,7 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
 # caller, so the handler_owns_pets policy is the filter. A pet another handler
-# owns is not forbidden, it is absent — which is a 404.
+# owns is not forbidden, it is absent â€” which is a 404.
 
 NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
 
@@ -362,7 +411,7 @@ async def archive_pet(
     Two columns, and nothing else: `due_items`, `public_pets` and
     `public_entries` all carry `archived_at is null`, so the ledger empties and
     the public page goes dark on this one update. The entries and the photo are
-    not touched — archiving is not a soft delete.
+    not touched â€” archiving is not a soft delete.
     """
     row = await conn.fetchrow(
         f"update pets set archived_at = now(), archived_reason = $2"
@@ -378,7 +427,7 @@ async def archive_pet(
 @app.post("/pets/{pet_id}/restore")
 async def restore_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
     """Undo it. Both columns clear together, and everything the views hid comes
-    back with them — same slug, same entries, same photo."""
+    back with them â€” same slug, same entries, same photo."""
     row = await conn.fetchrow(
         f"update pets set archived_at = null, archived_reason = null"
         f" where id = $1 returning {PET_COLUMNS}",
@@ -526,7 +575,7 @@ async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[st
 
 # The one answer to a slug that is absent, private or archived alike. All three
 # are simply a row `public_pets` does not return, so nothing here has to work at
-# telling them apart — there is only ever one branch to take.
+# telling them apart â€” there is only ever one branch to take.
 NO_SUCH_PAGE = HTTPException(status.HTTP_404_NOT_FOUND, "No such page.")
 
 
@@ -575,7 +624,7 @@ async def put_photo(
 ) -> pets.PetOut:
     """Upload a photo, or replace the one already there.
 
-    Upload, then point the row at it, then delete what it replaced — in that
+    Upload, then point the row at it, then delete what it replaced â€” in that
     order, so a failure anywhere leaves the pet with a photo that resolves.
     """
     content = await request.body()

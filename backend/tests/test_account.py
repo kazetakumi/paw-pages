@@ -92,3 +92,39 @@ async def test_a_date_of_birth_in_the_future_comes_back_named_not_as_a_500(signe
     assert rejected.status_code == 422
     assert rejected.json()["detail"]["field"] == "date_of_birth"
     assert "constraint" not in rejected.text.lower()
+
+
+async def test_the_email_address_is_changed_through_its_own_endpoint(signed_in, app):
+    """Losing access to an old inbox must not lock a handler out. The address
+    lives in auth.users; `handlers` never duplicates it."""
+    changed = await signed_in.patch("/me/email", json={"email": "akhil@newmail.example"})
+
+    assert changed.status_code == 200
+    assert changed.json()["email"] == "akhil@newmail.example"
+    async with app.state.pool.acquire() as conn:
+        assert await conn.fetchval("select email from auth.users") == "akhil@newmail.example"
+
+
+async def test_an_email_already_registered_comes_back_beside_the_email_field(
+    signed_in, seed_handler
+):
+    await seed_handler("Mira", "mira@example.com")
+
+    refused = await signed_in.patch("/me/email", json={"email": "mira@example.com"})
+
+    assert 400 <= refused.status_code < 500
+    assert refused.json()["detail"]["field"] == "email"
+
+
+async def test_the_password_is_changed_through_its_own_endpoint(signed_in, auth_stub):
+    changed = await signed_in.patch("/me/password", json={"password": "a longer secret"})
+
+    assert changed.status_code == 204
+    assert auth_stub.passwords["akhil@example.com"] == "a longer secret"
+
+
+async def test_a_password_supabase_refuses_comes_back_beside_the_password_field(signed_in):
+    refused = await signed_in.patch("/me/password", json={"password": ""})
+
+    assert refused.status_code == 422
+    assert refused.json()["detail"]["field"] == "password"
