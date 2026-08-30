@@ -93,7 +93,7 @@ export type PetFields = Omit<Pet, "id" | "slug" | "age_years" | "age_months">;
 
 export const listPets = () => request<Pet[]>("GET", "/pets");
 
-export const getPet = (id: string) => request<Pet>("GET", `/pets/${id}`);
+export const getPet = (id: string) => request<PetRecord>("GET", `/pets/${id}`);
 
 export const createPet = (fields: PetFields) => request<Pet>("POST", "/pets", fields);
 
@@ -124,7 +124,10 @@ export const listEntries = (petId: string, cursor?: string | null) =>
     `/pets/${petId}/entries${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
   );
 
-export const createEntry = (fields: EntryFields) => request<Entry>("POST", "/entries", fields);
+/** `closesEntryId` is "log the next one": the API saves the new entry and
+ *  closes that entry's due date in the one request. */
+export const createEntry = (fields: EntryFields, closesEntryId?: string) =>
+  request<Entry>("POST", "/entries", { ...fields, closes_entry_id: closesEntryId ?? null });
 
 export const updateEntry = (id: string, fields: EntryFields) =>
   request<Entry>("PATCH", `/entries/${id}`, fields);
@@ -132,3 +135,43 @@ export const updateEntry = (id: string, fields: EntryFields) =>
 export const deleteEntry = (id: string) => send("DELETE", `/entries/${id}`);
 
 export const recentTitles = () => request<string[]>("GET", "/entry-titles/recent");
+
+/** One outstanding due date, straight off the `due_items` view. `days_until`
+ *  and `is_overdue` are the database's answer — nothing here works out what
+ *  overdue means, and a negative `days_until` is how far past it is. */
+export type DueItem = {
+  entry_id: string;
+  pet_id: string;
+  pet_name: string;
+  title: string;
+  due_on: string;
+  days_until: number;
+  is_overdue: boolean;
+  happened_on: string;
+  vet: string | null;
+};
+
+/** A pet with what it needs, so its page and the home ledger read one view. */
+export type PetRecord = Pet & { due_items: DueItem[] };
+
+export type PetCard = Pet & {
+  next_due_on: string | null;
+  next_due_is_overdue: boolean;
+  last_logged_on: string | null;
+};
+
+/** The whole home screen in one response: the ledger, the cards and the counts. */
+export type Dashboard = {
+  ledger: DueItem[];
+  pets: PetCard[];
+  active_pets: number;
+  overdue: number;
+  due_within_30_days: number;
+  archived_pets: number;
+};
+
+export const getDashboard = () => request<Dashboard>("GET", "/dashboard");
+
+/** Dealt with elsewhere: the item leaves the ledger, the entry stays. */
+export const markDone = (entryId: string) =>
+  request<Entry>("POST", `/entries/${entryId}/mark-done`);

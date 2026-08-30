@@ -54,7 +54,16 @@ describe("signing in", () => {
     server.use(
       http.post("http://localhost:8000/auth/signin", () => HttpResponse.json(me)),
       http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
-      http.get("http://localhost:8000/pets", () => HttpResponse.json([])),
+      http.get("http://localhost:8000/dashboard", () =>
+        HttpResponse.json({
+          ledger: [],
+          pets: [],
+          active_pets: 0,
+          overdue: 0,
+          due_within_30_days: 0,
+          archived_pets: 0,
+        }),
+      ),
     );
 
     renderRoute("/signin");

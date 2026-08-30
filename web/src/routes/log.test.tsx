@@ -74,6 +74,8 @@ describe("the log form", () => {
     await waitFor(() => expect(sent).toHaveLength(1));
     expect(container.querySelector('[data-layout="desktop"]')).toBeInTheDocument();
     expect(sent[0]).toEqual({
+      // Nothing to close: a plain log is not "log the next one".
+      closes_entry_id: null,
       pet_id: biscuit.id,
       title: "Nail trim",
       happened_on: "2026-08-29",
