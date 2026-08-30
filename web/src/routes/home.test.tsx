@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
 import { setViewportWidth } from "../test/setup";
 import { renderRoute } from "../test/render";
-import type { Dashboard, DueItem, PetCard } from "../api";
+import type { ArchivedPet, Dashboard, DueItem, PetCard } from "../api";
 
 const me = { id: "11111111-1111-1111-1111-111111111111", name: "Akhil" };
 
@@ -84,6 +85,20 @@ const dhpp: DueItem = {
   vet: null,
 };
 
+const toffee: ArchivedPet = {
+  id: "44444444-4444-4444-4444-444444444444",
+  name: "Toffee",
+  archived_reason: "passed_away",
+  archived_on: "2026-06-02",
+};
+
+const rehomed: ArchivedPet = {
+  id: "55555555-5555-5555-5555-555555555555",
+  name: "Marmalade",
+  archived_reason: "rehomed",
+  archived_on: "2026-01-14",
+};
+
 const empty: Dashboard = {
   ledger: [],
   pets: [],
@@ -91,6 +106,7 @@ const empty: Dashboard = {
   overdue: 0,
   due_within_30_days: 0,
   archived_pets: 0,
+  archived: [],
 };
 
 /** One request answers the whole screen — the stub counts how many it took. */
@@ -256,12 +272,15 @@ describe("the home screen", () => {
     expect(within(bare).getByText("Nothing yet")).toBeInTheDocument();
   });
 
-  it("counts the archived pets without listing them", async () => {
-    signedInWith({ pets: [biscuit], archived_pets: 1 });
+  it("counts the archived pets without carding them", async () => {
+    signedInWith({ pets: [biscuit], archived_pets: 1, archived: [toffee] });
 
     renderRoute("/home");
 
     expect(await screen.findByText("1 archived pet")).toBeInTheDocument();
+    // Present, but not in the way: no card, no next due, nothing to act on.
+    expect(screen.queryByRole("link", { name: /Toffee/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/passed away/i)).not.toBeInTheDocument();
   });
 
   it("reaches the log form from the header above the breakpoint", async () => {
@@ -324,5 +343,70 @@ describe("a pet card's portrait", () => {
     expect(screen.queryByRole("img", { name: "Momo" })).not.toBeInTheDocument();
     expect(screen.getByText("M")).toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/supabase/i);
+  });
+});
+
+describe("the archived pets", () => {
+  const opened = async () => {
+    await userEvent.click(await screen.findByRole("button", { name: /Toffee/ }));
+    return screen.getByRole("region", { name: "Archived" });
+  };
+
+  it("names each one with why and when it was archived", async () => {
+    signedInWith({ pets: [biscuit], archived_pets: 2, archived: [toffee, rehomed] });
+
+    renderRoute("/home");
+    const list = await opened();
+
+    expect(within(list).getByText("Toffee")).toBeInTheDocument();
+    expect(within(list).getByText(/passed away/i)).toBeInTheDocument();
+    expect(within(list).getByText("2 Jun 2026")).toBeInTheDocument();
+    expect(within(list).getByText("Marmalade")).toBeInTheDocument();
+    expect(within(list).getByText(/rehomed/i)).toBeInTheDocument();
+    expect(within(list).getByText("14 Jan 2026")).toBeInTheDocument();
+  });
+
+  it("restores one and puts it back among the pets", async () => {
+    let restored: string | null = null;
+    let board: Partial<Dashboard> = { pets: [biscuit], archived_pets: 1, archived: [toffee] };
+    server.use(
+      http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
+      http.get("http://localhost:8000/dashboard", () => HttpResponse.json({ ...empty, ...board })),
+      http.post(`http://localhost:8000/pets/${toffee.id}/restore`, () => {
+        restored = toffee.id;
+        board = { pets: [biscuit, { ...momo, id: toffee.id, name: "Toffee" }], active_pets: 2 };
+        return HttpResponse.json({});
+      }),
+    );
+
+    renderRoute("/home");
+    const list = await opened();
+    await userEvent.click(within(list).getByRole("button", { name: /restore/i }));
+
+    await waitFor(() => expect(restored).toBe(toffee.id));
+    expect(await screen.findByRole("link", { name: /Toffee/ })).toBeInTheDocument();
+    expect(screen.queryByText(/archived pet/)).not.toBeInTheDocument();
+  });
+
+  it("lists them in a desktop layout above the breakpoint", async () => {
+    signedInWith({ pets: [biscuit], archived_pets: 1, archived: [toffee] });
+    setViewportWidth(1200);
+
+    const { container } = renderRoute("/home");
+    await opened();
+
+    expect(container.querySelector('[data-archived="desktop"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-archived="mobile"]')).toBeNull();
+  });
+
+  it("lists them in a mobile layout below the breakpoint", async () => {
+    signedInWith({ pets: [biscuit], archived_pets: 1, archived: [toffee] });
+    setViewportWidth(390);
+
+    const { container } = renderRoute("/home");
+    await opened();
+
+    expect(container.querySelector('[data-archived="mobile"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-archived="desktop"]')).toBeNull();
   });
 });

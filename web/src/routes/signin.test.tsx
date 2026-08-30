@@ -62,6 +62,7 @@ describe("signing in", () => {
           overdue: 0,
           due_within_30_days: 0,
           archived_pets: 0,
+          archived: [],
         }),
       ),
     );

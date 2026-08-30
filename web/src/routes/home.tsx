@@ -10,6 +10,7 @@ import {
 } from "../api";
 import { Ledger } from "../entries/due";
 import { formatDate, formatDayMonth, summaryOf } from "../pets/pet";
+import { ArchivedList } from "../pets/ArchivedList";
 import { PetAvatar } from "../pets/PetAvatar";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
@@ -112,6 +113,7 @@ function Tally({ board }: { board: Dashboard }) {
 
 export default function Home() {
   const [record, setRecord] = useState<{ handler: Handler; board: Dashboard } | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
   const isDesktop = useIsDesktop();
   const Pets = isDesktop ? PetsDesktop : PetsMobile;
 
@@ -151,10 +153,33 @@ export default function Home() {
         <span className="n">{board.pets.length}</span>
       </div>
       <Pets pets={board.pets} />
+      {/* Present without being in the way: a count, and the names behind it.
+          The pets themselves are one press away, never a card. */}
       {board.archived_pets > 0 && (
-        <p className="archived">
-          {board.archived_pets} archived {board.archived_pets === 1 ? "pet" : "pets"}
-        </p>
+        <>
+          <p className="archived">
+            <span>
+              {board.archived_pets} archived {board.archived_pets === 1 ? "pet" : "pets"}
+            </span>
+            <i aria-hidden="true">&mdash;</i>
+            <button
+              className="see"
+              type="button"
+              aria-expanded={showArchived}
+              onClick={() => setShowArchived(!showArchived)}
+            >
+              {board.archived.map((pet) => pet.name).join(", ")}
+            </button>
+          </p>
+          {showArchived && (
+            <ArchivedList
+              pets={board.archived}
+              onRestored={() =>
+                getDashboard().then((board) => setRecord({ ...record, board }))
+              }
+            />
+          )}
+        </>
       )}
       {!isDesktop && (
         <Link className="fab" to="/log" data-log="mobile">
