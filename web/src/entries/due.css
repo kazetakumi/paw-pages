@@ -230,6 +230,11 @@
   color: var(--ink-2);
   margin-top: 3px;
 }
+/* Every date in the app is in Space Mono, this one included. */
+.attention .ds .d {
+  font-family: var(--data);
+  font-size: 12.5px;
+}
 .attention .dacts {
   display: flex;
   gap: 8px;

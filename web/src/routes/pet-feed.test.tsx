@@ -261,7 +261,7 @@ describe("a pet's feed", () => {
 
     expect(panel).toHaveAttribute("data-layout", "desktop");
     expect(within(panel).getByText("Rabies booster")).toBeInTheDocument();
-    expect(within(panel).getByText(/Last given 14 Jul 2025 at Anvayaa Clinic/)).toBeInTheDocument();
+    expect(panel).toHaveTextContent("Last given 14 Jul 2025 at Anvayaa Clinic.");
     expect(panel).toHaveTextContent("Overdue 46 days");
   });
 

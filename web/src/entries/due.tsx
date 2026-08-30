@@ -115,7 +115,7 @@ export function Attention({
       <div className="dt">Due {formatDate(item.due_on)}</div>
       <div className="dw">{item.title}</div>
       <div className="ds">
-        Last given {formatDate(item.happened_on)}
+        Last given <span className="d">{formatDate(item.happened_on)}</span>
         {item.vet && ` at ${item.vet}`}.
       </div>
       <div className="dacts">
