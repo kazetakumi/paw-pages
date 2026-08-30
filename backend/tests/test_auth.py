@@ -89,3 +89,34 @@ async def test_signing_out_clears_the_cookie_and_the_next_call_401s(client, seed
 
 async def test_signing_out_without_a_session_is_still_fine(client):
     assert (await client.post("/auth/signout")).status_code == 204
+
+
+async def test_an_already_registered_email_is_a_field_level_error_pointing_at_sign_in(
+    client, seed_handler
+):
+    await seed_handler("Akhil", "akhil@example.com")
+
+    response = await client.post(
+        "/auth/signup",
+        json={"name": "Akhil", "email": "akhil@example.com", "password": "correct horse"},
+    )
+
+    assert 400 <= response.status_code < 500
+    detail = response.json()["detail"]
+    assert detail["field"] == "email"
+    assert "sign in" in detail["message"].lower()
+
+
+async def test_a_decoy_signup_response_is_the_same_field_level_error_not_a_5xx(
+    client, seed_handler, auth_stub
+):
+    await seed_handler("Akhil", "akhil@example.com")
+    auth_stub.hide_existing_users = True  # email-enumeration protection, as in production
+
+    response = await client.post(
+        "/auth/signup",
+        json={"name": "Akhil", "email": "akhil@example.com", "password": "correct horse"},
+    )
+
+    assert 400 <= response.status_code < 500
+    assert response.json()["detail"]["field"] == "email"

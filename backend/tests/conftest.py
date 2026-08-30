@@ -64,6 +64,7 @@ async def app(database_url):
 def auth_stub(app) -> SupabaseAuthStub:
     stub = app.state.auth_stub
     stub.access_token_lifetime = 3600
+    stub.hide_existing_users = False
     return stub
 
 

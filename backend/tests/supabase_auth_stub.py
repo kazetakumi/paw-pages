@@ -39,6 +39,9 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
     def __init__(self, pool: asyncpg.Pool) -> None:
         self.pool = pool
         self.access_token_lifetime = 3600
+        # Email-enumeration protection: a repeat signup comes back 200 with a
+        # decoy user that has no identities, instead of an error.
+        self.hide_existing_users = False
         self._refresh_tokens: dict[str, tuple[str, str]] = {}
 
     def forget_refresh_tokens(self) -> None:
@@ -62,6 +65,10 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
                 "select id from auth.users where email = $1", body["email"]
             )
             if existing:
+                if self.hide_existing_users:
+                    return httpx.Response(
+                        200, json={"user": {"id": str(existing), "identities": []}}
+                    )
                 return httpx.Response(400, json={"msg": "User already registered"})
             user_id = await conn.fetchval(
                 "insert into auth.users (email, raw_user_meta_data) values ($1, $2)"

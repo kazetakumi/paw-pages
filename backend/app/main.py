@@ -44,6 +44,11 @@ class HandlerOut(BaseModel):
 
 NOT_SIGNED_IN = HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in.")
 
+EMAIL_TAKEN = HTTPException(
+    status.HTTP_409_CONFLICT,
+    {"field": "email", "message": "That email already has an account. Sign in instead."},
+)
+
 
 async def claims(request: Request, response: Response) -> dict:
     """The caller's verified claims, refreshing the access token if it has expired.
@@ -100,7 +105,13 @@ async def signup(body: SignUpIn, request: Request, response: Response) -> Handle
             request.app.state.auth_client, body.name, body.email, body.password
         )
     except supabase_auth.AuthError as error:
+        if error.is_email_taken:
+            raise EMAIL_TAKEN
         raise HTTPException(status.HTTP_400_BAD_REQUEST, error.message)
+    # With email-enumeration protection on, Supabase hides a repeat signup behind
+    # a 200 carrying a decoy user with no identities rather than an error.
+    if tokens.get("user", {}).get("identities") == []:
+        raise EMAIL_TAKEN
     return await start_session(request, response, tokens)
 
 

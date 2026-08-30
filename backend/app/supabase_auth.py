@@ -7,6 +7,10 @@ class AuthError(Exception):
         self.status_code = status_code
         self.message = message
 
+    @property
+    def is_email_taken(self) -> bool:
+        return "already registered" in self.message.lower()
+
 
 async def _post(client: httpx.AsyncClient, path: str, **kwargs) -> dict:
     response = await client.post(path, **kwargs)
