@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paw Pages — v1 build board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E; --ink-2:#4E5A67; --faint:#8D97A1;
+    --paper:#F2F3EF; --card:#FFFFFF; --rule:#DCE0E4; --rule-2:#EDEFF1;
+    --stamp:#B23A24; --stamp-wash:#FBF1EE; --seal:#2E6B4F; --seal-wash:#EDF4F0;
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(242,243,239,.93);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+  .topbar .in{max-width:900px;margin:0 auto;padding:0 28px;height:56px;
+    display:flex;align-items:center;gap:20px}
+  .wordmark{font-family:var(--display);font-weight:700;font-size:14px;
+    letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+  .wordmark .p2{color:var(--faint)}
+  .topbar .sep{margin-left:auto;font-family:var(--data);font-size:12px;color:var(--faint)}
+  .topbar a.back{font-size:13px;color:var(--ink-2);text-decoration:none;
+    border-bottom:1px solid var(--rule);padding-bottom:1px}
+  .topbar a.back:hover{color:var(--ink);border-bottom-color:var(--ink)}
+
+  .page{max-width:900px;margin:0 auto;padding:40px 28px 120px}
+
+  .kicker{font-family:var(--data);font-size:12px;letter-spacing:.08em;
+    color:var(--faint);text-transform:uppercase;margin:0 0 12px}
+  h1{font-family:var(--display);font-weight:600;font-size:34px;line-height:1.15;
+    letter-spacing:-.015em;margin:0 0 18px;max-width:22ch}
+  h2{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--faint);margin:44px 0 14px;
+    padding-bottom:8px;border-bottom:1px solid var(--rule)}
+  p{margin:0 0 14px;max-width:70ch}
+  .lede{font-size:17px;line-height:1.6;color:var(--ink-2);max-width:64ch;margin-bottom:24px}
+  code{font-family:var(--data);font-size:.88em;background:var(--rule-2);
+    padding:1px 5px;border-radius:3px}
+
+  .meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 6px}
+  .badge{font-family:var(--data);font-size:11.5px;letter-spacing:.06em;
+    text-transform:uppercase;padding:4px 10px;border-radius:3px;border:1px solid var(--rule);
+    background:var(--card);color:var(--ink-2);display:inline-block;white-space:nowrap}
+  .badge.ready{background:var(--seal-wash);border-color:#C8DDD2;color:var(--seal)}
+  .badge.doing{background:#FDF6E7;border-color:#E8DCBE;color:#8A6A1F}
+  .badge.done{background:var(--ink);border-color:var(--ink);color:#fff}
+  .badge.blocked{background:var(--stamp-wash);border-color:#EAD0C9;color:var(--stamp)}
+
+  ul.ac{list-style:none;padding:0;margin:0}
+  ul.ac li{position:relative;padding:9px 0 9px 30px;border-bottom:1px solid var(--rule-2);
+    max-width:72ch}
+  ul.ac li:before{content:"";position:absolute;left:0;top:13px;width:14px;height:14px;
+    border:1.5px solid var(--faint);border-radius:2px}
+  ul.ac li.on:before{background:var(--ink);border-color:var(--ink)}
+  ul.ac li.on:after{content:"";position:absolute;left:4px;top:17px;width:6px;height:3px;
+    border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg)}
+
+  pre.proto{font-family:var(--data);font-size:12.5px;line-height:1.7;
+    background:var(--card);border:1px solid var(--rule);border-radius:4px;
+    padding:16px 18px;overflow-x:auto;margin:0 0 10px}
+  .caption{font-size:13.5px;color:var(--faint)}
+
+  .dep{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .dep a{font-family:var(--data);font-size:12.5px;text-decoration:none;
+    padding:5px 11px;border:1px solid var(--rule);background:var(--card);border-radius:3px}
+  .dep a:hover{border-color:var(--ink)}
+  .dep .none{font-family:var(--data);font-size:12.5px;color:var(--seal);padding:5px 0}
+
+  .endpoints{border:1px solid var(--rule);background:var(--card);border-radius:4px;
+    padding:4px 18px;margin:0 0 14px;overflow-x:auto}
+  .endpoints div{font-family:var(--data);font-size:12.5px;padding:8px 0;
+    border-bottom:1px solid var(--rule-2);color:var(--ink-2);white-space:nowrap}
+  .endpoints div:last-child{border-bottom:0}
+  .endpoints b{color:var(--ink);font-weight:700;display:inline-block;min-width:58px}
+
+  .note{border-left:2px solid var(--stamp);background:var(--stamp-wash);
+    padding:12px 16px;margin:18px 0;max-width:70ch}
+  .note p{margin:0;font-size:14px;color:#7A2E1E}
+  .note strong{font-family:var(--display)}
+
+  footer{margin-top:70px;padding-top:18px;border-top:1px solid var(--rule);
+    font-family:var(--data);font-size:12px;color:var(--faint)}
+  footer a{color:var(--faint)}
+
+  @media (max-width:640px){
+    .page{padding:28px 20px 90px}
+    h1{font-size:26px}
+    .lede{font-size:16px}
+    .topbar .in{padding:0 20px}
+  }
+
+  table.board{width:100%;border-collapse:collapse;margin:0 0 10px}
+  table.board th{font-family:var(--display);font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--faint);text-align:left;font-weight:600;
+    padding:0 12px 10px 0;border-bottom:1px solid var(--rule)}
+  table.board td{padding:13px 12px 13px 0;border-bottom:1px solid var(--rule-2);
+    vertical-align:top;font-size:14.5px}
+  table.board tr:hover td{background:rgba(255,255,255,.6)}
+  table.board td.n{font-family:var(--data);font-size:13px;color:var(--faint);width:34px}
+  table.board td.t a{text-decoration:none;font-weight:500}
+  table.board td.t a:hover{text-decoration:underline}
+  table.board td.t small{display:block;color:var(--ink-2);font-weight:400;font-size:13px;
+    margin-top:3px;max-width:54ch;line-height:1.5}
+  table.board td.b{font-family:var(--data);font-size:12.5px;color:var(--ink-2);
+    white-space:nowrap;width:86px}
+  table.board td.s{width:132px}
+  .tablewrap{overflow-x:auto}
+  .summary{display:flex;border:1px solid var(--rule);background:var(--card);
+    border-radius:4px;overflow:hidden;margin:0 0 14px}
+  .summary div{flex:1;padding:16px 18px;border-right:1px solid var(--rule-2)}
+  .summary div:last-child{border-right:0}
+  .summary .k{font-family:var(--data);font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+  .summary .v{font-family:var(--display);font-size:26px;font-weight:600;line-height:1}
+  .bar{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin:0 0 34px}
+  .bar i{display:block;height:100%;background:var(--seal)}
+  .chain{font-family:var(--data);font-size:12.5px;color:var(--ink-2);
+    background:var(--card);border:1px solid var(--rule);border-radius:4px;
+    padding:16px 18px;margin:0 0 14px;overflow-x:auto;white-space:pre;line-height:1.9}
+  .chain b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <a class="wordmark" href="board.html">Paw<span class="p2">Pages</span></a>
+  <span class="sep">10 tickets</span><a class="back" href="../docs/v1-prd.html">v1 PRD</a>
+</div></div>
+<div class="page">
+<p class="kicker">Build board &middot; v1</p>
+<h1>Ten vertical slices</h1>
+<p class="lede">Each ticket is one working path from screen to database, so the auth and RLS plumbing is proved on the first slice rather than integrated at the end. Work the frontier &mdash; any ticket whose blockers are done can be picked up &mdash; and clear context between tickets.</p>
+<div class="summary"><div><div class="k">Done</div><div class="v">0</div></div><div><div class="k">In progress</div><div class="v">0</div></div><div><div class="k">Not started</div><div class="v">10</div></div><div><div class="k">Total</div><div class="v">10</div></div></div>
+<div class="bar"><i style="width:0%"></i></div>
+<h2>Tickets</h2>
+<div class="tablewrap"><table class="board">
+<tr><th></th><th>Ticket</th><th>Blocked by</th><th>Status</th></tr>
+<tr><td class="n">01</td><td class="t"><a href="01-walking-skeleton.html">Walking skeleton: a signed-in shell over live RLS</a><small>Create an account, sign in, land on a page that greets you by name — with the session in an httpOnly cookie and every query already under row-level security.</small></td><td class="b">—</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">02</td><td class="t"><a href="02-auth-screens.html">Auth screens: sign up, sign in, forgot, reset</a><small>The four account screens as drawn, desktop and mobile, including the promise that the email address is only ever used for a password reset.</small></td><td class="b">01</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">03</td><td class="t"><a href="03-a-pet-exists.html">A pet exists: add, list, About tab</a><small>Add a pet with just a name and a species, see it on the home screen, open its About tab to correct anything that was guessed.</small></td><td class="b">01</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">04</td><td class="t"><a href="04-an-entry-exists.html">An entry exists: the universal log form and the feed</a><small>One form for a rabies booster, a vet visit and a nail trim — then the pet&rsquo;s page as a feed, newest first.</small></td><td class="b">03</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">05</td><td class="t"><a href="05-due-dates.html">Due dates: the ledger, the overdue stamp, mark done</a><small>Every pet&rsquo;s outstanding due dates on one screen, oldest problem first, anything past its date stamped with how many days it is overdue.</small></td><td class="b">04</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">06</td><td class="t"><a href="06-the-public-page.html">The public page</a><small>One pet&rsquo;s page switched on at its own URL and handed to a kennel or a sitter. Off by default, nothing about the handler, and switching it off kills the link at once.</small></td><td class="b">04</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">07</td><td class="t"><a href="07-pet-photos.html">Pet photos</a><small>One profile photo per pet — uploaded, replaced or removed — served from our own API out of the private bucket, never as a link to Supabase.</small></td><td class="b">03, 06</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">08</td><td class="t"><a href="08-archiving-and-restore.html">Archiving and restore</a><small>A pet that passed away or was rehomed keeps its history and its photo, stops counting toward due dates, and its public page goes dark.</small></td><td class="b">05, 06</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">09</td><td class="t"><a href="09-account.html">Account: details, export, deletion</a><small>Change what the app calls you, take everything you have entered away as one file, and leave — shown exactly what will be erased first.</small></td><td class="b">07</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+<tr><td class="n">10</td><td class="t"><a href="10-landing-page.html">Landing page</a><small>A real pet record on the page and the plain statement that the app never notifies — last, because it advertises what by then exists.</small></td><td class="b">05</td><td class="s"><span class="badge ready">ready-for-agent</span></td></tr>
+</table></div>
+<h2>Dependency chain</h2>
+<div class="chain"><b>01</b>  walking skeleton
+  ├─ <b>02</b>  auth screens
+  └─ <b>03</b>  a pet exists
+        └─ <b>04</b>  an entry exists
+              ├─ <b>05</b>  due dates
+              │     ├─ <b>08</b>  archiving        (also needs 06)
+              │     └─ <b>10</b>  landing page
+              └─ <b>06</b>  the public page
+                    ├─ <b>07</b>  pet photos       (also needs 03)
+                    │     └─ <b>09</b>  account
+                    └─ <b>08</b>  archiving</div>
+<p class="caption" style="color:var(--ink-2)">Only <b>01</b> is unblocked at the start. <b>02</b> and <b>03</b> can run in parallel once it lands, and so can <b>05</b> and <b>06</b> once <b>04</b> does. <b>08</b> waits on both of those; <b>09</b> waits on photos because deleting an account has to remove them first.</p>
+<h2>Keeping this current</h2>
+<p>Status lives in two places &mdash; the badge on the ticket page and the row in the table above. Move both when a ticket moves. The four values are <code>ready-for-agent</code>, <code>in-progress</code>, <code>done</code> and <code>blocked</code>. The counts and the progress bar at the top of this page are written in, so they need updating too.</p>
+<p>Out of scope for all ten tickets, restated here so it is not reopened: email or push reminders, vaccine schedule intelligence, weight tracking and charts, attachments, photo galleries, co-handlers and household sharing, search or filtering across entries, a printable PDF, native or offline builds, cost tracking, a microchip field, a vet on the pet, a fixed list of entry types, per-entry public visibility, and any scheduled job.</p>
+
+<footer>Paw Pages &middot; v1 build board &middot; derived from <a href="../docs/v1-prd.html">v1 PRD</a> &middot; schema in <a href="../docs/database.html">Database</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 — Walking skeleton: a signed-in shell over live RLS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E; --ink-2:#4E5A67; --faint:#8D97A1;
+    --paper:#F2F3EF; --card:#FFFFFF; --rule:#DCE0E4; --rule-2:#EDEFF1;
+    --stamp:#B23A24; --stamp-wash:#FBF1EE; --seal:#2E6B4F; --seal-wash:#EDF4F0;
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(242,243,239,.93);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--rule)}
+  .topbar .in{max-width:900px;margin:0 auto;padding:0 28px;height:56px;
+    display:flex;align-items:center;gap:20px}
+  .wordmark{font-family:var(--display);font-weight:700;font-size:14px;
+    letter-spacing:.16em;text-transform:uppercase;text-decoration:none}
+  .wordmark .p2{color:var(--faint)}
+  .topbar .sep{margin-left:auto;font-family:var(--data);font-size:12px;color:var(--faint)}
+  .topbar a.back{font-size:13px;color:var(--ink-2);text-decoration:none;
+    border-bottom:1px solid var(--rule);padding-bottom:1px}
+  .topbar a.back:hover{color:var(--ink);border-bottom-color:var(--ink)}
+
+  .page{max-width:900px;margin:0 auto;padding:40px 28px 120px}
+
+  .kicker{font-family:var(--data);font-size:12px;letter-spacing:.08em;
+    color:var(--faint);text-transform:uppercase;margin:0 0 12px}
+  h1{font-family:var(--display);font-weight:600;font-size:34px;line-height:1.15;
+    letter-spacing:-.015em;margin:0 0 18px;max-width:22ch}
+  h2{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.13em;
+    text-transform:uppercase;color:var(--faint);margin:44px 0 14px;
+    padding-bottom:8px;border-bottom:1px solid var(--rule)}
+  p{margin:0 0 14px;max-width:70ch}
+  .lede{font-size:17px;line-height:1.6;color:var(--ink-2);max-width:64ch;margin-bottom:24px}
+  code{font-family:var(--data);font-size:.88em;background:var(--rule-2);
+    padding:1px 5px;border-radius:3px}
+
+  .meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 6px}
+  .badge{font-family:var(--data);font-size:11.5px;letter-spacing:.06em;
+    text-transform:uppercase;padding:4px 10px;border-radius:3px;border:1px solid var(--rule);
+    background:var(--card);color:var(--ink-2);display:inline-block;white-space:nowrap}
+  .badge.ready{background:var(--seal-wash);border-color:#C8DDD2;color:var(--seal)}
+  .badge.doing{background:#FDF6E7;border-color:#E8DCBE;color:#8A6A1F}
+  .badge.done{background:var(--ink);border-color:var(--ink);color:#fff}
+  .badge.blocked{background:var(--stamp-wash);border-color:#EAD0C9;color:var(--stamp)}
+
+  ul.ac{list-style:none;padding:0;margin:0}
+  ul.ac li{position:relative;padding:9px 0 9px 30px;border-bottom:1px solid var(--rule-2);
+    max-width:72ch}
+  ul.ac li:before{content:"";position:absolute;left:0;top:13px;width:14px;height:14px;
+    border:1.5px solid var(--faint);border-radius:2px}
+  ul.ac li.on:before{background:var(--ink);border-color:var(--ink)}
+  ul.ac li.on:after{content:"";position:absolute;left:4px;top:17px;width:6px;height:3px;
+    border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg)}
+
+  pre.proto{font-family:var(--data);font-size:12.5px;line-height:1.7;
+    background:var(--card);border:1px solid var(--rule);border-radius:4px;
+    padding:16px 18px;overflow-x:auto;margin:0 0 10px}
+  .caption{font-size:13.5px;color:var(--faint)}
+
+  .dep{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+  .dep a{font-family:var(--data);font-size:12.5px;text-decoration:none;
+    padding:5px 11px;border:1px solid var(--rule);background:var(--card);border-radius:3px}
+  .dep a:hover{border-color:var(--ink)}
+  .dep .none{font-family:var(--data);font-size:12.5px;color:var(--seal);padding:5px 0}
+
+  .endpoints{border:1px solid var(--rule);background:var(--card);border-radius:4px;
+    padding:4px 18px;margin:0 0 14px;overflow-x:auto}
+  .endpoints div{font-family:var(--data);font-size:12.5px;padding:8px 0;
+    border-bottom:1px solid var(--rule-2);color:var(--ink-2);white-space:nowrap}
+  .endpoints div:last-child{border-bottom:0}
+  .endpoints b{color:var(--ink);font-weight:700;display:inline-block;min-width:58px}
+
+  .note{border-left:2px solid var(--stamp);background:var(--stamp-wash);
+    padding:12px 16px;margin:18px 0;max-width:70ch}
+  .note p{margin:0;font-size:14px;color:#7A2E1E}
+  .note strong{font-family:var(--display)}
+
+  footer{margin-top:70px;padding-top:18px;border-top:1px solid var(--rule);
+    font-family:var(--data);font-size:12px;color:var(--faint)}
+  footer a{color:var(--faint)}
+
+  @media (max-width:640px){
+    .page{padding:28px 20px 90px}
+    h1{font-size:26px}
+    .lede{font-size:16px}
+    .topbar .in{padding:0 20px}
+  }
+</style>
+</head>
+<body>
+<div class="topbar"><div class="in">
+  <a class="wordmark" href="board.html">Paw<span class="p2">Pages</span></a>
+  <span class="sep">Ticket 01 of 10</span><a class="back" href="board.html">All tickets</a>
+</div></div>
+<div class="page">
+<p class="kicker">Ticket 01 &middot; vertical slice</p>
+<h1>Walking skeleton: a signed-in shell over live RLS</h1>
+<div class="meta"><span class="badge ready">ready-for-agent</span></div>
+<p class="lede">A person can create an account, sign in, and land on a page that greets them by name — with the session in an httpOnly cookie and every query already running under Postgres row-level security.</p>
+<h2>Blocked by</h2>
+<div class="dep"><span class="none">Nothing &mdash; can start immediately</span></div>
+<h2>What to build</h2>
+<p>This slice proves the security model before any product feature depends on it. A visitor submits a name, email and password; the backend calls Supabase Auth server-side, receives the tokens, and writes them into an <code>httpOnly; Secure; SameSite=Lax</code> cookie. The browser never sees a token and no Supabase client ships to it. On the next load the app asks the backend who it is and renders the handler&rsquo;s name in the shell.</p>
+<p>The load-bearing piece is the per-request database dependency: every authenticated request opens a transaction, assumes the <code>authenticated</code> role and sets the caller&rsquo;s verified JWT claims, so <code>auth.uid()</code> resolves and all four RLS policies fire in Postgres exactly as they would have for a browser talking to PostgREST. Nothing hand-rolls an ownership check, and a forgotten filter in backend code returns nothing rather than another handler&rsquo;s pets.</p>
+<p>Both test harnesses land here too, because every later slice leans on them: the API tests drive the FastAPI test client against a throwaway Postgres with all three migrations applied, with nothing stubbed — RLS live, views live, constraints live; the screen tests render routes with HTTP mocked at the network boundary.</p>
+<pre class="proto">async with pool.acquire() as conn:
+    async with conn.transaction():
+        await conn.execute(&quot;set local role authenticated&quot;)
+        await conn.execute(
+            &quot;select set_config(&#x27;request.jwt.claims&#x27;, $1, true)&quot;, claims_json
+        )
+        yield conn   # auth.uid() now resolves; RLS applies to every query</pre>
+<p class="caption">From the PRD prototype — the whole mechanism, recorded so it is not re-derived later. The public-page path in ticket 06 uses the same shape with <code>set local role anon</code>.</p>
+<div class="note"><p><strong>Deviation from the PRD build order.</strong> The PRD puts the signup and sign-in screens in slice 02. They exist here as bare, unstyled forms — just enough to exercise the cookie and make this slice demoable in a browser. Ticket 02 replaces them with the drawn screens.</p></div>
+<h2>Endpoints in this slice</h2>
+<div class="endpoints"><div><b>POST</b>/auth/signup</div><div><b>POST</b>/auth/signin</div><div><b>GET</b>/me</div></div>
+<h2>Acceptance criteria</h2>
+<ul class="ac">
+  <li>A new account can be created; the <code>on_auth_user_created</code> trigger creates the handler row, so there is never a session without a profile</li>
+  <li>Signing in sets an httpOnly, Secure, SameSite=Lax cookie; no token is readable from JavaScript in the page</li>
+  <li><code>GET /me</code> returns the signed-in handler&rsquo;s name, and 401s with no cookie</li>
+  <li>The backend refreshes an expired access token silently and re-issues the cookie; the frontend holds no token parsing, no expiry timer and no refresh logic</li>
+  <li>Two seeded handlers, one dataset: handler B&rsquo;s queries return none of handler A&rsquo;s rows — enforced by RLS, not by a WHERE clause in application code</li>
+  <li>A deliberately omitted ownership filter in backend code returns nothing rather than another handler&rsquo;s data</li>
+  <li>The backend never connects as <code>service_role</code> for application data</li>
+  <li>No Supabase client, key or domain reaches the browser</li>
+  <li>API tests run against a real Postgres with all three migrations applied — no mocked database</li>
+  <li>Screen tests render a route with HTTP stubbed at the network boundary — no mocked hooks, no assertions on component internals</li>
+  <li>The signed-in shell renders the handler&rsquo;s name in both the desktop and the mobile layout</li>
+</ul>
+<h2>Done means</h2>
+<p>Every criterion above passes at the two seams the PRD fixed: the HTTP API against a real Postgres with RLS, the views and the constraints all live, and the rendered screen with HTTP stubbed at the network boundary. No test mocks the database, no test mocks a hook, and no test asserts on component internals — a test that breaks when nothing observable changed is a bug in the test. The desktop and mobile layouts are built together in this slice, not as a pass at the end: the slice is not done until both exist.</p>
+
+<footer>Paw Pages &middot; v1 build board &middot; derived from <a href="../docs/v1-prd.html">v1 PRD</a> &middot; schema in <a href="../docs/database.html">Database</a></footer>
+</div>
+</body>
+</html>
