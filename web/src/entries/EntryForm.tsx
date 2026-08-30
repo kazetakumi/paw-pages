@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { ApiError, FieldError, type Entry, type EntryFields, type Pet } from "../api";
 import { useIsDesktop } from "../shell/useIsDesktop";
-import { today } from "./entry";
+import { addMonths, INTERVALS, shiftDays, today } from "./entry";
 
 type Props = {
   pets: Pet[];
@@ -9,6 +9,8 @@ type Props = {
   entry?: Entry;
   /** The pet the form was opened from, pre-selected. */
   petId?: string;
+  /** Titles the handler has used before. Their own words, never a vocabulary. */
+  titles: string[];
   onSaved: (entry: Entry) => void;
   save: (fields: EntryFields) => Promise<Entry>;
   onCancel?: () => void;
@@ -42,7 +44,7 @@ const Optional = () => <span className="opt"> optional</span>;
 
 /** One form for a rabies booster, a vet visit and a nail trim, and the same
  *  form for correcting one afterwards. The title is typed, never picked. */
-export function EntryForm({ pets, entry, petId, save, onSaved, onCancel }: Props) {
+export function EntryForm({ pets, entry, petId, titles, save, onSaved, onCancel }: Props) {
   const [fields, setFields] = useState({
     pet_id: entry?.pet_id ?? petId ?? pets[0]?.id ?? "",
     title: entry?.title ?? "",
@@ -109,6 +111,21 @@ export function EntryForm({ pets, entry, petId, save, onSaved, onCancel }: Props
         required
         {...flag("title")}
       />
+      {titles.length > 0 && (
+        <div className="chips">
+          <span className="hint">You&rsquo;ve used</span>
+          {titles.map((used) => (
+            <button
+              key={used}
+              className="chip"
+              type="button"
+              onClick={() => set({ title: used })}
+            >
+              {used}
+            </button>
+          ))}
+        </div>
+      )}
     </Field>
   );
 
@@ -122,6 +139,18 @@ export function EntryForm({ pets, entry, petId, save, onSaved, onCancel }: Props
         required
         {...flag("happened_on")}
       />
+      <div className="chips">
+        <button className="chip" type="button" onClick={() => set({ happened_on: today() })}>
+          Today
+        </button>
+        <button
+          className="chip"
+          type="button"
+          onClick={() => set({ happened_on: shiftDays(today(), -1) })}
+        >
+          Yesterday
+        </button>
+      </div>
     </Field>
   );
 
@@ -146,24 +175,50 @@ export function EntryForm({ pets, entry, petId, save, onSaved, onCancel }: Props
   );
 
   const due = (
-    <Field
-      id="due_on"
-      label={
-        <>
-          Next one due
-          <Optional />
-        </>
-      }
-      problem={rejected("due_on")}
-    >
-      <input
+    <div className="due">
+      <Field
         id="due_on"
-        type="date"
-        value={fields.due_on}
-        onChange={(event) => set({ due_on: event.target.value })}
-        {...flag("due_on")}
-      />
-    </Field>
+        label={
+          <>
+            Next one due
+            <Optional />
+          </>
+        }
+        problem={rejected("due_on")}
+      >
+        <input
+          id="due_on"
+          type="date"
+          value={fields.due_on}
+          onChange={(event) => set({ due_on: event.target.value })}
+          {...flag("due_on")}
+        />
+        <div className="chips">
+          <span className="hint">Set to</span>
+          {INTERVALS.map(({ label, months }) => (
+            <button
+              key={label}
+              className="chip"
+              type="button"
+              onClick={() => set({ due_on: addMonths(fields.happened_on, months) })}
+            >
+              {label}
+            </button>
+          ))}
+          <button className="chip" type="button" onClick={() => set({ due_on: "" })}>
+            Nothing due after this
+          </button>
+        </div>
+      </Field>
+      {/* Only once a date is actually set, and it says all three things a due
+          date does — including the one it will never do. */}
+      {fields.due_on && (
+        <p className="promise">
+          This appears under Due &amp; overdue on your home screen, and stays there until you log
+          the next one. Paw Pages never emails you about it.
+        </p>
+      )}
+    </div>
   );
 
   const note = (

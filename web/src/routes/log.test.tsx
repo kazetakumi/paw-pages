@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
@@ -159,5 +159,115 @@ describe("the log form", () => {
     expect(await screen.findByLabelText("Date")).toHaveAccessibleDescription(
       /date is in the future/,
     );
+  });
+
+  it("sets the date to today and to yesterday with no date entry", async () => {
+    const sent = signedIn();
+    // A fixed clock, so the two shortcuts can be checked against literals.
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: new Date(2026, 7, 1, 10, 30) });
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Nail trim");
+    await userEvent.click(screen.getByRole("button", { name: "Today" }));
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-08-01");
+
+    // across a month boundary, where a naive subtraction would give day zero
+    await userEvent.click(screen.getByRole("button", { name: "Yesterday" }));
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-07-31");
+
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ happened_on: "2026-07-31" });
+    vi.useRealTimers();
+  });
+
+  it("opens with today's date already filled in", async () => {
+    signedIn();
+    vi.useFakeTimers({ shouldAdvanceTime: true, now: new Date(2026, 7, 1, 10, 30) });
+
+    renderRoute("/log");
+
+    expect(await screen.findByLabelText("Date")).toHaveValue("2026-08-01");
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ["+1 mo", "2026-09-29"],
+    ["+3 mo", "2026-11-29"],
+    ["+6 mo", "2027-02-28"],
+    ["+1 yr", "2027-08-29"],
+    ["+3 yr", "2029-08-29"],
+  ])("sets the next due date %s from the entry date", async (shortcut, expected) => {
+    signedIn();
+
+    renderRoute("/log");
+
+    await screen.findByLabelText("What happened");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.click(screen.getByRole("button", { name: shortcut }));
+
+    expect(screen.getByLabelText(/Next one due/)).toHaveValue(expected);
+  });
+
+  it("clears the due date and the panel when nothing is due after this", async () => {
+    const sent = signedIn();
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Grooming");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.click(screen.getByRole("button", { name: "+6 mo" }));
+    expect(screen.getByText(/home screen/i)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /Nothing due after this/ }));
+
+    expect(screen.getByLabelText(/Next one due/)).toHaveValue("");
+    expect(screen.queryByText(/home screen/i)).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ due_on: null });
+  });
+
+  it("says what a due date will and will not do before one is set", async () => {
+    signedIn();
+
+    renderRoute("/log");
+
+    await screen.findByLabelText("What happened");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.click(screen.getByRole("button", { name: "+1 yr" }));
+
+    const panel = screen.getByText(/home screen/i);
+    expect(panel).toHaveTextContent(/stays there until you log the next one/i);
+    expect(panel).toHaveTextContent(/never email/i);
+  });
+
+  it("offers the handler's own recent titles as chips, capped at four", async () => {
+    const sent = signedIn(["Rabies booster", "Deworming", "Grooming", "Vet visit"]);
+
+    renderRoute("/log");
+
+    for (const used of ["Rabies booster", "Deworming", "Grooming", "Vet visit"]) {
+      expect(await screen.findByRole("button", { name: used })).toBeInTheDocument();
+    }
+
+    await userEvent.click(screen.getByRole("button", { name: "Deworming" }));
+    expect(screen.getByLabelText("What happened")).toHaveValue("Deworming");
+
+    await typeDate("Date", "2026-08-29");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ title: "Deworming" });
+  });
+
+  it("suggests nothing to a handler who has logged nothing yet", async () => {
+    signedIn([]);
+
+    renderRoute("/log");
+
+    expect(await screen.findByLabelText("What happened")).toHaveValue("");
+    expect(screen.queryByText(/used/i)).toBeNull();
   });
 });

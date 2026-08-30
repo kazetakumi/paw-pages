@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { createEntry, getMe, listPets, Unauthorized, type Handler, type Pet } from "../api";
+import {
+  createEntry,
+  getMe,
+  listPets,
+  recentTitles,
+  Unauthorized,
+  type Handler,
+  type Pet,
+} from "../api";
 import { EntryForm } from "../entries/EntryForm";
 import { Shell } from "../shell/Shell";
 import "../pets/pets.css";
@@ -11,12 +19,16 @@ import "../entries/entries.css";
 export default function Log() {
   const navigate = useNavigate();
   const [search] = useSearchParams();
-  const [loaded, setLoaded] = useState<{ handler: Handler; pets: Pet[] } | null>(null);
+  const [loaded, setLoaded] = useState<{
+    handler: Handler;
+    pets: Pet[];
+    titles: string[];
+  } | null>(null);
 
   useEffect(() => {
     // A 401 is the app's business, not this screen's: see App.tsx.
-    Promise.all([getMe(), listPets()])
-      .then(([handler, pets]) => setLoaded({ handler, pets }))
+    Promise.all([getMe(), listPets(), recentTitles()])
+      .then(([handler, pets, titles]) => setLoaded({ handler, pets, titles }))
       .catch((error) => {
         if (!(error instanceof Unauthorized)) throw error;
       });
@@ -39,6 +51,7 @@ export default function Log() {
         <EntryForm
           pets={loaded.pets}
           petId={from}
+          titles={loaded.titles}
           save={createEntry}
           onSaved={(entry) => navigate(`/pets/${entry.pet_id}`)}
           onCancel={() => navigate(from ? `/pets/${from}` : "/home")}
