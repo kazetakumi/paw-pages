@@ -22,6 +22,16 @@ class DueItem(BaseModel):
     # Both straight off the view. Negative days_until is how far past it is.
     days_until: int
     is_overdue: bool
+    # The entry the item came from: what "last given" says, and what the next
+    # one is pre-filled from.
+    happened_on: date
+    vet: str | None
+
+
+class PetRecord(PetOut):
+    """A pet as its own page opens: what it needs, before its history."""
+
+    due_items: list[DueItem]
 
 
 class PetCard(PetOut):
@@ -42,8 +52,12 @@ class Dashboard(BaseModel):
     archived_pets: int
 
 
-LEDGER = """select entry_id, pet_id, pet_name, title, due_on, days_until, is_overdue
-       from due_items order by due_on, entry_id"""
+# `due_items` owns due and overdue; the join back to `entries` only fetches
+# the two columns the view leaves out.
+LEDGER = """select d.entry_id, d.pet_id, d.pet_name, d.title, d.due_on, d.days_until,
+       d.is_overdue, e.happened_on, e.vet
+       from due_items d join entries e on e.id = d.entry_id
+       {where} order by d.due_on, d.entry_id"""
 
 # The nearest outstanding item comes from the view, so an archived pet has no
 # next due for the same reason it has no ledger rows.

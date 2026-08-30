@@ -208,7 +208,7 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
     No `where handler_id = ...`: `due_items` is a security_invoker view, so the
     same four policies filter it that filter the tables underneath.
     """
-    ledger = await conn.fetch(due.LEDGER)
+    ledger = await conn.fetch(due.LEDGER.format(where=""))
     cards = await conn.fetch(due.PET_CARDS.format(columns=PET_COLUMNS))
     counts = await conn.fetchrow(due.COUNTS)
     return due.Dashboard(
@@ -259,11 +259,15 @@ async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -
 
 
 @app.get("/pets/{pet_id}")
-async def read_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
+async def read_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> due.PetRecord:
     row = await conn.fetchrow(f"select {PET_COLUMNS} from pets where id = $1", pet_id)
     if row is None:
         raise NO_SUCH_PET
-    return pets.PetOut(**dict(row))
+    # The same view the home ledger reads, so the two cannot disagree.
+    outstanding = await conn.fetch(due.LEDGER.format(where="where d.pet_id = $1"), pet_id)
+    return due.PetRecord(
+        **dict(row), due_items=[due.DueItem(**dict(item)) for item in outstanding]
+    )
 
 
 @app.patch("/pets/{pet_id}")

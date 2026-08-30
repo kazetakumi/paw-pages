@@ -262,3 +262,81 @@ async def test_the_home_screen_gets_all_of_it_from_one_request(signed_in, add_pe
         "due_within_30_days",
         "archived_pets",
     }
+
+
+async def test_a_second_handler_sees_none_of_the_first_handlers_due_items(
+    signed_in, add_pet, log, seed_handler
+):
+    """Proved by RLS: `due_items` is a security_invoker view and nothing in the
+    dashboard query carries an ownership filter."""
+    biscuit = await add_pet("Biscuit")
+    mine = await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
+    await seed_handler("Bela", "bela@example.com")
+    await signed_in.post("/auth/signin", json={"email": "bela@example.com", "password": "x"})
+
+    board = (await signed_in.get("/dashboard")).json()
+
+    assert board["ledger"] == []
+    assert board["pets"] == []
+    assert (board["active_pets"], board["overdue"], board["due_within_30_days"]) == (0, 0, 0)
+    assert board["archived_pets"] == 0
+    assert (await signed_in.post(f"/entries/{mine}/mark-done")).status_code == 404
+
+    await signed_in.post("/auth/signin", json={"email": "akhil@example.com", "password": "x"})
+
+    assert [item["entry_id"] for item in (await signed_in.get("/dashboard")).json()["ledger"]] == [
+        mine
+    ]
+
+
+async def test_the_dashboard_needs_a_session(client):
+    assert (await client.get("/dashboard")).status_code == 401
+
+
+async def test_a_pet_opens_with_its_own_outstanding_items_off_the_same_view(
+    signed_in, add_pet, log
+):
+    """The feed and the ledger read one view, so they cannot disagree."""
+    biscuit = await add_pet("Biscuit")
+    momo = await add_pet("Momo", "cat")
+    await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
+    await log(biscuit, "DHPP booster", days_from_today(-400), days_from_today(23))
+    await log(momo, "Deworming", days_from_today(-400), days_from_today(7))
+
+    outstanding = (await signed_in.get(f"/pets/{biscuit}")).json()["due_items"]
+
+    assert [item["title"] for item in outstanding] == ["Rabies booster", "DHPP booster"]
+    assert [item["is_overdue"] for item in outstanding] == [True, False]
+    assert [item["days_until"] for item in outstanding] == [-46, 23]
+
+    board = (await signed_in.get("/dashboard")).json()["ledger"]
+
+    assert [item for item in board if item["pet_id"] == biscuit] == outstanding
+
+
+async def test_an_outstanding_item_carries_what_the_next_one_is_pre_filled_from(
+    signed_in, add_pet
+):
+    biscuit = await add_pet("Biscuit")
+    await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Rabies booster",
+            "happened_on": days_from_today(-400),
+            "due_on": days_from_today(-46),
+            "vet": "Anvayaa Clinic",
+        },
+    )
+
+    item = (await signed_in.get(f"/pets/{biscuit}")).json()["due_items"][0]
+
+    assert item["happened_on"] == days_from_today(-400)
+    assert item["vet"] == "Anvayaa Clinic"
+
+
+async def test_a_pet_with_nothing_outstanding_needs_no_attention(signed_in, add_pet, log):
+    biscuit = await add_pet("Biscuit")
+    await log(biscuit, "Grooming", days_from_today(-3))
+
+    assert (await signed_in.get(f"/pets/{biscuit}")).json()["due_items"] == []
