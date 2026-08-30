@@ -99,3 +99,36 @@ export const createPet = (fields: PetFields) => request<Pet>("POST", "/pets", fi
 
 export const updatePet = (id: string, fields: PetFields) =>
   request<Pet>("PATCH", `/pets/${id}`, fields);
+
+/** An entry as the API returns it. `is_overdue` is computed by the database in
+ *  the `due_items` view — nothing here works out what overdue means. */
+export type Entry = {
+  id: string;
+  pet_id: string;
+  title: string;
+  happened_on: string;
+  due_on: string | null;
+  vet: string | null;
+  note: string | null;
+  is_overdue: boolean;
+};
+
+export type EntryFields = Omit<Entry, "id" | "is_overdue">;
+
+/** One page of a pet's feed. The cursor is opaque: carried back untouched. */
+export type FeedPage = { entries: Entry[]; next_cursor: string | null };
+
+export const listEntries = (petId: string, cursor?: string | null) =>
+  request<FeedPage>(
+    "GET",
+    `/pets/${petId}/entries${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`,
+  );
+
+export const createEntry = (fields: EntryFields) => request<Entry>("POST", "/entries", fields);
+
+export const updateEntry = (id: string, fields: EntryFields) =>
+  request<Entry>("PATCH", `/entries/${id}`, fields);
+
+export const deleteEntry = (id: string) => send("DELETE", `/entries/${id}`);
+
+export const recentTitles = () => request<string[]>("GET", "/entry-titles/recent");

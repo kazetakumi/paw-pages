@@ -54,7 +54,7 @@ describe("the home screen", () => {
     expect(container.querySelector('[data-layout="mobile"]')).toBeNull();
 
     const card = screen.getByRole("link", { name: /Biscuit/ });
-    expect(card).toHaveAttribute("href", `/pets/${biscuit.id}/about`);
+    expect(card).toHaveAttribute("href", `/pets/${biscuit.id}`);
     expect(within(card).getByText(/Indian Pariah/)).toHaveTextContent("male");
     expect(within(card).getByText(/Indian Pariah/)).toHaveTextContent("4 yrs 5 mo");
     expect(screen.getByRole("link", { name: /Momo/ })).toBeInTheDocument();

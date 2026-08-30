@@ -4,6 +4,7 @@ import { onSessionLost } from "./api";
 import ForgotPassword from "./routes/forgot-password";
 import Home from "./routes/home";
 import PetAbout from "./routes/pet-about";
+import PetFeed from "./routes/pet-feed";
 import PetNew from "./routes/pet-new";
 import ResetPassword from "./routes/reset-password";
 import SignIn from "./routes/signin";
@@ -27,6 +28,7 @@ export function AppRoutes() {
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
         <Route path="/pets/new" element={<PetNew />} />
+        <Route path="/pets/:id" element={<PetFeed />} />
         <Route path="/pets/:id/about" element={<PetAbout />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
