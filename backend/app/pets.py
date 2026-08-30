@@ -114,6 +114,10 @@ async def claim_slug(name: str, insert):
 # The constraints Pydantic cannot mirror, because they are about the row rather
 # than one field. The database stays the authority; this only names the field.
 CHECK_FIELDS = {
+    "handlers_date_of_birth_check": (
+        "date_of_birth",
+        "A date of birth cannot be in the future.",
+    ),
     "dob_approx_needs_a_date": (
         "dob_is_approx",
         "Mark a date of birth approximate only when there is a date.",
@@ -133,7 +137,7 @@ def constraint_error(error: asyncpg.IntegrityConstraintViolationError) -> HTTPEx
     if name in CHECK_FIELDS:
         field, message = CHECK_FIELDS[name]
     else:
-        column = re.fullmatch(r"pets_(.+)_check", name)
+        column = re.fullmatch(r"(?:pets|handlers)_(.+)_check", name)
         field = column.group(1) if column else "name"
         message = "That value is not allowed."
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"field": field, "message": message})

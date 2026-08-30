@@ -242,7 +242,10 @@ async def update_me(
     changes = body.model_dump(exclude_unset=True)
     if changes:
         assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=1))
-        await conn.execute(f"update handlers set {assignments}", *changes.values())
+        try:
+            await conn.execute(f"update handlers set {assignments}", *changes.values())
+        except asyncpg.IntegrityConstraintViolationError as error:
+            raise pets.constraint_error(error)
     return await read_handler(conn, payload["email"])
 
 

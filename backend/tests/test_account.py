@@ -43,3 +43,52 @@ async def test_the_account_shows_the_join_date_and_the_pet_and_entry_counts(sign
     assert account["entry_count"] == 2
     # From the caller's own verified claims; `handlers` never duplicates it.
     assert account["email"] == "akhil@example.com"
+
+
+async def test_the_three_personal_fields_are_unset_by_default_and_settable(signed_in):
+    """None of them drives anything. They are collected because they were asked
+    for, which is also why the delete screen names all three."""
+    account = (await signed_in.get("/me")).json()
+    assert (account["date_of_birth"], account["gender"], account["nationality"]) == (
+        None,
+        None,
+        None,
+    )
+
+    filled = await signed_in.patch(
+        "/me",
+        json={"date_of_birth": "1994-08-14", "gender": "Male", "nationality": "Indian"},
+    )
+
+    assert filled.status_code == 200
+    assert filled.json()["date_of_birth"] == "1994-08-14"
+    assert filled.json()["gender"] == "Male"
+    assert filled.json()["nationality"] == "Indian"
+
+    cleared = await signed_in.patch("/me", json={"gender": None})
+    assert cleared.json()["gender"] is None
+    assert cleared.json()["nationality"] == "Indian"
+
+
+async def test_age_is_derived_from_the_date_of_birth_and_never_stored(signed_in, app):
+    """A birthday on the first of January, this many years back, is that many
+    years old on every day of the year — so nothing here recomputes the age the
+    way the database does."""
+    born = date(date.today().year - 32, 1, 1)
+
+    filled = await signed_in.patch("/me", json={"date_of_birth": born.isoformat()})
+
+    assert filled.json()["age"] == 32
+    async with app.state.pool.acquire() as conn:
+        columns = await conn.fetch(
+            "select column_name from information_schema.columns where table_name = 'handlers'"
+        )
+    assert "age" not in [column["column_name"] for column in columns]
+
+
+async def test_a_date_of_birth_in_the_future_comes_back_named_not_as_a_500(signed_in):
+    rejected = await signed_in.patch("/me", json={"date_of_birth": "2099-01-01"})
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "date_of_birth"
+    assert "constraint" not in rejected.text.lower()
