@@ -1,6 +1,17 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getMe, getPet, listEntries, Unauthorized, type Entry, type Handler, type Pet } from "../api";
+import {
+  deleteEntry,
+  getMe,
+  getPet,
+  listEntries,
+  Unauthorized,
+  updateEntry,
+  type Entry,
+  type Handler,
+  type Pet,
+} from "../api";
+import { EntryForm } from "../entries/EntryForm";
 import { formatDate, initial, summaryOf } from "../pets/pet";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
@@ -9,7 +20,15 @@ import "../entries/entries.css";
 
 /** One thing that happened, as drawn: the date on the left, then what it was.
  *  Every date is formatted from the string the API gave, never re-read. */
-function EntryCard({ entry }: { entry: Entry }) {
+function EntryCard({
+  entry,
+  onEdit,
+  onDelete,
+}: {
+  entry: Entry;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <article className="entry">
       <div className="when">{formatDate(entry.happened_on)}</div>
@@ -27,6 +46,14 @@ function EntryCard({ entry }: { entry: Entry }) {
             {entry.vet && <span className="tag vet">{entry.vet}</span>}
           </div>
         )}
+        <div className="acts">
+          <button type="button" onClick={onEdit}>
+            Edit
+          </button>
+          <button type="button" onClick={onDelete}>
+            Delete
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -106,6 +133,8 @@ export default function PetFeed() {
   // The API's cursor, held as it came and handed straight back. A pet with
   // years of history opens on what is recent; the rest arrives on request.
   const [older, setOlder] = useState<string | null>(null);
+  // The entry being corrected, swapped for its card until it is saved.
+  const [editing, setEditing] = useState<Entry | null>(null);
   const Feed = useIsDesktop() ? FeedDesktop : FeedMobile;
 
   useEffect(() => {
@@ -127,11 +156,17 @@ export default function PetFeed() {
     setOlder(page.next_cursor);
   }
 
+  async function remove(entry: Entry) {
+    await deleteEntry(entry.id);
+    setEntries((shown) => shown.filter((one) => one.id !== entry.id));
+  }
+
   if (!record) return null;
+  const { pet } = record;
 
   return (
     <Shell name={record.handler.name}>
-      <Feed pet={record.pet}>
+      <Feed pet={pet}>
         <div className="sect">
           <h2>History</h2>
           <span className="line" />
@@ -140,9 +175,31 @@ export default function PetFeed() {
           <p className="lede">Nothing logged yet.</p>
         ) : (
           <div className="entries">
-            {entries.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} />
-            ))}
+            {entries.map((entry) =>
+              editing?.id === entry.id ? (
+                <div className="entry editing" key={entry.id}>
+                  <EntryForm
+                    pets={[pet]}
+                    entry={entry}
+                    save={(fields) => updateEntry(entry.id, fields)}
+                    onSaved={(saved) => {
+                      setEntries((shown) =>
+                        shown.map((one) => (one.id === saved.id ? saved : one)),
+                      );
+                      setEditing(null);
+                    }}
+                    onCancel={() => setEditing(null)}
+                  />
+                </div>
+              ) : (
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  onEdit={() => setEditing(entry)}
+                  onDelete={() => remove(entry)}
+                />
+              ),
+            )}
           </div>
         )}
         {older && (

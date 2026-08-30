@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
@@ -181,5 +181,54 @@ describe("a pet's feed", () => {
 
     expect(await screen.findByRole("heading", { name: "Deworming" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /older/i })).toBeNull();
+  });
+
+  it("edits an entry in place, behind the same Save button as a new one", async () => {
+    signedInWith([{ entries: [deworming, vetVisit], next_cursor: null }]);
+    let sent: Record<string, unknown> | null = null;
+    server.use(
+      http.get("http://localhost:8000/pets", () => HttpResponse.json([biscuit])),
+      http.get("http://localhost:8000/entry-titles/recent", () => HttpResponse.json([])),
+      http.patch(`http://localhost:8000/entries/${deworming.id}`, async ({ request }) => {
+        sent = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...deworming, ...sent });
+      }),
+    );
+
+    renderRoute(feed);
+
+    const card = (await screen.findByRole("heading", { name: "Deworming" })).closest("article")!;
+    await userEvent.click(within(card).getByRole("button", { name: "Edit" }));
+
+    expect(screen.getByLabelText("What happened")).toHaveValue("Deworming");
+    expect(screen.getByLabelText("Date")).toHaveValue("2026-08-12");
+    const note = screen.getByLabelText(/Notes/);
+    await userEvent.clear(note);
+    await userEvent.type(note, "Whole tablet this time.");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Whole tablet this time.")).toBeInTheDocument();
+    expect(sent).toMatchObject({ title: "Deworming", note: "Whole tablet this time." });
+    expect(screen.queryByLabelText("What happened")).toBeNull();
+  });
+
+  it("deletes an entry and drops it out of the record", async () => {
+    signedInWith([{ entries: [deworming, vetVisit], next_cursor: null }]);
+    let deleted: string | null = null;
+    server.use(
+      http.delete(`http://localhost:8000/entries/${vetVisit.id}`, () => {
+        deleted = vetVisit.id;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+
+    renderRoute(feed);
+
+    const card = (await screen.findByRole("heading", { name: "Vet visit" })).closest("article")!;
+    await userEvent.click(within(card).getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(screen.queryByRole("heading", { name: "Vet visit" })).toBeNull());
+    expect(deleted).toBe(vetVisit.id);
+    expect(screen.getByRole("heading", { name: "Deworming" })).toBeInTheDocument();
   });
 });

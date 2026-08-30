@@ -9,8 +9,9 @@ type Props = {
   entry?: Entry;
   /** The pet the form was opened from, pre-selected. */
   petId?: string;
-  /** Titles the handler has used before. Their own words, never a vocabulary. */
-  titles: string[];
+  /** Titles the handler has used before. Their own words, never a vocabulary.
+   *  The edit form offers none: a correction already has its words. */
+  titles?: string[];
   onSaved: (entry: Entry) => void;
   save: (fields: EntryFields) => Promise<Entry>;
   onCancel?: () => void;
@@ -44,7 +45,7 @@ const Optional = () => <span className="opt"> optional</span>;
 
 /** One form for a rabies booster, a vet visit and a nail trim, and the same
  *  form for correcting one afterwards. The title is typed, never picked. */
-export function EntryForm({ pets, entry, petId, titles, save, onSaved, onCancel }: Props) {
+export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCancel }: Props) {
   const [fields, setFields] = useState({
     pet_id: entry?.pet_id ?? petId ?? pets[0]?.id ?? "",
     title: entry?.title ?? "",

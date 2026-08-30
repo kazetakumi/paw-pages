@@ -206,3 +206,18 @@
   padding-left: 12px;
   margin: 14px 0 0;
 }
+
+/* The card, swapped for the form that corrects it. */
+.entry.editing {
+  display: block;
+  padding: 0;
+}
+.entry.editing .entryform {
+  border: 0;
+  border-radius: 0;
+}
+
+.entryform label .opt {
+  color: var(--faint);
+  letter-spacing: 0.06em;
+}
