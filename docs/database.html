@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paw Pages — Database</title>
+<style>
+  :root{
+    --ink:#1c1b19;
+    --ink-soft:#55514b;
+    --ink-faint:#8b857d;
+    --rule:#e4e0d9;
+    --rule-soft:#efece6;
+    --paper:#fbfaf7;
+    --paper-2:#f4f2ed;
+    --accent:#8a5a2b;
+    --accent-soft:#f0e6da;
+    --green:#4a6b46;
+    --amber:#8a6a1f;
+    --red:#a3402f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+
+  .layout{display:grid;grid-template-columns:236px minmax(0,1fr) 216px;
+    max-width:1360px;margin:0 auto;align-items:start}
+
+  .rail-l{position:sticky;top:0;height:100vh;overflow-y:auto;
+    padding:44px 26px 60px 32px;border-right:1px solid var(--rule);font-family:var(--sans)}
+  .brand{display:block;text-decoration:none;margin-bottom:4px}
+  .brand .mark{font-size:20px;letter-spacing:-.01em;font-family:var(--serif);font-weight:600;display:block}
+  .brand .sub{font-size:11px;text-transform:uppercase;letter-spacing:.13em;
+    color:var(--ink-faint);margin-top:3px;display:block}
+  .rail-l nav{margin-top:30px}
+  .navgroup{font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;
+    color:var(--ink-faint);margin:22px 0 8px;font-weight:600}
+  .rail-l a.nl{display:block;text-decoration:none;color:var(--ink-soft);
+    font-size:13.5px;line-height:1.35;padding:5px 0 5px 11px;border-left:2px solid transparent}
+  .rail-l a.nl:hover{color:var(--ink);border-left-color:var(--rule)}
+  .rail-l a.nl.on{color:var(--accent);border-left-color:var(--accent);font-weight:500}
+
+  .rail-r{position:sticky;top:0;height:100vh;overflow-y:auto;
+    padding:52px 20px 60px 22px;font-family:var(--sans)}
+  .rail-r .ttl{font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;
+    color:var(--ink-faint);font-weight:600;margin-bottom:11px}
+  .rail-r a{display:block;text-decoration:none;color:var(--ink-faint);font-size:12.5px;
+    line-height:1.35;padding:4px 0 4px 10px;border-left:2px solid var(--rule-soft)}
+  .rail-r a:hover{color:var(--ink-soft)}
+  .rail-r a.on{color:var(--accent);border-left-color:var(--accent)}
+
+  main{padding:44px 62px 140px;min-width:0}
+  .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-size:44px;line-height:1.1;letter-spacing:-.02em;margin:0 0 16px;font-weight:600}
+  .standfirst{font-size:20px;line-height:1.55;color:var(--ink-soft);max-width:60ch;margin:0 0 26px}
+  .meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:11px 0;display:flex;gap:26px;flex-wrap:wrap;margin-bottom:46px}
+  .meta b{font-weight:600;color:var(--ink-soft)}
+
+  h2{font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:64px 0 6px;
+    padding-top:22px;border-top:1px solid var(--rule)}
+  h2:first-of-type{margin-top:0}
+  .sectnote{color:var(--ink-faint);font-size:15px;margin:0 0 26px;max-width:62ch;font-style:italic}
+  h3{font-family:var(--mono);font-size:17px;font-weight:600;letter-spacing:-.01em;
+    margin:40px 0 4px;color:var(--accent)}
+  h3 .plain{font-family:var(--serif);color:var(--ink-faint);font-weight:400;
+    font-size:15px;margin-left:10px;letter-spacing:0}
+  p{max-width:64ch}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0 6px}
+  th{text-align:left;font-family:var(--sans);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);font-weight:600;
+    padding:0 14px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  td code{white-space:nowrap}
+  .ty{font-family:var(--mono);font-size:12px;color:var(--ink-faint);white-space:nowrap}
+  .nn{font-family:var(--sans);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-faint);border:1px solid var(--rule);border-radius:2px;padding:1px 5px}
+  .nn.req{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+
+  code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+    padding:1px 5px;border-radius:2px;color:var(--accent)}
+  pre{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:16px 18px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--ink);font-size:12.5px;line-height:1.6}
+
+  .callout{border-left:3px solid var(--accent);background:var(--paper-2);
+    padding:17px 22px;margin:24px 0;border-radius:0 2px 2px 0}
+  .callout p{margin:0;color:var(--ink-soft)}
+  .callout p+p{margin-top:9px}
+  .callout .ct{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.11em;font-weight:600;color:var(--accent);margin-bottom:6px}
+  .callout.warn{border-left-color:var(--red);background:#fdf7f5}
+  .callout.warn .ct{color:var(--red)}
+
+  .tally{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 6px}
+  .tile{border:1px solid var(--rule);background:#fff;padding:15px 19px;min-width:118px;border-radius:2px}
+  .tile .n{font-size:30px;line-height:1;font-weight:600;letter-spacing:-.02em}
+  .tile .l{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);margin-top:7px}
+
+  .why{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:14px 18px;margin:14px 0 0;font-size:15px;color:var(--ink-soft)}
+  .why b{font-family:var(--sans);font-size:10px;text-transform:uppercase;letter-spacing:.11em;
+    color:var(--ink-faint);display:block;margin-bottom:5px;font-weight:600}
+
+  footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--rule);
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-faint)}
+
+  @media (max-width:1180px){
+    .layout{grid-template-columns:210px minmax(0,1fr)}
+    .rail-r{display:none}
+    main{padding:44px 40px 120px}
+  }
+  @media (max-width:840px){
+    .layout{grid-template-columns:1fr}
+    .rail-l{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:26px 24px}
+    main{padding:32px 24px 90px}
+    h1{font-size:33px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="rail-l">
+    <a class="brand" href="#top">
+      <span class="mark">Paw&nbsp;Pages</span>
+      <span class="sub">Database</span>
+    </a>
+    <nav>
+      <div class="navgroup">Overview</div>
+      <a class="nl" href="#project">The project</a>
+      <a class="nl" href="#auth">Authentication</a>
+
+      <div class="navgroup">Tables</div>
+      <a class="nl" href="#handlers">handlers</a>
+      <a class="nl" href="#pets">pets</a>
+      <a class="nl" href="#entries">entries</a>
+      <a class="nl" href="#indexes">Indexes</a>
+
+      <div class="navgroup">Derived</div>
+      <a class="nl" href="#views">Views</a>
+
+      <div class="navgroup">Access</div>
+      <a class="nl" href="#rls">Row level security</a>
+      <a class="nl" href="#storage">Storage</a>
+
+      <div class="navgroup">Operations</div>
+      <a class="nl" href="#migrations">Migrations</a>
+      <a class="nl" href="#lints">Linter exceptions</a>
+      <a class="nl" href="#todo">Left to the app</a>
+    </nav>
+  </aside>
+
+  <main id="top">
+    <div class="eyebrow">Reference · Live schema</div>
+    <h1>Database</h1>
+    <p class="standfirst">Three tables, three views, row level security throughout, and one
+    private storage bucket. Everything a handler can see is decided by Postgres, not by the
+    frontend remembering to filter.</p>
+
+    <div class="meta">
+      <span><b>Project</b> &nbsp;paw-pages</span>
+      <span><b>Ref</b> &nbsp;ywfmrpmvfcaokzavcuzx</span>
+      <span><b>Region</b> &nbsp;ap-south-1</span>
+      <span><b>Postgres</b> &nbsp;17</span>
+      <span><b>Updated</b> &nbsp;30 August 2026</span>
+    </div>
+
+    <h2 id="project">The project</h2>
+    <p class="sectnote">Created clean. The earlier <code>pet-app</code> project and its
+    abandoned schema were left untouched, not migrated.</p>
+    <div class="tally">
+      <div class="tile"><div class="n">3</div><div class="l">Tables</div></div>
+      <div class="tile"><div class="n">3</div><div class="l">Views</div></div>
+      <div class="tile"><div class="n">4</div><div class="l">Table policies</div></div>
+      <div class="tile"><div class="n">5</div><div class="l">Storage policies</div></div>
+      <div class="tile"><div class="n">1</div><div class="l">Bucket</div></div>
+    </div>
+    <p>Everything lives in the <code>public</code> schema except the storage policies, which
+    attach to <code>storage.objects</code>. There is no application server: the browser talks to
+    PostgREST directly, which is precisely why the access rules have to live in the database.</p>
+
+    <h2 id="auth">Authentication</h2>
+    <p class="sectnote">Supabase Auth owns credentials. This schema never sees a password.</p>
+    <p>Sign-up, sign-in, password hashing, sessions, refresh tokens, reset emails and email
+    confirmation are handled by Supabase Auth in the <code>auth</code> schema.
+    <code>auth.users.id</code> is the anchor every other table hangs from, and
+    <code>auth.uid()</code> — which reads the caller's signed JWT — is what every policy
+    compares against.</p>
+
+    <p>A trigger keeps the two halves in step, so there is never a signed-in user without a
+    profile row:</p>
+    <pre><code>create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function handle_new_user();</code></pre>
+    <p><code>handle_new_user()</code> is <code>security definer</code> — it has to insert into
+    <code>handlers</code> before any session exists, so it runs with the owner's rights and
+    bypasses RLS. Its <code>execute</code> permission is revoked from <code>anon</code> and
+    <code>authenticated</code> so it cannot be called as a REST endpoint.</p>
+
+    <h2 id="handlers">handlers <span class="plain">— one row per signed-up person</span></h2>
+    <p class="sectnote">A profile, not an account. Email and password stay in
+    <code>auth.users</code> and are never duplicated here.</p>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td class="ty">uuid</td>
+          <td>Primary key. <code>references auth.users(id) on delete cascade</code> — deleting the
+          auth user erases the handler, their pets and every entry.</td></tr>
+        <tr><td><code>name</code></td><td class="ty">text <span class="nn req">required</span></td>
+          <td>1–80 characters after trimming.</td></tr>
+        <tr><td><code>date_of_birth</code></td><td class="ty">date</td>
+          <td>Optional. Age is derived at read time and never stored, so it cannot go stale.</td></tr>
+        <tr><td><code>gender</code></td><td class="ty">text</td><td>Optional, ≤ 40 chars.</td></tr>
+        <tr><td><code>nationality</code></td><td class="ty">text</td><td>Optional, ≤ 60 chars.</td></tr>
+        <tr><td><code>created_at</code></td><td class="ty">timestamptz</td><td><code>now()</code></td></tr>
+        <tr><td><code>updated_at</code></td><td class="ty">timestamptz</td><td>Maintained by trigger.</td></tr>
+      </tbody>
+    </table>
+    <div class="why"><b>Why the three optional fields exist</b>
+      Nothing in the app branches on gender or nationality — they were requested, so they are
+      stored, optional and unset by default. They are pure liability: collected, held, and
+      deletable on request, which is why the delete-account screen names them explicitly.</div>
+
+    <h2 id="pets">pets <span class="plain">— one row per animal</span></h2>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td class="ty">uuid</td><td><code>gen_random_uuid()</code></td></tr>
+        <tr><td><code>handler_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+          <td>→ <code>handlers.id</code>, cascade delete.</td></tr>
+        <tr><td><code>name</code></td><td class="ty">text <span class="nn req">required</span></td><td>1–60 chars.</td></tr>
+        <tr><td><code>species</code></td><td class="ty">text <span class="nn req">required</span></td>
+          <td>Free text, 1–40 chars. No check list — one would block rabbits and birds for no
+          gain, since nothing branches on it.</td></tr>
+        <tr><td><code>breed</code></td><td class="ty">text</td><td>≤ 60 chars.</td></tr>
+        <tr><td><code>sex</code></td><td class="ty">text</td><td><code>male</code> or <code>female</code>.</td></tr>
+        <tr><td><code>date_of_birth</code></td><td class="ty">date</td><td>Not in the future.</td></tr>
+        <tr><td><code>dob_is_approx</code></td><td class="ty">boolean</td>
+          <td>Default false. Rescue pets rarely have a real birthday.</td></tr>
+        <tr><td><code>colour</code></td><td class="ty">text</td><td>≤ 60 chars.</td></tr>
+        <tr><td><code>photo_path</code></td><td class="ty">text</td>
+          <td>Path into the <code>pet-photos</code> bucket. Null until a photo is uploaded.</td></tr>
+        <tr><td><code>slug</code></td><td class="ty">text <span class="nn req">required</span></td>
+          <td>Unique. Must match <code>^[a-z0-9]+(-[a-z0-9]+)*$</code>. Claimed at insert whether
+          or not the page is public, so toggling it off and on keeps the same URL.</td></tr>
+        <tr><td><code>is_public</code></td><td class="ty">boolean</td><td>Default false.</td></tr>
+        <tr><td><code>archived_at</code></td><td class="ty">timestamptz</td>
+          <td>Null means active. Set means excluded from due dates and the public page is offline.</td></tr>
+        <tr><td><code>archived_reason</code></td><td class="ty">text</td>
+          <td><code>passed_away</code>, <code>rehomed</code> or <code>other</code>.</td></tr>
+        <tr><td><code>created_at</code> / <code>updated_at</code></td><td class="ty">timestamptz</td><td></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Constraints worth knowing</h3>
+    <table>
+      <thead><tr><th>Name</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><code>archive_is_complete</code></td>
+          <td>Both <code>archived_at</code> and <code>archived_reason</code>, or neither. There is
+          no such thing as a pet archived for no reason.</td></tr>
+        <tr><td><code>dob_approx_needs_a_date</code></td>
+          <td><code>dob_is_approx</code> cannot be true with no date. "Approximately nothing"
+          is not a state.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="entries">entries <span class="plain">— one row per logged event</span></h2>
+    <p class="sectnote">One universal shape for everything: a rabies booster, a vet visit, a
+    nail trim. No per-type columns.</p>
+    <table>
+      <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><code>id</code></td><td class="ty">uuid</td><td><code>gen_random_uuid()</code></td></tr>
+        <tr><td><code>pet_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+          <td>→ <code>pets.id</code>, cascade delete.</td></tr>
+        <tr><td><code>title</code></td><td class="ty">text <span class="nn req">required</span></td>
+          <td>Free text, 1–120 chars. "What happened."</td></tr>
+        <tr><td><code>happened_on</code></td><td class="ty">date <span class="nn req">required</span></td>
+          <td>Not in the future.</td></tr>
+        <tr><td><code>due_on</code></td><td class="ty">date</td>
+          <td>Optional. Typed by hand — the app knows no vaccine schedules.</td></tr>
+        <tr><td><code>due_closed_at</code></td><td class="ty">timestamptz</td>
+          <td>Set by <em>Mark done</em>. Null means the due date still stands.</td></tr>
+        <tr><td><code>vet</code></td><td class="ty">text</td>
+          <td>≤ 120 chars. Per entry, not on the pet.</td></tr>
+        <tr><td><code>note</code></td><td class="ty">text</td><td>≤ 2000 chars. Never public.</td></tr>
+        <tr><td><code>created_at</code> / <code>updated_at</code></td><td class="ty">timestamptz</td><td></td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <p class="ct">Why due_closed_at exists</p>
+      <p>Entry titles are free text, so the database cannot tell that "Rabies booster" and
+      "rabies" are the same series. Nothing can close a due date automatically — somebody has to
+      say so. That is what this column records, and it is the entire reason the pet page has a
+      <em>Mark done</em> button.</p>
+      <p>Overdue is therefore always:
+      <code>due_on &lt; current_date and due_closed_at is null</code>.</p>
+    </div>
+
+    <h3>Constraints worth knowing</h3>
+    <table>
+      <thead><tr><th>Name</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><code>due_after_it_happened</code></td>
+          <td>A next-due date cannot precede the date the thing happened.</td></tr>
+        <tr><td><code>cannot_close_a_due_date_<wbr>that_does_not_exist</code></td>
+          <td><code>due_closed_at</code> requires a <code>due_on</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="indexes">Indexes</h2>
+    <p class="sectnote">Four, each written for a query a screen actually makes. Three are
+    partial — they index only the rows that get read.</p>
+    <table>
+      <thead><tr><th>Index</th><th>Serves</th></tr></thead>
+      <tbody>
+        <tr><td><code>pets_handler_active_idx</code></td>
+          <td>The pet list. <code>where archived_at is null</code>, so archived pets are not in
+          the index at all.</td></tr>
+        <tr><td><code>pets_public_slug_idx</code></td>
+          <td>Public page lookup by URL, limited to pets that are actually public and active.</td></tr>
+        <tr><td><code>entries_pet_feed_idx</code></td>
+          <td>A pet's feed, newest first — <code>(pet_id, happened_on desc, id desc)</code>. The
+          id breaks ties so pagination is stable.</td></tr>
+        <tr><td><code>entries_open_due_idx</code></td>
+          <td>The dashboard ledger. Only entries that still owe something:
+          <code>due_on is not null and due_closed_at is null</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="views">Views</h2>
+    <p class="sectnote">A view stores no data — it is a saved SELECT that re-runs on every read.
+    These three exist for two different reasons.</p>
+
+    <h3>due_items <span class="plain">— one definition of "overdue"</span></h3>
+    <p>The rule is needed on the dashboard and on every pet page. Written twice it drifts;
+    someone adds the archived check in one place and a dead pet turns up in red. Written once,
+    the screens cannot disagree.</p>
+    <pre><code>select e.id as entry_id, p.id as pet_id, p.handler_id, p.name as pet_name,
+       e.title, e.due_on,
+       e.due_on - current_date as days_until,
+       e.due_on &lt; current_date as is_overdue
+from entries e join pets p on p.id = e.pet_id
+where e.due_on is not null
+  and e.due_closed_at is null
+  and p.archived_at is null;</code></pre>
+    <p>It is <code>security_invoker = true</code>, so the caller's own RLS applies — a handler
+    reading it sees only their pets, automatically.</p>
+
+    <h3>public_pets &amp; public_entries <span class="plain">— the gate</span></h3>
+    <p>RLS decides which <em>rows</em> someone can read. It cannot hide <em>columns</em>. The
+    public page problem is entirely about columns: a visitor may see an entry's date and title,
+    and must never see the note or the vet.</p>
+    <pre><code>create view public_entries as
+select p.slug, e.title, e.happened_on, e.due_on
+from entries e join pets p on p.id = e.pet_id
+where p.is_public and p.archived_at is null;</code></pre>
+    <p><code>note</code>, <code>vet</code>, <code>due_closed_at</code> and every row id are not
+    filtered out — they are absent from the query. An anonymous visitor has no policy on
+    <code>entries</code> at all, so there is no request they can craft that returns a note, even
+    if the frontend has a bug.</p>
+    <p><code>public_pets</code> does the same for the pet, and coarsens the birthday: it exposes
+    <code>Mon YYYY</code> plus a precomputed <code>age_years</code> / <code>age_months</code>.
+    The exact date never leaves the table.</p>
+
+    <h2 id="rls">Row level security</h2>
+    <p class="sectnote">Enabled on all three tables. Four policies, all keyed to
+    <code>auth.uid()</code>.</p>
+    <table>
+      <thead><tr><th>Policy</th><th>Table</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td><code>handler_reads_self</code></td><td><code>handlers</code></td>
+          <td><code>select</code> where <code>id = auth.uid()</code></td></tr>
+        <tr><td><code>handler_updates_self</code></td><td><code>handlers</code></td>
+          <td><code>update</code>, same condition on both <code>using</code> and <code>with check</code></td></tr>
+        <tr><td><code>handler_owns_pets</code></td><td><code>pets</code></td>
+          <td><code>all</code> where <code>handler_id = auth.uid()</code></td></tr>
+        <tr><td><code>handler_owns_entries</code></td><td><code>entries</code></td>
+          <td><code>all</code> where the parent pet belongs to <code>auth.uid()</code></td></tr>
+      </tbody>
+    </table>
+    <p>Every policy wraps the call as <code>(select auth.uid())</code>. That lets Postgres
+    evaluate it once per query rather than once per row, which matters as the entries table
+    grows.</p>
+    <div class="why"><b>Two deliberate absences</b>
+      There is no <code>insert</code> policy on <code>handlers</code> — the row is created by the
+      security-definer trigger, and nothing else should ever create one. There is no
+      <code>delete</code> policy either: account deletion happens in <code>auth.users</code> and
+      cascades down through handlers → pets → entries.</div>
+
+    <h2 id="storage">Storage</h2>
+    <p class="sectnote">One private bucket. Photo visibility follows the pet, enforced by the
+    same mechanism as everything else.</p>
+    <table>
+      <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Bucket</td><td><code>pet-photos</code></td></tr>
+        <tr><td>Public</td><td><code>false</code></td></tr>
+        <tr><td>Max file size</td><td>5 MB</td></tr>
+        <tr><td>Allowed types</td><td><code>image/jpeg</code>, <code>image/png</code>,
+          <code>image/webp</code>, <code>image/heic</code></td></tr>
+        <tr><td>Path convention</td><td><code>{pet_id}/{filename}</code></td></tr>
+      </tbody>
+    </table>
+    <p>The path convention is load-bearing: the first folder <em>is</em> the pet's id, and every
+    policy joins it back to <code>pets</code> using
+    <code>(storage.foldername(name))[1]</code>. The comparison is done as text rather than
+    casting to uuid, so a malformed path fails the policy quietly instead of raising an error at
+    the user.</p>
+    <table>
+      <thead><tr><th>Policy</th><th>Who</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>reads own pet photos</td><td>authenticated</td><td rowspan="4">The pet's
+          <code>handler_id</code> must equal <code>auth.uid()</code></td></tr>
+        <tr><td>uploads own pet photos</td><td>authenticated</td></tr>
+        <tr><td>replaces own pet photos</td><td>authenticated</td></tr>
+        <tr><td>deletes own pet photos</td><td>authenticated</td></tr>
+        <tr><td>anyone reads photos of public pets</td><td>anon + authenticated</td>
+          <td>The pet must have <code>is_public</code> and <code>archived_at is null</code></td></tr>
+      </tbody>
+    </table>
+    <div class="why"><b>Why not a public bucket</b>
+      A public bucket gives every file a permanent world-readable URL — including photos of pets
+      whose page is switched off, which quietly undoes the toggle. With these policies, turning a
+      page off or archiving a pet stops the image resolving at the same instant the page goes
+      dark. The cost is that files serve through the Storage API rather than straight off the CDN.</div>
+
+    <h2 id="migrations">Migrations</h2>
+    <p class="sectnote">Plain SQL in <code>supabase/migrations/</code>, committed to git. Run in
+    order on an empty database, they produce exactly what is live.</p>
+    <table>
+      <thead><tr><th>File</th><th>What it did</th></tr></thead>
+      <tbody>
+        <tr><td><code>0001_init.sql</code></td>
+          <td>The three tables, four indexes, three views, RLS and its four policies, and the two
+          triggers.</td></tr>
+        <tr><td><code>0002_harden_functions.sql</code></td>
+          <td>Pinned <code>search_path</code> on <code>touch_updated_at</code>; revoked
+          <code>execute</code> on both trigger functions from <code>anon</code> and
+          <code>authenticated</code>; documented the two deliberate view exceptions.</td></tr>
+        <tr><td><code>0003_pet_photos_bucket.sql</code></td>
+          <td>The bucket and its five storage policies.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout warn">
+      <p class="ct">The rule</p>
+      <p>Once a migration has been applied anywhere real, it is frozen — you write the next one.
+      <code>0002</code> exists because the linter found problems in <code>0001</code> after it
+      had already run. Editing <code>0001</code> would have left a file that no longer describes
+      the database that exists.</p>
+    </div>
+
+    <h2 id="lints">Linter exceptions</h2>
+    <p class="sectnote">Supabase's security linter reports two errors. Both are the design.</p>
+    <p><code>public_pets</code> and <code>public_entries</code> are flagged as
+    <strong>SECURITY DEFINER</strong> views, meaning they run with the owner's privileges and
+    bypass RLS on the underlying tables. That is exactly what they are for — anonymous visitors
+    have no policy on <code>pets</code> or <code>entries</code>, so these views are their only
+    route in, and each exposes a fixed column list.</p>
+    <p>The lint-clean alternative would be granting <code>anon</code> a select policy on the
+    tables with column-level grants. It is worse: it exposes <code>handler_id</code> and the
+    exact date of birth, and makes the coarsened age impossible to compute. The reasoning is
+    written into both views' comments so nobody "fixes" it later.</p>
+
+    <h2 id="todo">Left to the app</h2>
+    <p class="sectnote">Things the database deliberately does not do.</p>
+    <table>
+      <thead><tr><th>Thing</th><th>Why not in the database</th></tr></thead>
+      <tbody>
+        <tr><td><b>Slug generation</b></td>
+          <td>The app slugifies the name and appends four random characters, retrying on the
+          unique violation. The database only enforces shape and uniqueness.</td></tr>
+        <tr><td><b>Age display</b></td>
+          <td>Derived from <code>date_of_birth</code> at read time. Never stored, so it cannot
+          go stale.</td></tr>
+        <tr><td><b>Photo cleanup</b></td>
+          <td>Deleting a pet cascades its rows, but the file in the bucket is not removed by that
+          cascade. The app must delete the object, or a cleanup job must.</td></tr>
+        <tr><td><b>Anything scheduled</b></td>
+          <td>There are no jobs, no cron, no sending. Due dates are read when someone opens the
+          app, and that is the whole system.</td></tr>
+      </tbody>
+    </table>
+
+    <footer>Paw Pages · database reference · 30 August 2026 · Schema live on
+    <code>ywfmrpmvfcaokzavcuzx</code> · 0 rows</footer>
+  </main>
+
+  <aside class="rail-r">
+    <div class="ttl">On this page</div>
+    <a href="#project">The project</a>
+    <a href="#auth">Authentication</a>
+    <a href="#handlers">handlers</a>
+    <a href="#pets">pets</a>
+    <a href="#entries">entries</a>
+    <a href="#indexes">Indexes</a>
+    <a href="#views">Views</a>
+    <a href="#rls">Row level security</a>
+    <a href="#storage">Storage</a>
+    <a href="#migrations">Migrations</a>
+    <a href="#lints">Linter exceptions</a>
+    <a href="#todo">Left to the app</a>
+  </aside>
+
+</div>
+
+<script>
+(function(){
+  var secs = [].slice.call(document.querySelectorAll('main h2[id]'));
+  var links = [].slice.call(document.querySelectorAll('.rail-l a.nl, .rail-r a'));
+  function sync(){
+    var pos = window.scrollY + 140, cur = secs[0];
+    secs.forEach(function(s){ if(s.offsetTop <= pos) cur = s; });
+    links.forEach(function(a){
+      a.classList.toggle('on', a.getAttribute('href') === '#' + cur.id);
+    });
+  }
+  window.addEventListener('scroll', sync, {passive:true});
+  window.addEventListener('resize', sync);
+  sync();
+})();
+</script>
+</body>
+</html>
