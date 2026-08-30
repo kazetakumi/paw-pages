@@ -60,13 +60,14 @@ describe("signing up", () => {
     server.use(
       http.post("http://localhost:8000/auth/signup", () => HttpResponse.json(me)),
       http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
+      http.get("http://localhost:8000/pets", () => HttpResponse.json([])),
     );
 
     renderRoute("/signup");
     await fillTheForm();
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("heading", { name: "Hello, Akhil" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
   });
 
   it("puts an already-registered email beside the email field and points at sign in", async () => {

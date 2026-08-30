@@ -54,6 +54,7 @@ describe("signing in", () => {
     server.use(
       http.post("http://localhost:8000/auth/signin", () => HttpResponse.json(me)),
       http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
+      http.get("http://localhost:8000/pets", () => HttpResponse.json([])),
     );
 
     renderRoute("/signin");
@@ -61,7 +62,7 @@ describe("signing in", () => {
     await userEvent.type(screen.getByLabelText("Password"), "correct horse");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("heading", { name: "Hello, Akhil" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
     expect(window.localStorage.length).toBe(0);
     expect(document.cookie).toBe("");
   });

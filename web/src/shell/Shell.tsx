@@ -14,7 +14,7 @@ function initials(name: string) {
 
 function ShellDesktop({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <div className="shell-desktop">
+    <div className="shell-desktop" data-layout="desktop">
       <header className="topbar">
         <div className="in">
           <Link className="wordmark" to="/home">
@@ -40,7 +40,7 @@ function ShellDesktop({ name, children }: { name: string; children: ReactNode })
 
 function ShellMobile({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <div className="shell-mobile">
+    <div className="shell-mobile" data-layout="mobile">
       <div className="top">
         <span className="wordmark">
           Paw<span className="p2">Pages</span>

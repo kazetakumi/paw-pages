@@ -72,3 +72,30 @@ export const requestPasswordReset = (email: string) =>
 
 export const confirmPasswordReset = (accessToken: string, password: string) =>
   send("POST", "/auth/password-reset/confirm", { access_token: accessToken, password });
+
+/** A pet as the API returns it. `age_*` is derived from the date of birth on
+ *  every read and never stored, so the screen only ever formats what it got. */
+export type Pet = {
+  id: string;
+  name: string;
+  species: string;
+  breed: string | null;
+  sex: "male" | "female" | null;
+  date_of_birth: string | null;
+  dob_is_approx: boolean;
+  colour: string | null;
+  slug: string;
+  age_years: number | null;
+  age_months: number | null;
+};
+
+export type PetFields = Omit<Pet, "id" | "slug" | "age_years" | "age_months">;
+
+export const listPets = () => request<Pet[]>("GET", "/pets");
+
+export const getPet = (id: string) => request<Pet>("GET", `/pets/${id}`);
+
+export const createPet = (fields: PetFields) => request<Pet>("POST", "/pets", fields);
+
+export const updatePet = (id: string, fields: PetFields) =>
+  request<Pet>("PATCH", `/pets/${id}`, fields);
