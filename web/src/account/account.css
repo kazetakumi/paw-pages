@@ -1,0 +1,232 @@
+/* The account screen, from design/account-web.html and design/account-mobile.html.
+   The sections, cards and rows come from pets.css, which already carries them
+   for the About tab; only what is new here is below. */
+
+.account .head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 40px;
+}
+.account .head .av {
+  background: var(--ink);
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+.account h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 4px;
+  line-height: 1.08;
+}
+.account .since {
+  font-family: var(--data);
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  color: var(--faint);
+}
+.sect .opt {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+}
+.account .card {
+  margin-bottom: 44px;
+}
+.account .row .sub {
+  display: block;
+  font-size: 12.5px;
+  color: var(--faint);
+  margin-top: 2px;
+}
+.account .act {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 6px 11px;
+  border-radius: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.account .act:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+/* ---- changing one thing ---- */
+.account .edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.account .edit label {
+  font-family: var(--data);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.account .edit input {
+  flex: 1;
+  min-width: 160px;
+  font-family: var(--body);
+  font-size: 15px;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 9px 11px;
+}
+.account .edit input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+.account .edit input[aria-invalid="true"] {
+  border-color: var(--stamp);
+}
+.account .acts {
+  display: flex;
+  gap: 10px;
+}
+.account .problem {
+  width: 100%;
+  font-size: 13px;
+  color: var(--stamp);
+  margin: 0;
+}
+
+/* ---- your data, and leaving ---- */
+.account .blk {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 20px 22px;
+  margin-bottom: 44px;
+}
+.account .blk h3 {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 5px;
+}
+.account .blk p {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 0 0 16px;
+  max-width: 58ch;
+}
+.account .blk.danger {
+  border-color: #e9d2cb;
+  background: var(--stamp-wash, #fbf1ee);
+}
+.account .blk.danger h3 {
+  color: var(--stamp);
+}
+.account .btn.warn {
+  background: transparent;
+  color: var(--stamp);
+  border-color: #dec3bb;
+}
+.account .btn.warn:hover {
+  background: #fff;
+  border-color: var(--stamp);
+}
+.account .kills {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.account .kills li {
+  padding: 3px 0 3px 18px;
+  position: relative;
+}
+.account .kills li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--faint);
+}
+.account .out button {
+  font-family: var(--body);
+  font-size: 14px;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  padding: 0 0 1px;
+  cursor: pointer;
+}
+.account .out button:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+/* ============ desktop ============ */
+.shell-desktop .account h1 {
+  font-size: 32px;
+}
+.shell-desktop .account .head .av {
+  width: 62px;
+  height: 62px;
+  font-size: 21px;
+}
+.shell-desktop .account .card .row {
+  grid-template-columns: 150px 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 22px;
+}
+
+/* ============ mobile ============ */
+.shell-mobile .account .head {
+  gap: 14px;
+  padding-bottom: 20px;
+  margin-bottom: 26px;
+}
+.shell-mobile .account h1 {
+  font-size: 25px;
+}
+.shell-mobile .account .head .av {
+  width: 54px;
+  height: 54px;
+  font-size: 18px;
+}
+.shell-mobile .account .card .row {
+  align-items: center;
+  gap: 14px;
+  padding: 14px 15px;
+}
+.shell-mobile .account .row .mid {
+  flex: 1;
+  min-width: 0;
+}
+.shell-mobile .account .row .v {
+  text-align: left;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell-mobile .account .row .sub {
+  font-size: 11.5px;
+}
+.shell-mobile .account .blk {
+  padding: 18px 16px;
+  margin-bottom: 34px;
+}
+.shell-mobile .account .out {
+  text-align: center;
+}

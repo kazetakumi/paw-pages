@@ -25,7 +25,7 @@ function ShellDesktop({ name, children }: { name: string; children: ReactNode })
               Home
             </Link>
             <Link to="/home">Pets</Link>
-            <Link to="/home">Account</Link>
+            <Link to="/account">Account</Link>
           </nav>
           <div className="who">
             <span className="chip">{initials(name)}</span>
@@ -45,7 +45,7 @@ function ShellMobile({ name, children }: { name: string; children: ReactNode }) 
         <span className="wordmark">
           Paw<span className="p2">Pages</span>
         </span>
-        <Link className="acct" to="/home" aria-label="Account">
+        <Link className="acct" to="/account" aria-label="Account">
           <span className="chip">{initials(name)}</span>
         </Link>
       </div>
