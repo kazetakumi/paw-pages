@@ -45,3 +45,11 @@ async def test_a_stale_link_is_told_to_ask_for_a_new_one(client):
 
     assert response.status_code == 400
     assert "new one" in response.json()["detail"]
+
+
+async def test_the_emailed_link_comes_back_to_the_reset_screen(client, seed_handler, auth_stub):
+    await seed_handler("Akhil", "akhil@example.com")
+
+    await client.post("/auth/password-reset", json={"email": "akhil@example.com"})
+
+    assert auth_stub.recovery_redirect.endswith("/reset-password")

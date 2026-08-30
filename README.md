@@ -62,3 +62,17 @@ cd web     && npm run dev                            # http://localhost:5173
 The dev server proxies `/api/*` to the backend, so the browser only ever talks
 to one origin. Copy `backend/.env.example` to `backend/.env` and fill it in;
 `.env` is gitignored.
+
+## One setting to change in the Supabase dashboard
+
+The `paw-pages` project has **email confirmation on**. With it on,
+`POST /auth/v1/signup` returns a user and a `confirmation_sent_at` but no
+session, so signing up against the live project cannot sign anyone in and
+`POST /auth/signup` answers 502 rather than 201. Turn it off under
+**Authentication -> Sign In / Providers -> Email -> Confirm email**.
+
+While you are there, add `http://localhost:5173/reset-password` to
+**Authentication -> URL Configuration -> Redirect URLs**: the backend asks
+Supabase Auth to send the reset link back there (`WEB_URL` in `.env`), and
+Supabase drops any redirect that is not allow-listed. Both are dashboard
+settings; neither is in this repo.

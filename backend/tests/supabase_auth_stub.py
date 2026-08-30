@@ -44,6 +44,7 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
         self.hide_existing_users = False
         # What the emailed link would carry, and what the reset wrote.
         self.recovery_tokens: dict[str, str] = {}
+        self.recovery_redirect: str | None = None
         self.passwords: dict[str, str] = {}
         self._refresh_tokens: dict[str, tuple[str, str]] = {}
 
@@ -53,12 +54,13 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
     def reset(self) -> None:
         self.forget_refresh_tokens()
         self.recovery_tokens.clear()
+        self.recovery_redirect = None
         self.passwords.clear()
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content or b"{}")
         if request.url.path == "/auth/v1/recover":
-            return await self._recover(body)
+            return await self._recover(request, body)
         if request.url.path == "/auth/v1/user" and request.method == "PUT":
             return self._set_password(request, body)
         if request.url.path == "/auth/v1/signup":
@@ -90,7 +92,8 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
             )
         return self._session(str(user_id), body["email"])
 
-    async def _recover(self, body: dict) -> httpx.Response:
+    async def _recover(self, request: httpx.Request, body: dict) -> httpx.Response:
+        self.recovery_redirect = request.url.params.get("redirect_to")
         async with self.pool.acquire() as conn:
             user_id = await conn.fetchval(
                 "select id from auth.users where email = $1", body["email"]

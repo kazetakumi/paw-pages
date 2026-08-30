@@ -144,7 +144,9 @@ async def password_reset(body: PasswordResetIn, request: Request) -> None:
     Always 204: whether an address is registered here is not ours to tell.
     """
     try:
-        await supabase_auth.request_password_reset(request.app.state.auth_client, body.email)
+        await supabase_auth.request_password_reset(
+            request.app.state.auth_client, body.email, f"{settings.web_url}/reset-password"
+        )
     except supabase_auth.AuthError:
         pass
 
