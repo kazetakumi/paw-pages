@@ -14,6 +14,8 @@ import time
 import asyncpg
 import httpx
 
+from uuid import UUID
+
 
 def _b64(payload: dict) -> str:
     return base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
@@ -35,6 +37,15 @@ def _mint(user_id: str, email: str, lifetime_seconds: int) -> str:
     return f"{header}.{claims}.{secrets.token_urlsafe(24)}"
 
 
+def _sub(token: str) -> UUID | None:
+    """The user a session token says it is, or None if it says nothing."""
+    try:
+        payload = token.split(".")[1]
+        return UUID(json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["sub"])
+    except Exception:
+        return None
+
+
 class SupabaseAuthStub(httpx.AsyncBaseTransport):
     def __init__(self, pool: asyncpg.Pool) -> None:
         self.pool = pool
@@ -46,6 +57,9 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
         self.recovery_tokens: dict[str, str] = {}
         self.recovery_redirect: str | None = None
         self.passwords: dict[str, str] = {}
+        # (method, path, bearer) for every call made, oldest first — which is
+        # how a test shows what token this service was ever spoken to with.
+        self.calls: list[tuple[str, str, str]] = []
         self._refresh_tokens: dict[str, tuple[str, str]] = {}
 
     def forget_refresh_tokens(self) -> None:
@@ -56,13 +70,21 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
         self.recovery_tokens.clear()
         self.recovery_redirect = None
         self.passwords.clear()
+        self.calls.clear()
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         body = json.loads(request.content or b"{}")
+        self.calls.append(
+            (
+                request.method,
+                request.url.path,
+                request.headers.get("authorization", "").removeprefix("Bearer "),
+            )
+        )
         if request.url.path == "/auth/v1/recover":
             return await self._recover(request, body)
         if request.url.path == "/auth/v1/user" and request.method == "PUT":
-            return self._set_password(request, body)
+            return await self._update_user(request, body)
         if request.url.path == "/auth/v1/signup":
             return await self._signup(body)
         if request.url.path == "/auth/v1/token":
@@ -103,13 +125,46 @@ class SupabaseAuthStub(httpx.AsyncBaseTransport):
             self.recovery_tokens[body["email"]] = _mint(str(user_id), body["email"], 3600)
         return httpx.Response(200, json={})
 
-    def _set_password(self, request: httpx.Request, body: dict) -> httpx.Response:
+    async def _update_user(self, request: httpx.Request, body: dict) -> httpx.Response:
+        """The one endpoint that changes a user, spoken to with a user's token.
+
+        Either the recovery token the emailed link carried, or the handler's
+        own live session token from the account screen. Never a service key:
+        this endpoint has no idea one exists.
+        """
+        if "password" in body and len(body["password"]) < 6:
+            return httpx.Response(
+                422, json={"msg": "Password should be at least 6 characters."}
+            )
         bearer = request.headers.get("authorization", "").removeprefix("Bearer ")
         for email, token in self.recovery_tokens.items():
             if token == bearer:
                 self.passwords[email] = body["password"]
                 return httpx.Response(200, json={"email": email})
-        return httpx.Response(401, json={"msg": "invalid claim: missing sub claim"})
+
+        user_id = _sub(bearer)
+        if user_id is None:
+            return httpx.Response(401, json={"msg": "invalid claim: missing sub claim"})
+        async with self.pool.acquire() as conn:
+            email = await conn.fetchval("select email from auth.users where id = $1", user_id)
+            if email is None:
+                return httpx.Response(401, json={"msg": "invalid claim: missing sub claim"})
+            if "email" in body:
+                taken = await conn.fetchval(
+                    "select 1 from auth.users where email = $1 and id <> $2", body["email"], user_id
+                )
+                if taken:
+                    return httpx.Response(
+                        422,
+                        json={"msg": "A user with this email address has already been registered"},
+                    )
+                await conn.execute(
+                    "update auth.users set email = $1 where id = $2", body["email"], user_id
+                )
+                email = body["email"]
+        if "password" in body:
+            self.passwords[email] = body["password"]
+        return httpx.Response(200, json={"id": str(user_id), "email": email})
 
     async def _password(self, body: dict) -> httpx.Response:
         async with self.pool.acquire() as conn:

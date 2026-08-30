@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { onSessionLost } from "./api";
+import Account from "./routes/account";
 import ForgotPassword from "./routes/forgot-password";
 import Home from "./routes/home";
 import Log from "./routes/log";
@@ -29,6 +30,7 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/account" element={<Account />} />
         <Route path="/log" element={<Log />} />
         <Route path="/pets/new" element={<PetNew />} />
         <Route path="/pets/:id" element={<PetFeed />} />

@@ -5,10 +5,21 @@ import asyncpg
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from . import due, entries, pets, public, session, supabase_auth, supabase_storage
+from . import (
+    due,
+    entries,
+    export,
+    handler,
+    pets,
+    public,
+    session,
+    supabase_admin,
+    supabase_auth,
+    supabase_storage,
+)
 from .config import settings
 from .db import anon_connection, rls_connection
 
@@ -26,7 +37,11 @@ async def lifespan(app: FastAPI):
         headers={"apikey": settings.supabase_anon_key},
         timeout=30.0,
     )
+    # No key on this client: the service-role key rides on the one request that
+    # deletes an auth user and is attached to nothing else.
+    app.state.admin_client = httpx.AsyncClient(base_url=settings.supabase_url, timeout=15.0)
     yield
+    await app.state.admin_client.aclose()
     await app.state.storage_client.aclose()
     await app.state.auth_client.aclose()
     await app.state.pool.close()
@@ -81,9 +96,12 @@ class PasswordResetConfirmIn(BaseModel):
     password: str
 
 
-class HandlerOut(BaseModel):
-    id: str
-    name: str
+class EmailIn(BaseModel):
+    email: str
+
+
+class PasswordIn(BaseModel):
+    password: str
 
 
 NOT_SIGNED_IN = HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in.")
@@ -135,15 +153,25 @@ async def anon_db(request: Request):
         yield conn
 
 
-async def read_handler(conn: asyncpg.Connection) -> HandlerOut:
+# Everything the account screen opens with, in one row. The two counts are
+# subqueries with no `where handler_id = ...`: the same policies that filter
+# `handlers` filter `pets` and `entries`, so they can only count the caller's.
+HANDLER_COLUMNS = """id, name, created_at::date as joined_on,
+       date_of_birth, gender, nationality,
+       extract(year from age(date_of_birth))::int as age,
+       (select count(*) from pets) as pet_count,
+       (select count(*) from entries) as entry_count"""
+
+
+async def read_handler(conn: asyncpg.Connection, email: str) -> handler.HandlerOut:
     # No `where id = ...`: the handler_reads_self policy is the filter.
-    row = await conn.fetchrow("select id, name from handlers")
+    row = await conn.fetchrow(f"select {HANDLER_COLUMNS} from handlers")
     if row is None:
         raise NOT_SIGNED_IN
-    return HandlerOut(id=str(row["id"]), name=row["name"])
+    return handler.HandlerOut(**dict(row), email=email)
 
 
-async def start_session(request: Request, response: Response, tokens: dict) -> HandlerOut:
+async def start_session(request: Request, response: Response, tokens: dict) -> handler.HandlerOut:
     if not tokens.get("access_token"):
         raise HTTPException(
             status.HTTP_502_BAD_GATEWAY,
@@ -153,11 +181,11 @@ async def start_session(request: Request, response: Response, tokens: dict) -> H
     async with rls_connection(
         request.app.state.pool, session.claims_of(tokens["access_token"])
     ) as conn:
-        return await read_handler(conn)
+        return await read_handler(conn, session.claims_of(tokens["access_token"])["email"])
 
 
 @app.post("/auth/signup", status_code=status.HTTP_201_CREATED)
-async def signup(body: SignUpIn, request: Request, response: Response) -> HandlerOut:
+async def signup(body: SignUpIn, request: Request, response: Response) -> handler.HandlerOut:
     try:
         tokens = await supabase_auth.sign_up(
             request.app.state.auth_client, body.name, body.email, body.password
@@ -174,7 +202,7 @@ async def signup(body: SignUpIn, request: Request, response: Response) -> Handle
 
 
 @app.post("/auth/signin")
-async def signin(body: SignInIn, request: Request, response: Response) -> HandlerOut:
+async def signin(body: SignInIn, request: Request, response: Response) -> handler.HandlerOut:
     try:
         tokens = await supabase_auth.sign_in(
             request.app.state.auth_client, body.email, body.password
@@ -201,8 +229,8 @@ async def password_reset(body: PasswordResetIn, request: Request) -> None:
 @app.post("/auth/password-reset/confirm", status_code=status.HTTP_204_NO_CONTENT)
 async def password_reset_confirm(body: PasswordResetConfirmIn, request: Request) -> None:
     try:
-        await supabase_auth.set_password(
-            request.app.state.auth_client, body.access_token, body.password
+        await supabase_auth.update_user(
+            request.app.state.auth_client, body.access_token, {"password": body.password}
         )
     except supabase_auth.AuthError:
         raise HTTPException(
@@ -217,8 +245,132 @@ async def signout(response: Response) -> None:
 
 
 @app.get("/me")
-async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
-    return await read_handler(conn)
+async def me(
+    conn: asyncpg.Connection = Depends(db), payload: dict = Depends(claims)
+) -> handler.HandlerOut:
+    return await read_handler(conn, payload["email"])
+
+
+@app.patch("/me")
+async def update_me(
+    body: handler.HandlerPatch,
+    conn: asyncpg.Connection = Depends(db),
+    payload: dict = Depends(claims),
+) -> handler.HandlerOut:
+    """What the app calls them, and the three optional fields.
+
+    No `where id = ...`: the handler_updates_self policy is the filter, so the
+    only row this can reach is the caller's own.
+    """
+    changes = body.model_dump(exclude_unset=True)
+    if changes:
+        assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=1))
+        try:
+            await conn.execute(f"update handlers set {assignments}", *changes.values())
+        except asyncpg.IntegrityConstraintViolationError as error:
+            raise pets.constraint_error(error)
+    return await read_handler(conn, payload["email"])
+
+
+@app.patch("/me/email")
+async def update_my_email(
+    body: EmailIn,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> handler.HandlerOut:
+    """The address lives in auth.users, so this is Supabase Auth's to change —
+    asked with the handler's own token, the way any other handler would."""
+    try:
+        await supabase_auth.update_user(
+            request.app.state.auth_client, token, {"email": body.email}
+        )
+    except supabase_auth.AuthError as error:
+        if error.is_email_taken:
+            raise EMAIL_TAKEN
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            {"field": "email", "message": error.message},
+        )
+    # The claims in the cookie still say the old address until the token is
+    # refreshed, so the new one is what this reports.
+    return await read_handler(conn, body.email)
+
+
+@app.patch("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+async def update_my_password(
+    body: PasswordIn, request: Request, token: str = Depends(access_token)
+) -> None:
+    """A password can be rotated whenever a handler thinks it is compromised."""
+    try:
+        await supabase_auth.update_user(
+            request.app.state.auth_client, token, {"password": body.password}
+        )
+    except supabase_auth.AuthError as error:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            {"field": "password", "message": error.message},
+        )
+
+
+@app.get("/me/export")
+async def export_account(
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+    payload: dict = Depends(claims),
+) -> StreamingResponse:
+    """Everything the handler has entered, as one file they can keep.
+
+    Built while they wait and streamed out. The photos are read with the
+    handler's own token, so the same policies that serve them on a pet's page
+    are what allow them into the archive.
+    """
+    account = (await read_handler(conn, payload["email"])).model_dump()
+    pets_rows = [dict(row) for row in await conn.fetch(export.PETS)]
+    entry_rows = [dict(row) for row in await conn.fetch(export.ENTRIES)]
+
+    photos: dict[str, bytes] = {}
+    for pet in pets_rows:
+        if pet["photo_path"]:
+            found = await supabase_storage.download(
+                request.app.state.storage_client, token, pet["photo_path"]
+            )
+            if found is not None:
+                photos[export.photo_name(pet["slug"], pet["photo_path"])] = found[0]
+
+    buffer = export.build(account, pets_rows, entry_rows, photos)
+    return StreamingResponse(
+        export.chunks(buffer),
+        media_type="application/zip",
+        headers={"content-disposition": f'attachment; filename="{export.FILENAME}"'},
+    )
+
+
+@app.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_me(
+    request: Request,
+    response: Response,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+    payload: dict = Depends(claims),
+) -> None:
+    """Leave, and take everything with you.
+
+    The photos go first and the auth user second, because the foreign-key
+    cascade does not reach storage: once the rows are gone nothing knows which
+    objects to remove. The paths are read as the handler, the objects deleted
+    with the handler's own token, and only the last call — the one no token of
+    theirs can make — carries the service-role key.
+    """
+    supabase_admin.check_configured()
+    paths = await conn.fetch("select photo_path from pets where photo_path is not null")
+    for row in paths:
+        await supabase_storage.remove(
+            request.app.state.storage_client, token, row["photo_path"]
+        )
+    await supabase_admin.delete_user(request.app.state.admin_client, payload["sub"])
+    session.clear(response)
 
 
 # Everything a pet shows on any screen. `age_*` is derived by the database on

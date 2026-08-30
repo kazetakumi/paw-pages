@@ -61,9 +61,51 @@ async function send(method: string, path: string, body?: unknown): Promise<void>
   await call(method, path, body);
 }
 
-export type Handler = { id: string; name: string };
+/** The handler, as the account screen reads them. `age` is derived from the
+ *  date of birth by the database on every read and never stored, so the screen
+ *  only ever shows the number it was given. The email lives in Supabase Auth
+ *  and reaches us through the session, never through the handlers table. */
+export type Handler = {
+  id: string;
+  name: string;
+  email: string;
+  joined_on: string;
+  pet_count: number;
+  entry_count: number;
+  /** The three optional ones. Null until the handler fills them in, and
+   *  nothing in the app branches on any of them. */
+  date_of_birth: string | null;
+  gender: string | null;
+  nationality: string | null;
+  age: number | null;
+};
+
+export type HandlerFields = Pick<
+  Handler,
+  "name" | "date_of_birth" | "gender" | "nationality"
+>;
 
 export const getMe = () => request<Handler>("GET", "/me");
+
+/** Only the fields sent are touched; null clears one back to unset. */
+export const updateMe = (fields: Partial<HandlerFields>) =>
+  request<Handler>("PATCH", "/me", fields);
+
+/** The email and the password each have their own endpoint, because each is a
+ *  credential Supabase Auth owns rather than a column on the handler. */
+export const updateEmail = (email: string) =>
+  request<Handler>("PATCH", "/me/email", { email });
+
+export const updatePassword = (password: string) =>
+  send("PATCH", "/me/password", { password });
+
+/** One archive, built on request and streamed by the API. A plain link, so the
+ *  browser saves the file itself and nothing is ever held in memory here. */
+export const exportUrl = () => `${BASE}/me/export`;
+
+/** Photos first, then the auth user, which cascades the rows. All of that is
+ *  the backend's ordering to keep; this only asks. */
+export const deleteAccount = () => send("DELETE", "/me");
 
 export const signUp = (name: string, email: string, password: string) =>
   request<Handler>("POST", "/auth/signup", { name, email, password });

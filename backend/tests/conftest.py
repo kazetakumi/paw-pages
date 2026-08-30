@@ -13,12 +13,17 @@ import pytest  # noqa: E402
 from app import main  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db import anon_connection, rls_connection  # noqa: E402
+from tests.supabase_admin_stub import SupabaseAdminStub  # noqa: E402
 from tests.supabase_auth_stub import SupabaseAuthStub  # noqa: E402
 from tests.supabase_storage_stub import SupabaseStorageStub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 MIGRATIONS = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
 SHIM = Path(__file__).resolve().parent / "supabase_shim.sql"
+
+# The real key was never supplied and the Admin API is stubbed anyway, so the
+# tests bring their own. Nothing else may ever carry it.
+SERVICE_ROLE_KEY = "service-role-key-for-tests"
 
 ADMIN_DSN = os.environ.get(
     "TEST_DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/postgres"
@@ -52,6 +57,7 @@ async def database_url():
 @pytest.fixture(scope="session")
 async def app(database_url):
     settings.database_url = database_url
+    settings.supabase_service_role_key = SERVICE_ROLE_KEY
     async with main.lifespan(main.app):
         await main.app.state.auth_client.aclose()
         main.app.state.auth_stub = SupabaseAuthStub(main.app.state.pool)
@@ -62,6 +68,11 @@ async def app(database_url):
         main.app.state.storage_stub = SupabaseStorageStub()
         main.app.state.storage_client = httpx.AsyncClient(
             base_url=settings.supabase_url, transport=main.app.state.storage_stub
+        )
+        await main.app.state.admin_client.aclose()
+        main.app.state.admin_stub = SupabaseAdminStub(main.app.state.pool)
+        main.app.state.admin_client = httpx.AsyncClient(
+            base_url=settings.supabase_url, transport=main.app.state.admin_stub
         )
         yield main.app
 
@@ -80,11 +91,18 @@ def storage_stub(app) -> SupabaseStorageStub:
     return app.state.storage_stub
 
 
+@pytest.fixture
+def admin_stub(app) -> SupabaseAdminStub:
+    """The one service the service-role key is ever allowed to reach."""
+    return app.state.admin_stub
+
+
 @pytest.fixture(autouse=True)
 async def clean_slate(app):
     yield
     app.state.auth_stub.reset()
     app.state.storage_stub.reset()
+    app.state.admin_stub.reset()
     async with app.state.pool.acquire() as conn:
         await conn.execute("truncate auth.users cascade")
 
