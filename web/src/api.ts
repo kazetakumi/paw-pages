@@ -87,6 +87,13 @@ export type HandlerFields = Pick<
 
 export const getMe = () => request<Handler>("GET", "/me");
 
+/** Is anyone signed in? Asked at the root, where a 401 is the expected answer
+ *  for a visitor rather than a session that ran out — so this one asks the
+ *  API directly and never sends anybody to sign in. */
+export async function hasSession(): Promise<boolean> {
+  return (await fetch(BASE + "/me", { credentials: "include" })).ok;
+}
+
 /** Only the fields sent are touched; null clears one back to unset. */
 export const updateMe = (fields: Partial<HandlerFields>) =>
   request<Handler>("PATCH", "/me", fields);

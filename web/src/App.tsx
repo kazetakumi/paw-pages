@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import { onSessionLost } from "./api";
 import Account from "./routes/account";
 import ForgotPassword from "./routes/forgot-password";
 import Home from "./routes/home";
+import Landing from "./routes/landing";
 import Log from "./routes/log";
 import PetAbout from "./routes/pet-about";
 import PetFeed from "./routes/pet-feed";
@@ -28,7 +29,7 @@ export function AppRoutes() {
     <>
       <SignInOnUnauthorized />
       <Routes>
-        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/home" element={<Home />} />
         <Route path="/account" element={<Account />} />
         <Route path="/log" element={<Log />} />
