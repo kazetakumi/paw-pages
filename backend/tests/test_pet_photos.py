@@ -180,3 +180,18 @@ async def test_the_photo_routes_are_shut_to_anyone_without_a_session(client, bis
     assert (await client.get(f"/pets/{pet_id}/photo")).status_code == 401
     assert (await upload(client, pet_id)).status_code == 401
     assert (await client.delete(f"/pets/{pet_id}/photo")).status_code == 401
+
+
+async def test_the_public_page_says_whether_there_is_a_photo_to_ask_for(
+    signed_in, biscuit, client
+):
+    """`has_photo`, never the path: the visitor is given our route to the bytes
+    and never a way to name the object behind it."""
+    await signed_in.patch(f"/pets/{biscuit['id']}", json={"is_public": True})
+    assert (await client.get(f"/public/pets/{biscuit['slug']}")).json()["has_photo"] is False
+
+    await upload(signed_in, biscuit["id"])
+
+    page = await client.get(f"/public/pets/{biscuit['slug']}")
+    assert page.json()["has_photo"] is True
+    assert "photo_path" not in page.text
