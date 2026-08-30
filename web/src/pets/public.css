@@ -1,0 +1,276 @@
+/* The public page, from design/public-page-*.html. A document, not an app
+   screen: it shares the app's type and colour and none of its furniture.
+   Only one layout is ever mounted, so the same class names carry both. */
+
+.pubpage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: #e9eae5;
+}
+
+.pubpage .doc {
+  width: 100%;
+  max-width: 620px;
+  background: var(--card);
+  border: 1px solid #cfd3d7;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 14px 44px rgba(19, 32, 46, 0.1);
+}
+
+.pubpage .kicker {
+  font-family: var(--data);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.pubpage .idblock {
+  display: flex;
+  align-items: center;
+}
+.pubpage .av {
+  border-radius: 50%;
+  flex: none;
+  background: #dee5ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 600;
+  color: var(--ink);
+}
+.pubpage h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0 0 4px;
+  line-height: 1.05;
+}
+.pubpage .meta {
+  color: var(--ink-2);
+}
+.pubpage .meta .dot {
+  color: var(--rule);
+  margin: 0 8px;
+}
+
+/* ---- the facts strip ---- */
+.pubpage .strip {
+  display: grid;
+  border-top: 1px solid var(--rule-2);
+  border-bottom: 1px solid var(--rule-2);
+}
+.pubpage .cell {
+  padding: 15px 18px;
+  border-right: 1px solid var(--rule-2);
+}
+.pubpage .cell .k {
+  font-family: var(--data);
+  font-size: 9px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: block;
+  margin-bottom: 4px;
+}
+.pubpage .cell .v {
+  font-size: 14.5px;
+}
+
+/* ---- the record ---- */
+.pubpage .sect {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 14px;
+}
+.pubpage .sect h2 {
+  font-family: var(--data);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
+}
+.pubpage .sect .line {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.pubpage .sect .n {
+  font-family: var(--data);
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.pubpage .rec {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pubpage .r {
+  display: grid;
+  align-items: baseline;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.pubpage .r:last-child {
+  border-bottom: 0;
+}
+.pubpage .r .d {
+  font-family: var(--data);
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.pubpage .r .w {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+/* Neutral grey, always. Stamp red never appears on this page: whether a due
+   date has passed is between the handler and their pet. */
+.pubpage .r .nx {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+/* ---- the footer mark, the only nod to the app ---- */
+.pubpage .foot {
+  border-top: 1px solid var(--rule-2);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pubpage .foot .up {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.pubpage .foot .mk {
+  margin-left: auto;
+  font-family: var(--display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.pubpage .foot .mk .p2 {
+  color: #c3c8cd;
+}
+
+.pubpage .under {
+  max-width: 620px;
+  margin-top: 18px;
+  font-size: 12.5px;
+  color: var(--faint);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.pubpage.gone {
+  justify-content: center;
+  color: var(--ink-2);
+}
+
+/* ============ desktop ============ */
+.pubpage[data-layout="desktop"] {
+  padding: 52px 22px 70px;
+}
+.pubpage[data-layout="desktop"] .kicker {
+  padding: 22px 30px 0;
+}
+.pubpage[data-layout="desktop"] .idblock {
+  padding: 18px 30px 26px;
+  gap: 20px;
+}
+.pubpage[data-layout="desktop"] .av {
+  width: 96px;
+  height: 96px;
+  font-size: 36px;
+}
+.pubpage[data-layout="desktop"] h1 {
+  font-size: 36px;
+}
+.pubpage[data-layout="desktop"] .meta {
+  font-size: 14.5px;
+}
+.pubpage[data-layout="desktop"] .strip {
+  grid-template-columns: repeat(4, 1fr);
+}
+.pubpage[data-layout="desktop"] .cell:last-child {
+  border-right: 0;
+}
+.pubpage[data-layout="desktop"] .recwrap {
+  padding: 26px 30px 30px;
+}
+.pubpage[data-layout="desktop"] .r {
+  grid-template-columns: 112px 1fr auto;
+  gap: 18px;
+}
+.pubpage[data-layout="desktop"] .foot {
+  padding: 18px 30px 24px;
+}
+
+/* ============ mobile ============ */
+.pubpage[data-layout="mobile"] {
+  padding: 26px 16px 50px;
+}
+.pubpage[data-layout="mobile"] .kicker {
+  padding: 18px 20px 0;
+}
+.pubpage[data-layout="mobile"] .idblock {
+  padding: 14px 20px 20px;
+  gap: 15px;
+}
+.pubpage[data-layout="mobile"] .av {
+  width: 76px;
+  height: 76px;
+  font-size: 29px;
+}
+.pubpage[data-layout="mobile"] h1 {
+  font-size: 28px;
+}
+.pubpage[data-layout="mobile"] .meta {
+  font-size: 13.5px;
+}
+.pubpage[data-layout="mobile"] .strip {
+  grid-template-columns: 1fr 1fr;
+}
+.pubpage[data-layout="mobile"] .cell:nth-child(2n) {
+  border-right: 0;
+}
+.pubpage[data-layout="mobile"] .cell:nth-child(-n + 2) {
+  border-bottom: 1px solid var(--rule-2);
+}
+.pubpage[data-layout="mobile"] .recwrap {
+  padding: 22px 20px 24px;
+}
+.pubpage[data-layout="mobile"] .r {
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+.pubpage[data-layout="mobile"] .r .nx {
+  justify-self: start;
+}
+.pubpage[data-layout="mobile"] .foot {
+  padding: 16px 20px 20px;
+}
