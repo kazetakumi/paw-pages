@@ -5,10 +5,20 @@ import asyncpg
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from . import due, entries, handler, pets, public, session, supabase_auth, supabase_storage
+from . import (
+    due,
+    entries,
+    export,
+    handler,
+    pets,
+    public,
+    session,
+    supabase_auth,
+    supabase_storage,
+)
 from .config import settings
 from .db import anon_connection, rls_connection
 
@@ -76,7 +86,7 @@ class PasswordResetIn(BaseModel):
 
 class PasswordResetConfirmIn(BaseModel):
     # The token the emailed link carried. It passes straight through to Supabase
-    # Auth and is never stored â€” it is not a session and never becomes one.
+    # Auth and is never stored — it is not a session and never becomes one.
     access_token: str
     password: str
 
@@ -298,6 +308,40 @@ async def update_my_password(
         )
 
 
+@app.get("/me/export")
+async def export_account(
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+    payload: dict = Depends(claims),
+) -> StreamingResponse:
+    """Everything the handler has entered, as one file they can keep.
+
+    Built while they wait and streamed out. The photos are read with the
+    handler's own token, so the same policies that serve them on a pet's page
+    are what allow them into the archive.
+    """
+    account = (await read_handler(conn, payload["email"])).model_dump()
+    pets_rows = [dict(row) for row in await conn.fetch(export.PETS)]
+    entry_rows = [dict(row) for row in await conn.fetch(export.ENTRIES)]
+
+    photos: dict[str, bytes] = {}
+    for pet in pets_rows:
+        if pet["photo_path"]:
+            found = await supabase_storage.download(
+                request.app.state.storage_client, token, pet["photo_path"]
+            )
+            if found is not None:
+                photos[export.photo_name(pet["slug"], pet["photo_path"])] = found[0]
+
+    buffer = export.build(account, pets_rows, entry_rows, photos)
+    return StreamingResponse(
+        export.chunks(buffer),
+        media_type="application/zip",
+        headers={"content-disposition": f'attachment; filename="{export.FILENAME}"'},
+    )
+
+
 # Everything a pet shows on any screen. `age_*` is derived by the database on
 # every read rather than stored, so it cannot go stale.
 PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug, is_public,
@@ -331,7 +375,7 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
 # caller, so the handler_owns_pets policy is the filter. A pet another handler
-# owns is not forbidden, it is absent â€” which is a 404.
+# owns is not forbidden, it is absent — which is a 404.
 
 NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
 
@@ -411,7 +455,7 @@ async def archive_pet(
     Two columns, and nothing else: `due_items`, `public_pets` and
     `public_entries` all carry `archived_at is null`, so the ledger empties and
     the public page goes dark on this one update. The entries and the photo are
-    not touched â€” archiving is not a soft delete.
+    not touched — archiving is not a soft delete.
     """
     row = await conn.fetchrow(
         f"update pets set archived_at = now(), archived_reason = $2"
@@ -427,7 +471,7 @@ async def archive_pet(
 @app.post("/pets/{pet_id}/restore")
 async def restore_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
     """Undo it. Both columns clear together, and everything the views hid comes
-    back with them â€” same slug, same entries, same photo."""
+    back with them — same slug, same entries, same photo."""
     row = await conn.fetchrow(
         f"update pets set archived_at = null, archived_reason = null"
         f" where id = $1 returning {PET_COLUMNS}",
@@ -575,7 +619,7 @@ async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[st
 
 # The one answer to a slug that is absent, private or archived alike. All three
 # are simply a row `public_pets` does not return, so nothing here has to work at
-# telling them apart â€” there is only ever one branch to take.
+# telling them apart — there is only ever one branch to take.
 NO_SUCH_PAGE = HTTPException(status.HTTP_404_NOT_FOUND, "No such page.")
 
 
@@ -624,7 +668,7 @@ async def put_photo(
 ) -> pets.PetOut:
     """Upload a photo, or replace the one already there.
 
-    Upload, then point the row at it, then delete what it replaced â€” in that
+    Upload, then point the row at it, then delete what it replaced — in that
     order, so a failure anywhere leaves the pet with a photo that resolves.
     """
     content = await request.body()

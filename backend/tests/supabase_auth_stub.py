@@ -1,7 +1,7 @@
 """Supabase Auth, stubbed at the HTTP boundary.
 
 The one external thing the API tests stub. It stands in for Supabase Auth, so
-like the real thing it writes the row in `auth.users` â€” which is what fires the
+like the real thing it writes the row in `auth.users` — which is what fires the
 `on_auth_user_created` trigger. It does not check passwords: credential
 handling is Supabase Auth's job and is deliberately not tested.
 """

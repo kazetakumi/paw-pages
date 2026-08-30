@@ -6,9 +6,14 @@ stubbed things are the three Supabase HTTP services — Auth, Storage and the
 Admin API — each at its own httpx transport.
 """
 
+import io
+import json
+import zipfile
 from datetime import date
 
 import pytest
+
+from app.session import claims_of
 
 TODAY = date.today().isoformat()
 
@@ -128,3 +133,53 @@ async def test_a_password_supabase_refuses_comes_back_beside_the_password_field(
 
     assert refused.status_code == 422
     assert refused.json()["detail"]["field"] == "password"
+
+
+JPEG = b"\xff\xd8\xff\xe0 not really a jpeg, but the bucket only reads the type"
+
+
+async def test_the_export_carries_every_pet_every_entry_and_every_photo(signed_in, storage_stub):
+    """One archive, built on request and streamed. Opened here rather than
+    described, so nothing can quietly go missing from it."""
+    biscuit = (await signed_in.post("/pets", json={"name": "Biscuit", "species": "dog"})).json()
+    toffee = (await signed_in.post("/pets", json={"name": "Toffee", "species": "cat"})).json()
+    await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit["id"],
+            "title": "Rabies booster",
+            "happened_on": TODAY,
+            "note": "Took it well.",
+            "vet": "Dr Rao",
+        },
+    )
+    await signed_in.post(
+        "/entries", json={"pet_id": toffee["id"], "title": "Nail trim", "happened_on": TODAY}
+    )
+    await signed_in.put(
+        f"/pets/{biscuit['id']}/photo", content=JPEG, headers={"content-type": "image/jpeg"}
+    )
+
+    export = await signed_in.get("/me/export")
+
+    assert export.status_code == 200
+    assert export.headers["content-type"] == "application/zip"
+    assert "attachment" in export.headers["content-disposition"]
+
+    archive = zipfile.ZipFile(io.BytesIO(export.content))
+    data = json.loads(archive.read("paw-pages.json"))
+    assert data["handler"]["name"] == "Akhil"
+    assert data["handler"]["email"] == "akhil@example.com"
+    assert {pet["name"] for pet in data["pets"]} == {"Biscuit", "Toffee"}
+    logged = {entry["title"] for pet in data["pets"] for entry in pet["entries"]}
+    assert logged == {"Rabies booster", "Nail trim"}
+    kept = next(e for p in data["pets"] for e in p["entries"] if e["title"] == "Rabies booster")
+    assert (kept["note"], kept["vet"]) == ("Took it well.", "Dr Rao")
+
+    photos = [name for name in archive.namelist() if name.startswith("photos/")]
+    assert len(photos) == 1, "the photo is missing from the export"
+    assert archive.read(photos[0]) == JPEG
+    # Read as the handler, so the four owner policies in 0003 are what allowed it.
+    method, _, bearer = storage_stub.calls[-1]
+    assert method == "GET"
+    assert claims_of(bearer)["sub"] == (await signed_in.get("/me")).json()["id"]
