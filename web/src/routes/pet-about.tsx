@@ -1,30 +1,36 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMe, getPet, updatePet, Unauthorized, type Handler, type Pet } from "../api";
-import { ageOf, formatDate, initial, summaryOf } from "../pets/pet";
+import { ageOf, formatDate, summaryOf } from "../pets/pet";
+import { PetAvatar } from "../pets/PetAvatar";
 import { PetForm } from "../pets/PetForm";
+import { PhotoControl } from "../pets/PhotoControl";
 import { PublicPageSwitch } from "../pets/PublicPageSwitch";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
 
-type LayoutProps = { pet: Pet; onEdit: () => void; form: ReactNode; publicPage: ReactNode };
+type LayoutProps = {
+  pet: Pet;
+  onEdit: () => void;
+  form: ReactNode;
+  photo: ReactNode;
+  publicPage: ReactNode;
+};
 
 function Value({ text }: { text: string | null }) {
   return text ? <span className="v">{text}</span> : <span className="v empty">Not recorded</span>;
 }
 
 /** Above the breakpoint: a label column, the age its own aside. */
-function AboutDesktop({ pet, onEdit, form, publicPage }: LayoutProps) {
+function AboutDesktop({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
   return (
     <div className="about">
       <Link className="back" to="/home">
         &larr; Home
       </Link>
       <div className="phead">
-        <span className="av" aria-hidden="true">
-          {initial(pet.name)}
-        </span>
+        <PetAvatar pet={pet} />
         <div className="id">
           <h1>{pet.name}</h1>
           <div className="meta">{summaryOf(pet)}</div>
@@ -84,7 +90,13 @@ function AboutDesktop({ pet, onEdit, form, publicPage }: LayoutProps) {
 
       {!form && (
         <>
-          <div className="sect pubsect">
+          <div className="sect apart">
+            <h2>Photo</h2>
+            <span className="line" />
+          </div>
+          {photo}
+
+          <div className="sect apart">
             <h2>Public page</h2>
             <span className="line" />
           </div>
@@ -96,7 +108,7 @@ function AboutDesktop({ pet, onEdit, form, publicPage }: LayoutProps) {
 }
 
 /** Below it: the label and the value on one line, the age under the date. */
-function AboutMobile({ pet, onEdit, form, publicPage }: LayoutProps) {
+function AboutMobile({ pet, onEdit, form, photo, publicPage }: LayoutProps) {
   return (
     <div className="about">
       <div className="crumbs">
@@ -111,9 +123,7 @@ function AboutMobile({ pet, onEdit, form, publicPage }: LayoutProps) {
       </div>
 
       <div className="hero">
-        <span className="av" aria-hidden="true">
-          {initial(pet.name)}
-        </span>
+        <PetAvatar pet={pet} />
         <div>
           <h1>{pet.name}</h1>
           <div className="meta">{summaryOf(pet)}</div>
@@ -167,7 +177,13 @@ function AboutMobile({ pet, onEdit, form, publicPage }: LayoutProps) {
 
       {!form && (
         <>
-          <div className="sect pubsect">
+          <div className="sect apart">
+            <h2>Photo</h2>
+            <span className="line" />
+          </div>
+          {photo}
+
+          <div className="sect apart">
             <h2>Public page</h2>
             <span className="line" />
           </div>
@@ -201,6 +217,9 @@ export default function PetAbout() {
       <About
         pet={pet}
         onEdit={() => setEditing(true)}
+        photo={
+          <PhotoControl pet={pet} onChanged={(saved) => setRecord({ handler, pet: saved })} />
+        }
         publicPage={
           <PublicPageSwitch pet={pet} onChanged={(saved) => setRecord({ handler, pet: saved })} />
         }

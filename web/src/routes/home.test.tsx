@@ -19,6 +19,7 @@ const biscuit: PetCard = {
   colour: "Tan & white",
   slug: "biscuit-a4f2",
   is_public: false,
+  has_photo: false,
   age_years: 4,
   age_months: 5,
   next_due_on: "2026-07-14",
@@ -37,6 +38,7 @@ const momo: PetCard = {
   colour: null,
   slug: "momo-9k2p",
   is_public: false,
+  has_photo: false,
   age_years: null,
   age_months: null,
   next_due_on: null,
@@ -280,5 +282,21 @@ describe("the home screen", () => {
     await screen.findByRole("link", { name: /Momo/ });
 
     expect(screen.queryByRole("region", { name: "Due and overdue" })).not.toBeInTheDocument();
+  });
+});
+
+describe("a pet card's portrait", () => {
+  it("shows the photo from our own API, and the letter for a pet without one", async () => {
+    signedInWith({ pets: [{ ...biscuit, has_photo: true }, momo], active_pets: 2 });
+
+    const { container } = renderRoute("/home");
+
+    expect(await screen.findByRole("img", { name: "Biscuit" })).toHaveAttribute(
+      "src",
+      `http://localhost:8000/pets/${biscuit.id}/photo`,
+    );
+    expect(screen.queryByRole("img", { name: "Momo" })).not.toBeInTheDocument();
+    expect(screen.getByText("M")).toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/supabase/i);
   });
 });

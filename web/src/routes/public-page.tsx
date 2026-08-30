@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getPublicPage, type PublicEntry, type PublicPet } from "../api";
-import { formatDate, initial } from "../pets/pet";
+import { formatDate } from "../pets/pet";
+import { PublicPetAvatar } from "../pets/PetAvatar";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/public.css";
 
@@ -89,9 +90,7 @@ function PageDesktop({ pet }: { pet: PublicPet }) {
       <div className="doc">
         <div className="kicker">Pet record</div>
         <div className="idblock">
-          <span className="av" aria-hidden="true">
-            {initial(pet.name)}
-          </span>
+          <PublicPetAvatar pet={pet} />
           <div>
             <h1>{pet.name}</h1>
             <Meta parts={[pet.breed || pet.species, pet.sex, ageOf(pet)]} />
@@ -131,9 +130,7 @@ function PageMobile({ pet }: { pet: PublicPet }) {
       <div className="doc">
         <div className="kicker">Pet record</div>
         <div className="idblock">
-          <span className="av" aria-hidden="true">
-            {initial(pet.name)}
-          </span>
+          <PublicPetAvatar pet={pet} />
           <div>
             <h1>{pet.name}</h1>
             <Meta parts={[pet.breed || pet.species, pet.sex]} />

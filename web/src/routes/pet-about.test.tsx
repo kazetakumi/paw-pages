@@ -20,6 +20,7 @@ const biscuit: Pet = {
   colour: "Tan & white",
   slug: "biscuit-a4f2",
   is_public: false,
+  has_photo: false,
   age_years: 4,
   age_months: 5,
 };
@@ -210,5 +211,116 @@ describe("a pet's public page, from the About tab", () => {
 
     await waitFor(() => expect(screen.queryByText(/\/p\/biscuit-a4f2/)).not.toBeInTheDocument());
     expect(screen.queryByRole("button", { name: /copy/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("a pet's photo, from the About tab", () => {
+  const photoSrc = `http://localhost:8000/pets/${biscuit.id}/photo`;
+
+  it("renders the photo from our own API and never from Supabase", async () => {
+    signedInWith({ ...biscuit, has_photo: true });
+
+    const { container } = renderRoute(about);
+
+    expect(await screen.findByRole("img", { name: "Biscuit" })).toHaveAttribute("src", photoSrc);
+    expect(container.innerHTML).not.toMatch(/supabase/i);
+  });
+
+  it("falls back to the initial-letter avatar when there is no photo", async () => {
+    signedInWith(biscuit);
+
+    renderRoute(about);
+
+    expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Biscuit" })).not.toBeInTheDocument();
+    expect(screen.getByText("B")).toBeInTheDocument();
+  });
+
+  it("uploads a chosen photo and shows it in place of the letter", async () => {
+    signedInWith(biscuit);
+    let sentType: string | null = null;
+    server.use(
+      http.put(`http://localhost:8000/pets/${biscuit.id}/photo`, ({ request }) => {
+        sentType = request.headers.get("content-type");
+        return HttpResponse.json({ ...biscuit, has_photo: true });
+      }),
+    );
+
+    renderRoute(about);
+    await userEvent.upload(
+      await screen.findByLabelText(/photo/i),
+      new File(["bytes"], "biscuit.jpg", { type: "image/jpeg" }),
+    );
+
+    expect(await screen.findByRole("img", { name: "Biscuit" })).toHaveAttribute("src", photoSrc);
+    expect(sentType).toBe("image/jpeg");
+  });
+
+  it("removes the photo and falls back to the initial-letter avatar", async () => {
+    signedInWith({ ...biscuit, has_photo: true });
+    server.use(
+      http.delete(`http://localhost:8000/pets/${biscuit.id}/photo`, () =>
+        HttpResponse.json({ ...biscuit, has_photo: false }),
+      ),
+    );
+
+    renderRoute(about);
+    await userEvent.click(await screen.findByRole("button", { name: /remove photo/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("img", { name: "Biscuit" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByText("B")).toBeInTheDocument();
+  });
+
+  it("offers no way to remove a photo that is not there", async () => {
+    signedInWith(biscuit);
+
+    renderRoute(about);
+
+    expect(await screen.findByLabelText(/photo/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /remove photo/i })).not.toBeInTheDocument();
+  });
+
+  it("puts a photo the API refused beside the control", async () => {
+    signedInWith(biscuit);
+    server.use(
+      http.put(`http://localhost:8000/pets/${biscuit.id}/photo`, () =>
+        HttpResponse.json(
+          { detail: { field: "photo", message: "That image is over 5 MB. Choose a smaller one." } },
+          { status: 422 },
+        ),
+      ),
+    );
+
+    renderRoute(about);
+    await userEvent.upload(
+      await screen.findByLabelText(/photo/i),
+      new File(["much too much"], "huge.jpg", { type: "image/jpeg" }),
+    );
+
+    expect(await screen.findByLabelText(/photo/i)).toHaveAccessibleDescription(/over 5 MB/);
+  });
+
+  it("gives the upload control a desktop layout above the breakpoint", async () => {
+    signedInWith(biscuit);
+    setViewportWidth(1200);
+
+    const { container } = renderRoute(about);
+
+    expect(await screen.findByLabelText(/photo/i)).toBeInTheDocument();
+    expect(container.querySelector('[data-photo="desktop"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-photo="mobile"]')).toBeNull();
+  });
+
+  it("gives it a mobile layout below the breakpoint", async () => {
+    signedInWith(biscuit);
+    setViewportWidth(390);
+
+    const { container } = renderRoute(about);
+
+    expect(await screen.findByLabelText(/photo/i)).toBeInTheDocument();
+    expect(container.querySelector('[data-photo="mobile"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-photo="desktop"]')).toBeNull();
   });
 });

@@ -66,6 +66,9 @@ class PetOut(BaseModel):
     # Off until the handler throws the switch; the slug above is claimed at
     # insert either way, so turning it off and on again keeps the same URL.
     is_public: bool
+    # Whether `photo_path` is set, never the path itself: the browser is given
+    # our own route to the bytes and never a way to name the object.
+    has_photo: bool
     # Derived by the database from date_of_birth on every read, never stored,
     # so it cannot go stale and nobody is ever asked to correct it.
     age_years: int | None

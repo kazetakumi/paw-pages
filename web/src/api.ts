@@ -26,11 +26,17 @@ export function onSessionLost(handler: (() => void) | null) {
 }
 
 async function call(method: string, path: string, body?: unknown): Promise<Response> {
+  // A File goes up as itself under its own type, because that is what the
+  // photo routes take and what the bucket's allowed types are checked against.
+  const file = body instanceof File ? body : null;
   const res = await fetch(BASE + path, {
     method,
     credentials: "include",
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers:
+      body === undefined
+        ? undefined
+        : { "Content-Type": file ? file.type : "application/json" },
+    body: body === undefined ? undefined : (file ?? JSON.stringify(body)),
   });
   // A 401 from /auth/* is a rejected credential, not a session that ran out.
   if (res.status === 401 && !path.startsWith("/auth/")) {
@@ -88,11 +94,17 @@ export type Pet = {
   /** Off until the handler throws the switch. The slug above is claimed at
    *  insert either way, so switching off and on again keeps the same URL. */
   is_public: boolean;
+  /** Whether there is a photo to ask `photoUrl` for. Never the path: the
+   *  object lives in a private bucket the browser cannot name. */
+  has_photo: boolean;
   age_years: number | null;
   age_months: number | null;
 };
 
-export type PetFields = Omit<Pet, "id" | "slug" | "is_public" | "age_years" | "age_months">;
+export type PetFields = Omit<
+  Pet,
+  "id" | "slug" | "is_public" | "has_photo" | "age_years" | "age_months"
+>;
 
 export const listPets = () => request<Pet[]>("GET", "/pets");
 
@@ -200,9 +212,22 @@ export type PublicPet = {
   born: string | null;
   age_years: number | null;
   age_months: number | null;
+  has_photo: boolean;
   updated_on: string;
   entries: PublicEntry[];
 };
 
 export const getPublicPage = (slug: string) =>
   request<PublicPet>("GET", `/public/pets/${slug}`);
+
+/** Where the bytes come from: our own API, out of a private bucket. No signed
+ *  URL and no Supabase domain ever reaches the browser — the backend reads the
+ *  object with the handler's token here and as `anon` below, so an image stops
+ *  resolving at the same instant the page it belongs to goes dark. */
+export const photoUrl = (petId: string) => `${BASE}/pets/${petId}/photo`;
+export const publicPhotoUrl = (slug: string) => `${BASE}/public/pets/${slug}/photo`;
+
+export const uploadPhoto = (petId: string, file: File) =>
+  request<Pet>("PUT", `/pets/${petId}/photo`, file);
+
+export const removePhoto = (petId: string) => request<Pet>("DELETE", `/pets/${petId}/photo`);

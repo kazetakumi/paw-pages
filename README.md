@@ -37,9 +37,12 @@ are not on `PATH`, but nothing in the test run shells out to them — the fixtur
 talks to Postgres with asyncpg.
 
 Nothing else is stubbed: RLS is live, the views are live, the constraints are
-live. The one exception is the Supabase Auth HTTP client, stubbed at the httpx
-transport in `backend/tests/supabase_auth_stub.py`, because Supabase Auth
-itself is deliberately not tested.
+live. The exceptions are the two Supabase HTTP services, each stubbed at the
+httpx transport because neither is ours to test: Supabase Auth in
+`backend/tests/supabase_auth_stub.py`, and Supabase Storage in
+`backend/tests/supabase_storage_stub.py`. The storage stub really holds the
+uploaded bytes, so a test can prove an object was deleted on replace and on
+remove rather than only that a path was cleared.
 
 ### Web — the screen, with HTTP stubbed at the network boundary
 

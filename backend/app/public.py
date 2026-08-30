@@ -32,11 +32,15 @@ class PublicPet(BaseModel):
     born: str | None
     age_years: int | None
     age_months: int | None
+    # Whether there is a photo to ask our own route for, never where it lives:
+    # the object's path stays inside the backend, like every other id here.
+    has_photo: bool
     updated_on: date
     entries: list[PublicEntry]
 
 
 PET = """select slug, name, species, breed, colour, sex, born, age_years, age_months,
+       (photo_path is not null) as has_photo,
        updated_at::date as updated_on
        from public_pets where slug = $1"""
 

@@ -14,6 +14,7 @@ from app import main  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db import anon_connection, rls_connection  # noqa: E402
 from tests.supabase_auth_stub import SupabaseAuthStub  # noqa: E402
+from tests.supabase_storage_stub import SupabaseStorageStub  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 MIGRATIONS = sorted((ROOT / "supabase" / "migrations").glob("*.sql"))
@@ -57,6 +58,11 @@ async def app(database_url):
         main.app.state.auth_client = httpx.AsyncClient(
             base_url=settings.supabase_url, transport=main.app.state.auth_stub
         )
+        await main.app.state.storage_client.aclose()
+        main.app.state.storage_stub = SupabaseStorageStub()
+        main.app.state.storage_client = httpx.AsyncClient(
+            base_url=settings.supabase_url, transport=main.app.state.storage_stub
+        )
         yield main.app
 
 
@@ -68,10 +74,17 @@ def auth_stub(app) -> SupabaseAuthStub:
     return stub
 
 
+@pytest.fixture
+def storage_stub(app) -> SupabaseStorageStub:
+    """What the bucket is actually holding, to assert an object came and went."""
+    return app.state.storage_stub
+
+
 @pytest.fixture(autouse=True)
 async def clean_slate(app):
     yield
     app.state.auth_stub.reset()
+    app.state.storage_stub.reset()
     async with app.state.pool.acquire() as conn:
         await conn.execute("truncate auth.users cascade")
 
