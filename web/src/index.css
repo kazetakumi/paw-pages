@@ -1,0 +1,39 @@
+:root {
+  --ink: #13202e;
+  --ink-2: #4e5a67;
+  --faint: #8d97a1;
+  --paper: #f2f3ef;
+  --card: #ffffff;
+  --rule: #dce0e4;
+  --rule-2: #edeff1;
+  --stamp: #b23a24;
+  --seal: #2e6b4f;
+
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
+  --data: "Space Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
