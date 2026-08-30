@@ -18,6 +18,7 @@ const created = {
   dob_is_approx: false,
   colour: null,
   slug: "biscuit-a4f2",
+  is_public: false,
   age_years: null,
   age_months: null,
 };

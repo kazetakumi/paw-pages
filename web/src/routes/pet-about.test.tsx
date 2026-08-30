@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
@@ -19,6 +19,7 @@ const biscuit: Pet = {
   dob_is_approx: true,
   colour: "Tan & white",
   slug: "biscuit-a4f2",
+  is_public: false,
   age_years: 4,
   age_months: 5,
 };
@@ -135,5 +136,79 @@ describe("a pet's About tab", () => {
     expect(await screen.findByLabelText(/approximate/i)).toHaveAccessibleDescription(
       /only when there is a date/,
     );
+  });
+});
+
+describe("a pet's public page, from the About tab", () => {
+  it("states what the page will and will not reveal before the switch is thrown", async () => {
+    signedInWith(biscuit);
+
+    renderRoute(about);
+
+    expect(await screen.findByRole("switch", { name: /public page/i })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+    const shows = screen.getByText(/anyone with this link sees/i);
+    expect(shows).toHaveTextContent(/name, species, breed, colour and age/i);
+    expect(shows).toHaveTextContent(/every entry.s date and title/i);
+    expect(screen.getByText(/never shown/i)).toHaveTextContent(
+      /your name, contact details, notes and clinic names/i,
+    );
+    expect(screen.getByText(/month and year/i)).toBeInTheDocument();
+  });
+
+  it("shows no link until the page is on, then the link the slug claimed", async () => {
+    signedInWith(biscuit);
+    let sent: Record<string, unknown> | null = null;
+    server.use(
+      http.patch(`http://localhost:8000/pets/${biscuit.id}`, async ({ request }) => {
+        sent = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...biscuit, ...sent });
+      }),
+    );
+
+    renderRoute(about);
+    expect(await screen.findByRole("switch", { name: /public page/i })).toBeInTheDocument();
+    expect(screen.queryByText(/\/p\/biscuit-a4f2/)).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("switch", { name: /public page/i }));
+
+    expect(await screen.findByText(/\/p\/biscuit-a4f2/)).toBeInTheDocument();
+    expect(sent).toEqual({ is_public: true });
+    expect(screen.getByRole("switch", { name: /public page/i })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
+  it("copies the link in one action", async () => {
+    const user = userEvent.setup();
+    signedInWith({ ...biscuit, is_public: true });
+
+    renderRoute(about);
+
+    await user.click(await screen.findByRole("button", { name: /copy/i }));
+
+    expect(await navigator.clipboard.readText()).toBe(
+      `${window.location.origin}/p/biscuit-a4f2`,
+    );
+  });
+
+  it("takes the link away the moment the page is switched off", async () => {
+    signedInWith({ ...biscuit, is_public: true });
+    server.use(
+      http.patch(`http://localhost:8000/pets/${biscuit.id}`, () =>
+        HttpResponse.json({ ...biscuit, is_public: false }),
+      ),
+    );
+
+    renderRoute(about);
+    expect(await screen.findByText(/\/p\/biscuit-a4f2/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("switch", { name: /public page/i }));
+
+    await waitFor(() => expect(screen.queryByText(/\/p\/biscuit-a4f2/)).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: /copy/i })).not.toBeInTheDocument();
   });
 });

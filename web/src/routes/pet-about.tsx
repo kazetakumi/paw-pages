@@ -3,18 +3,19 @@ import { Link, useParams } from "react-router-dom";
 import { getMe, getPet, updatePet, Unauthorized, type Handler, type Pet } from "../api";
 import { ageOf, formatDate, initial, summaryOf } from "../pets/pet";
 import { PetForm } from "../pets/PetForm";
+import { PublicPageSwitch } from "../pets/PublicPageSwitch";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
 
-type LayoutProps = { pet: Pet; onEdit: () => void; form: ReactNode };
+type LayoutProps = { pet: Pet; onEdit: () => void; form: ReactNode; publicPage: ReactNode };
 
 function Value({ text }: { text: string | null }) {
   return text ? <span className="v">{text}</span> : <span className="v empty">Not recorded</span>;
 }
 
 /** Above the breakpoint: a label column, the age its own aside. */
-function AboutDesktop({ pet, onEdit, form }: LayoutProps) {
+function AboutDesktop({ pet, onEdit, form, publicPage }: LayoutProps) {
   return (
     <div className="about">
       <Link className="back" to="/home">
@@ -80,12 +81,22 @@ function AboutDesktop({ pet, onEdit, form }: LayoutProps) {
           </div>
         </div>
       )}
+
+      {!form && (
+        <>
+          <div className="sect pubsect">
+            <h2>Public page</h2>
+            <span className="line" />
+          </div>
+          {publicPage}
+        </>
+      )}
     </div>
   );
 }
 
 /** Below it: the label and the value on one line, the age under the date. */
-function AboutMobile({ pet, onEdit, form }: LayoutProps) {
+function AboutMobile({ pet, onEdit, form, publicPage }: LayoutProps) {
   return (
     <div className="about">
       <div className="crumbs">
@@ -153,6 +164,16 @@ function AboutMobile({ pet, onEdit, form }: LayoutProps) {
           </div>
         </div>
       )}
+
+      {!form && (
+        <>
+          <div className="sect pubsect">
+            <h2>Public page</h2>
+            <span className="line" />
+          </div>
+          {publicPage}
+        </>
+      )}
     </div>
   );
 }
@@ -180,6 +201,9 @@ export default function PetAbout() {
       <About
         pet={pet}
         onEdit={() => setEditing(true)}
+        publicPage={
+          <PublicPageSwitch pet={pet} onChanged={(saved) => setRecord({ handler, pet: saved })} />
+        }
         form={
           editing ? (
             <PetForm
