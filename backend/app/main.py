@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import due, entries, pets, public, session, supabase_auth
+from . import due, entries, pets, public, session, supabase_auth, supabase_storage
 from .config import settings
 from .db import anon_connection, rls_connection
 
@@ -21,7 +21,13 @@ async def lifespan(app: FastAPI):
         headers={"apikey": settings.supabase_anon_key},
         timeout=15.0,
     )
+    app.state.storage_client = httpx.AsyncClient(
+        base_url=settings.supabase_url,
+        headers={"apikey": settings.supabase_anon_key},
+        timeout=30.0,
+    )
     yield
+    await app.state.storage_client.aclose()
     await app.state.auth_client.aclose()
     await app.state.pool.close()
 
@@ -40,6 +46,16 @@ async def one_field_at_a_time(request: Request, error: RequestValidationError) -
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={"detail": {"field": str(first["loc"][-1]), "message": first["msg"]}},
+    )
+
+
+@app.exception_handler(supabase_storage.StorageError)
+async def storage_is_unavailable(request: Request, error: Exception) -> JSONResponse:
+    """Storage said no to something the policies had already allowed. That is
+    ours to own, not the handler's to read a stack trace about."""
+    return JSONResponse(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        content={"detail": "The photo store did not answer. Try again."},
     )
 
 
@@ -88,6 +104,7 @@ async def claims(request: Request, response: Response) -> dict:
         raise NOT_SIGNED_IN
 
     payload = session.claims_of(tokens["access_token"])
+    request.state.access_token = tokens["access_token"]
     if session.is_expired(payload):
         try:
             fresh = await supabase_auth.refresh(
@@ -97,12 +114,19 @@ async def claims(request: Request, response: Response) -> dict:
             raise NOT_SIGNED_IN
         session.issue(response, fresh["access_token"], fresh["refresh_token"])
         payload = session.claims_of(fresh["access_token"])
+        request.state.access_token = fresh["access_token"]
     return payload
 
 
 async def db(request: Request, payload: dict = Depends(claims)):
     async with rls_connection(request.app.state.pool, payload) as conn:
         yield conn
+
+
+async def access_token(request: Request, payload: dict = Depends(claims)) -> str:
+    """The handler's own live token, for the one service asked to apply the
+    policies itself: Supabase Storage. `claims` has already refreshed it."""
+    return request.state.access_token
 
 
 async def anon_db(request: Request):
@@ -200,6 +224,7 @@ async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
 # Everything a pet shows on any screen. `age_*` is derived by the database on
 # every read rather than stored, so it cannot go stale.
 PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug, is_public,
+       (photo_path is not null) as has_photo,
        extract(year  from age(date_of_birth))::int as age_years,
        extract(month from age(date_of_birth))::int as age_months"""
 
@@ -451,3 +476,107 @@ async def public_page(slug: str, conn: asyncpg.Connection = Depends(anon_db)) ->
         raise NO_SUCH_PAGE
     rows = await conn.fetch(public.ENTRIES, slug)
     return public.PublicPet(**dict(pet), entries=[public.PublicEntry(**dict(r)) for r in rows])
+
+
+# -------------------------------------------------------------- photos -----
+# One profile photo per pet, streamed by these four routes out of the private
+# bucket. No signed URL is ever minted and no Supabase domain ever reaches the
+# browser. The owner's routes read with the handler's own token, so the four
+# owner policies in migration 0003 apply; the visitor's route reads as `anon`,
+# so the public-read policy does. Switching a page off or archiving a pet stops
+# the image resolving at the same instant the page goes dark, and nothing here
+# holds the two in step.
+
+NO_SUCH_PHOTO = HTTPException(status.HTTP_404_NOT_FOUND, "No such photo.")
+
+
+async def stream_photo(request: Request, token: str, path: str, missing: HTTPException) -> Response:
+    found = await supabase_storage.download(request.app.state.storage_client, token, path)
+    if found is None:
+        raise missing
+    content, content_type = found
+    # The path behind this URL changes on every replacement, so the one thing
+    # a cache must not do is answer for it.
+    return Response(content, media_type=content_type, headers={"cache-control": "no-store"})
+
+
+@app.put("/pets/{pet_id}/photo")
+async def put_photo(
+    pet_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> pets.PetOut:
+    """Upload a photo, or replace the one already there.
+
+    Upload, then point the row at it, then delete what it replaced — in that
+    order, so a failure anywhere leaves the pet with a photo that resolves.
+    """
+    content = await request.body()
+    content_type = supabase_storage.check(request.headers.get("content-type"), len(content))
+
+    previous = await conn.fetchrow("select photo_path from pets where id = $1", pet_id)
+    if previous is None:
+        raise NO_SUCH_PET
+
+    path = supabase_storage.path_for(pet_id, content_type)
+    client = request.app.state.storage_client
+    await supabase_storage.upload(client, token, path, content, content_type)
+    row = await conn.fetchrow(
+        f"update pets set photo_path = $2 where id = $1 returning {PET_COLUMNS}", pet_id, path
+    )
+    # The foreign key cascade does not reach storage and there is no cleanup
+    # job, so the object it replaced is deleted here or never.
+    if previous["photo_path"]:
+        await supabase_storage.remove(client, token, previous["photo_path"])
+    return pets.PetOut(**dict(row))
+
+
+@app.delete("/pets/{pet_id}/photo")
+async def delete_photo(
+    pet_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> pets.PetOut:
+    """Take the photo away, object and all, and fall back to the initial."""
+    previous = await conn.fetchrow("select photo_path from pets where id = $1", pet_id)
+    if previous is None:
+        raise NO_SUCH_PET
+    row = await conn.fetchrow(
+        f"update pets set photo_path = null where id = $1 returning {PET_COLUMNS}", pet_id
+    )
+    if previous["photo_path"]:
+        await supabase_storage.remove(
+            request.app.state.storage_client, token, previous["photo_path"]
+        )
+    return pets.PetOut(**dict(row))
+
+
+@app.get("/pets/{pet_id}/photo")
+async def read_photo(
+    pet_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> Response:
+    path = await conn.fetchval("select photo_path from pets where id = $1", pet_id)
+    if path is None:
+        raise NO_SUCH_PHOTO
+    return await stream_photo(request, token, path, NO_SUCH_PHOTO)
+
+
+@app.get("/public/pets/{slug}/photo")
+async def public_photo(
+    slug: str, request: Request, conn: asyncpg.Connection = Depends(anon_db)
+) -> Response:
+    """The visitor's copy of the same bytes, read as nobody.
+
+    `public_pets` is the only place the path can come from, and the anon key is
+    the only token this carries, so a pet that is private or archived has no
+    photo here for the same reason it has no page.
+    """
+    path = await conn.fetchval("select photo_path from public_pets where slug = $1", slug)
+    if path is None:
+        raise NO_SUCH_PAGE
+    return await stream_photo(request, settings.supabase_anon_key, path, NO_SUCH_PAGE)
