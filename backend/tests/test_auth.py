@@ -72,3 +72,20 @@ async def test_a_refresh_token_supabase_rejects_ends_the_session(client, seed_ha
     response = await client.get("/me")
 
     assert response.status_code == 401
+
+
+async def test_signing_out_clears_the_cookie_and_the_next_call_401s(client, seed_handler):
+    await seed_handler("Akhil", "akhil@example.com")
+    await client.post(
+        "/auth/signin", json={"email": "akhil@example.com", "password": "correct horse"}
+    )
+
+    signout = await client.post("/auth/signout")
+
+    assert signout.status_code == 204
+    assert "pp_session" not in client.cookies
+    assert (await client.get("/me")).status_code == 401
+
+
+async def test_signing_out_without_a_session_is_still_fine(client):
+    assert (await client.post("/auth/signout")).status_code == 204

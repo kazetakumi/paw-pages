@@ -49,3 +49,13 @@ def claims_of(access_token: str) -> dict:
 
 def is_expired(claims: dict, skew_seconds: int = 30) -> bool:
     return claims.get("exp", 0) <= time.time() + skew_seconds
+
+
+def clear(response: Response) -> None:
+    response.delete_cookie(
+        COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
+    )

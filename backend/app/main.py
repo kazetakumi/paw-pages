@@ -115,6 +115,12 @@ async def signin(body: SignInIn, request: Request, response: Response) -> Handle
     return await start_session(request, response, tokens)
 
 
+@app.post("/auth/signout", status_code=status.HTTP_204_NO_CONTENT)
+async def signout(response: Response) -> None:
+    """Drop the cookie. No session to check first: signing out twice is fine."""
+    session.clear(response)
+
+
 @app.get("/me")
 async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
     return await read_handler(conn)
