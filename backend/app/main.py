@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import entries, pets, session, supabase_auth
+from . import due, entries, pets, session, supabase_auth
 from .config import settings
 from .db import rls_connection
 
@@ -191,6 +191,19 @@ async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
     return await read_handler(conn)
 
 
+# ----------------------------------------------------------- dashboard -----
+
+
+@app.get("/dashboard")
+async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
+    """Everything the home screen opens with, in one request.
+
+    No `where handler_id = ...`: `due_items` is a security_invoker view, so the
+    same four policies filter it that filter the tables underneath.
+    """
+    return due.Dashboard(ledger=[due.DueItem(**dict(row)) for row in await conn.fetch(due.LEDGER)])
+
+
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
 # caller, so the handler_owns_pets policy is the filter. A pet another handler
@@ -357,6 +370,25 @@ async def update_entry(
 async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
     if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
         raise NO_SUCH_ENTRY
+
+
+async def close_due_date(entry_id: UUID, conn: asyncpg.Connection) -> None:
+    """Stop an entry's due date standing. Nothing does this automatically:
+    free-text titles mean the app cannot know two entries are the same series."""
+    closed = await conn.fetchval(
+        "update entries set due_closed_at = now()"
+        " where id = $1 and due_on is not null returning id",
+        entry_id,
+    )
+    if closed is None:
+        raise NO_SUCH_ENTRY
+
+
+@app.post("/entries/{entry_id}/mark-done")
+async def mark_done(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> entries.EntryOut:
+    """Dealt with elsewhere: the item leaves the ledger, the entry stays."""
+    await close_due_date(entry_id, conn)
+    return await read_entry(entry_id, conn)
 
 
 @app.get("/entry-titles/recent")
