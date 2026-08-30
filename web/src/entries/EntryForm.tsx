@@ -5,8 +5,9 @@ import { addMonths, INTERVALS, shiftDays, today } from "./entry";
 
 type Props = {
   pets: Pet[];
-  /** The entry being corrected, if this is an edit rather than a new one. */
-  entry?: Entry;
+  /** What the form opens filled in with: the entry being corrected, or the
+   *  outstanding item "log the next one" was started from. */
+  entry?: Partial<EntryFields>;
   /** The pet the form was opened from, pre-selected. */
   petId?: string;
   /** Titles the handler has used before. Their own words, never a vocabulary.

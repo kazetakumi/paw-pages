@@ -45,7 +45,9 @@ function signedIn(titles: string[] = []) {
       return HttpResponse.json({ id: "e1", is_overdue: false, ...body }, { status: 201 });
     }),
     ...[biscuit, momo].flatMap((pet) => [
-      http.get(`http://localhost:8000/pets/${pet.id}`, () => HttpResponse.json(pet)),
+      http.get(`http://localhost:8000/pets/${pet.id}`, () =>
+        HttpResponse.json({ ...pet, due_items: [] }),
+      ),
       http.get(`http://localhost:8000/pets/${pet.id}/entries`, () =>
         HttpResponse.json({ entries: [], next_cursor: null }),
       ),
@@ -74,6 +76,8 @@ describe("the log form", () => {
     await waitFor(() => expect(sent).toHaveLength(1));
     expect(container.querySelector('[data-layout="desktop"]')).toBeInTheDocument();
     expect(sent[0]).toEqual({
+      // Nothing to close: a plain log is not "log the next one".
+      closes_entry_id: null,
       pet_id: biscuit.id,
       title: "Nail trim",
       happened_on: "2026-08-29",

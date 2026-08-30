@@ -458,3 +458,73 @@
 .shell-desktop .about .greeting {
   margin-top: 22px;
 }
+
+/* ============ the summary line and the card footers ============ */
+.greeting-sub .hot {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.greeting-sub i {
+  color: var(--faint);
+  font-style: normal;
+  margin: 0 8px;
+}
+.head {
+  margin-bottom: 34px;
+}
+.fline {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--data);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.fline + .fline {
+  margin-top: 7px;
+}
+.fline .k {
+  color: var(--faint);
+}
+.fline .v {
+  color: var(--ink-2);
+  text-align: right;
+}
+.fline .v.over {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.shell-desktop .pet .foot {
+  display: block;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule-2);
+}
+.shell-mobile .nextdue {
+  flex: none;
+  text-align: right;
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.shell-mobile .nextdue .k {
+  display: block;
+  color: var(--faint);
+}
+.shell-mobile .nextdue .v {
+  display: block;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+.shell-mobile .nextdue .v.over {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.archived {
+  margin-top: 26px;
+  font-size: 13px;
+  color: var(--faint);
+}

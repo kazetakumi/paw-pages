@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import entries, pets, session, supabase_auth
+from . import due, entries, pets, session, supabase_auth
 from .config import settings
 from .db import rls_connection
 
@@ -191,14 +191,37 @@ async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
     return await read_handler(conn)
 
 
+# Everything a pet shows on any screen. `age_*` is derived by the database on
+# every read rather than stored, so it cannot go stale.
+PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug,
+       extract(year  from age(date_of_birth))::int as age_years,
+       extract(month from age(date_of_birth))::int as age_months"""
+
+
+# ----------------------------------------------------------- dashboard -----
+
+
+@app.get("/dashboard")
+async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
+    """Everything the home screen opens with, in one request.
+
+    No `where handler_id = ...`: `due_items` is a security_invoker view, so the
+    same four policies filter it that filter the tables underneath.
+    """
+    ledger = await conn.fetch(due.LEDGER.format(where=""))
+    cards = await conn.fetch(due.PET_CARDS.format(columns=PET_COLUMNS))
+    counts = await conn.fetchrow(due.COUNTS)
+    return due.Dashboard(
+        ledger=[due.DueItem(**dict(row)) for row in ledger],
+        pets=[due.PetCard(**dict(row)) for row in cards],
+        **dict(counts),
+    )
+
+
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
 # caller, so the handler_owns_pets policy is the filter. A pet another handler
 # owns is not forbidden, it is absent — which is a 404.
-
-PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug,
-       extract(year  from age(date_of_birth))::int as age_years,
-       extract(month from age(date_of_birth))::int as age_months"""
 
 NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
 
@@ -236,11 +259,15 @@ async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -
 
 
 @app.get("/pets/{pet_id}")
-async def read_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
+async def read_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> due.PetRecord:
     row = await conn.fetchrow(f"select {PET_COLUMNS} from pets where id = $1", pet_id)
     if row is None:
         raise NO_SUCH_PET
-    return pets.PetOut(**dict(row))
+    # The same view the home ledger reads, so the two cannot disagree.
+    outstanding = await conn.fetch(due.LEDGER.format(where="where d.pet_id = $1"), pet_id)
+    return due.PetRecord(
+        **dict(row), due_items=[due.DueItem(**dict(item)) for item in outstanding]
+    )
 
 
 @app.patch("/pets/{pet_id}")
@@ -282,11 +309,23 @@ async def read_entry(entry_id: UUID, conn: asyncpg.Connection) -> entries.EntryO
     return entries.EntryOut(**dict(row))
 
 
+async def close_due_date(entry_id: UUID, conn: asyncpg.Connection) -> None:
+    """Stop an entry's due date standing. Nothing does this automatically:
+    free-text titles mean the app cannot know two entries are the same series."""
+    closed = await conn.fetchval(
+        "update entries set due_closed_at = now()"
+        " where id = $1 and due_on is not null returning id",
+        entry_id,
+    )
+    if closed is None:
+        raise NO_SUCH_ENTRY
+
+
 @app.post("/entries", status_code=status.HTTP_201_CREATED)
 async def create_entry(
     body: entries.EntryIn, conn: asyncpg.Connection = Depends(db)
 ) -> entries.EntryOut:
-    fields = body.model_dump()
+    fields = body.model_dump(exclude=entries.NOT_COLUMNS)
     columns = ", ".join(fields)
     values = ", ".join(f"${n}" for n in range(1, len(fields) + 1))
     try:
@@ -298,6 +337,10 @@ async def create_entry(
     except asyncpg.InsufficientPrivilegeError:
         # The insert check on handler_owns_entries: that pet is not theirs.
         raise NO_SUCH_PET
+    # The request is already one transaction, so "log the next one" saves the
+    # new entry and closes the old due date together or does neither.
+    if body.closes_entry_id is not None:
+        await close_due_date(body.closes_entry_id, conn)
     return await read_entry(entry_id, conn)
 
 
@@ -357,6 +400,13 @@ async def update_entry(
 async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
     if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
         raise NO_SUCH_ENTRY
+
+
+@app.post("/entries/{entry_id}/mark-done")
+async def mark_done(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> entries.EntryOut:
+    """Dealt with elsewhere: the item leaves the ledger, the entry stays."""
+    await close_due_date(entry_id, conn)
+    return await read_entry(entry_id, conn)
 
 
 @app.get("/entry-titles/recent")

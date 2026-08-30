@@ -23,3 +23,6 @@ export function formatDate(date: string): string {
   const [year, month, day] = date.split("-");
   return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}`;
 }
+
+/** The same date without the year, where the narrow layout has no room. */
+export const formatDayMonth = (date: string) => formatDate(date).slice(0, -5);

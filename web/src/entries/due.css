@@ -1,0 +1,282 @@
+/* The ledger and the needs-attention panel, from design/dashboard-*.html and
+   design/pet-profile-*.html. Only one layout is ever mounted, so the same
+   class names carry the two shapes. Every date here is in Space Mono. */
+
+.ledger {
+  margin: 0 0 54px;
+}
+.lrow {
+  position: relative;
+}
+.lrow .date {
+  font-family: var(--data);
+  white-space: nowrap;
+}
+.lrow .what {
+  min-width: 0;
+}
+.lrow .what b {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.lrow .what .slash {
+  color: var(--rule);
+  margin: 0 9px;
+}
+.lrow .what .kind {
+  color: var(--ink-2);
+}
+.lrow .when {
+  font-family: var(--data);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.lrow.over {
+  background: var(--stamp-wash);
+}
+.lrow.over .date {
+  color: var(--stamp);
+  font-weight: 700;
+}
+
+/* The signature: a rubber-stamp impression. Stamp red, and only ever on
+   something the database said is overdue. */
+.stamp {
+  font-family: var(--data);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stamp);
+  border: 2px solid var(--stamp);
+  border-radius: 3px;
+  line-height: 1;
+  opacity: 0.86;
+  box-shadow: inset 0 0 0 1px rgba(178, 58, 36, 0.22);
+  display: flex;
+  align-items: baseline;
+  pointer-events: none;
+}
+.stamp .days {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* ============ desktop: a ruled table ============ */
+.shell-desktop .ledger {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.shell-desktop .lrow {
+  display: grid;
+  grid-template-columns: 126px 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 17px 22px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.shell-desktop .lrow:last-child {
+  border-bottom: 0;
+}
+.shell-desktop .lrow:hover {
+  background: #fcfcfb;
+}
+.shell-desktop .lrow.over:hover {
+  background: #f9eae6;
+}
+.shell-desktop .lrow .date {
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  padding-right: 20px;
+  border-right: 1px solid var(--rule-2);
+}
+.shell-desktop .lrow.over .date {
+  border-right-color: #edd5ce;
+}
+.shell-desktop .lrow .what {
+  font-size: 16px;
+}
+.shell-desktop .lrow .when {
+  font-size: 12px;
+}
+.shell-desktop .lrow .stamp {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-5deg);
+  font-size: 12px;
+  padding: 5px 11px 4px;
+  gap: 9px;
+}
+.shell-desktop .lrow .stamp .days {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+/* ============ mobile: stacked cards ============ */
+.shell-mobile .ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-bottom: 34px;
+}
+.shell-mobile .lrow {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 14px 15px;
+}
+.shell-mobile .lrow.over {
+  border-color: #e9d2cb;
+}
+.shell-mobile .lrow .date {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: block;
+  margin-bottom: 6px;
+}
+.shell-mobile .lrow .what {
+  font-size: 16.5px;
+  line-height: 1.3;
+  padding-right: 8px;
+  display: block;
+}
+.shell-mobile .lrow .when {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--rule-2);
+}
+.shell-mobile .lrow .stamp {
+  position: absolute;
+  right: 13px;
+  bottom: 12px;
+  transform: rotate(-5deg);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  padding: 4px 9px 3px;
+  gap: 7px;
+}
+.shell-mobile .lrow .stamp .days {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+}
+
+/* ============ what a pet needs, on its own page ============ */
+.attention {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  position: relative;
+}
+.attention:last-of-type {
+  margin-bottom: 44px;
+}
+.attention .dt {
+  font-family: var(--data);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+/* The alarm, only on something the database said is overdue. */
+.attention.over {
+  background: var(--stamp-wash);
+  border-color: #e9d2cb;
+}
+.attention.over .dt {
+  color: var(--stamp);
+}
+.attention.over .mini {
+  border-color: #dec3bb;
+  color: var(--stamp);
+}
+.attention.over .mini:hover {
+  border-color: var(--stamp);
+}
+/* Mark done stays quiet even here: only one of the two is the loud one. */
+.attention.over .mini.q {
+  color: var(--ink-2);
+  border-color: var(--rule);
+}
+.attention.over .mini.q:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.attention .dw {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.attention .ds {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin-top: 3px;
+}
+/* Every date in the app is in Space Mono, this one included. */
+.attention .ds .d {
+  font-family: var(--data);
+  font-size: 12.5px;
+}
+.attention .dacts {
+  display: flex;
+  gap: 8px;
+  margin-top: 15px;
+}
+.mini {
+  font-family: var(--body);
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--rule);
+  background: #fff;
+  color: var(--ink-2);
+  padding: 7px 13px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.mini:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.attention .stamp {
+  position: absolute;
+  right: 20px;
+  top: 22px;
+  transform: rotate(-5deg);
+  font-size: 12px;
+  padding: 5px 11px 4px;
+  gap: 9px;
+}
+.attention .stamp .days {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+.shell-mobile .attention .stamp {
+  right: 15px;
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  padding: 4px 9px 3px;
+  gap: 7px;
+}
+
+/* The panel, swapped for the form that logs the next one. */
+.attention.logging {
+  padding: 18px 20px 20px;
+}

@@ -8,7 +8,7 @@ describe("a session that has run out", () => {
   it("sends the handler to sign in, wherever in the app the 401 came from", async () => {
     server.use(
       http.get("http://localhost:8000/me", () => new HttpResponse(null, { status: 401 })),
-      http.get("http://localhost:8000/pets", () => new HttpResponse(null, { status: 401 })),
+      http.get("http://localhost:8000/dashboard", () => new HttpResponse(null, { status: 401 })),
     );
 
     renderRoute("/home");

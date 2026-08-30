@@ -22,7 +22,12 @@ Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)]
 
 
 class EntryIn(BaseModel):
-    """A new entry. A pet, a title and a date are enough."""
+    """A new entry. A pet, a title and a date are enough.
+
+    `closes_entry_id` is "log the next one": the outstanding entry whose due
+    date this one settles. It is not a column — it names another row, and the
+    handler names it because free-text titles mean the app cannot.
+    """
 
     pet_id: UUID
     title: Title
@@ -30,6 +35,11 @@ class EntryIn(BaseModel):
     due_on: date | None = None
     vet: Vet | None = None
     note: Note | None = None
+    closes_entry_id: UUID | None = None
+
+
+# Everything on EntryIn that is not a column on `entries`.
+NOT_COLUMNS = {"closes_entry_id"}
 
 
 class EntryPatch(BaseModel):

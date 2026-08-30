@@ -5,11 +5,11 @@ import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
 import { setViewportWidth } from "../test/setup";
 import { renderRoute } from "../test/render";
-import type { Entry, Pet } from "../api";
+import type { DueItem, Entry, PetRecord } from "../api";
 
 const me = { id: "11111111-1111-1111-1111-111111111111", name: "Akhil" };
 
-const biscuit: Pet = {
+const biscuit: PetRecord = {
   id: "22222222-2222-2222-2222-222222222222",
   name: "Biscuit",
   species: "dog",
@@ -21,6 +21,7 @@ const biscuit: Pet = {
   slug: "biscuit-a4f2",
   age_years: 4,
   age_months: 5,
+  due_items: [],
 };
 
 const entry = (fields: Partial<Entry> & { id: string; title: string; happened_on: string }): Entry => ({
@@ -57,13 +58,31 @@ const rabies = entry({
   is_overdue: true,
 });
 
+/** The outstanding item behind the rabies entry, as `due_items` returns it. */
+const outstanding: DueItem = {
+  entry_id: rabies.id,
+  pet_id: biscuit.id,
+  pet_name: "Biscuit",
+  title: "Rabies booster",
+  due_on: "2026-07-14",
+  days_until: -46,
+  is_overdue: true,
+  happened_on: "2025-07-14",
+  vet: "Anvayaa Clinic",
+};
+
 const feed = `/pets/${biscuit.id}`;
 
-function signedInWith(pages: { entries: Entry[]; next_cursor: string | null }[]) {
+function signedInWith(
+  pages: { entries: Entry[]; next_cursor: string | null }[],
+  dueItems: DueItem[] = [],
+) {
   const asked: (string | null)[] = [];
   server.use(
     http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
-    http.get(`http://localhost:8000/pets/${biscuit.id}`, () => HttpResponse.json(biscuit)),
+    http.get(`http://localhost:8000/pets/${biscuit.id}`, () =>
+      HttpResponse.json({ ...biscuit, due_items: dueItems }),
+    ),
     // The stub keys off the cursor it was handed, so a screen that dropped one
     // or invented one would get the wrong page rather than the next.
     http.get(`http://localhost:8000/pets/${biscuit.id}/entries`, ({ request }) => {
@@ -230,5 +249,120 @@ describe("a pet's feed", () => {
     await waitFor(() => expect(screen.queryByRole("heading", { name: "Vet visit" })).toBeNull());
     expect(deleted).toBe(vetVisit.id);
     expect(screen.getByRole("heading", { name: "Deworming" })).toBeInTheDocument();
+  });
+
+  it("opens with what this pet needs, above its history", async () => {
+    signedInWith([{ entries: [deworming, rabies], next_cursor: null }], [outstanding]);
+    setViewportWidth(1200);
+
+    renderRoute(feed);
+
+    const panel = (await screen.findByText("Due 14 Jul 2026")).closest<HTMLElement>("[data-layout]")!;
+
+    expect(panel).toHaveAttribute("data-layout", "desktop");
+    expect(within(panel).getByText("Rabies booster")).toBeInTheDocument();
+    expect(panel).toHaveTextContent("Last given 14 Jul 2025 at Anvayaa Clinic.");
+    expect(panel).toHaveTextContent("Overdue 46 days");
+  });
+
+  it("draws the same panel in the mobile layout below the breakpoint", async () => {
+    signedInWith([{ entries: [rabies], next_cursor: null }], [outstanding]);
+    setViewportWidth(390);
+
+    renderRoute(feed);
+
+    const panel = (await screen.findByText("Due 14 Jul 2026")).closest<HTMLElement>("[data-layout]")!;
+
+    expect(panel).toHaveAttribute("data-layout", "mobile");
+    expect(panel).toHaveTextContent("Overdue 46d");
+  });
+
+  it("says nothing needs attention when nothing is outstanding", async () => {
+    signedInWith([{ entries: [deworming], next_cursor: null }]);
+
+    renderRoute(feed);
+
+    await screen.findByRole("heading", { name: "Deworming" });
+
+    expect(screen.queryByText(/needs attention/i)).toBeNull();
+  });
+
+  it("marks an item done, dropping it while the entry stays in the history", async () => {
+    signedInWith([{ entries: [deworming, rabies], next_cursor: null }], [outstanding]);
+    let marked: string | null = null;
+    server.use(
+      http.post(`http://localhost:8000/entries/${rabies.id}/mark-done`, () => {
+        marked = rabies.id;
+        return HttpResponse.json({ ...rabies, is_overdue: false });
+      }),
+    );
+
+    renderRoute(feed);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Mark done" }));
+
+    await waitFor(() => expect(screen.queryByText("Due 14 Jul 2026")).toBeNull());
+    expect(marked).toBe(rabies.id);
+
+    const kept = screen.getByRole("heading", { name: "Rabies booster" }).closest("article")!;
+    expect(within(kept).getByText(/Next due 14 Jul 2026/)).toBeInTheDocument();
+    expect(within(kept).queryByText(/overdue/i)).toBeNull();
+  });
+
+  it("opens the log form pre-filled from the outstanding item", async () => {
+    signedInWith([{ entries: [rabies], next_cursor: null }], [outstanding]);
+
+    renderRoute(feed);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Log the next one" }));
+
+    expect(screen.getByLabelText("What happened")).toHaveValue("Rabies booster");
+    expect(screen.getByLabelText(/Vet or clinic/)).toHaveValue("Anvayaa Clinic");
+    // A new entry, not a correction: today, with nothing yet due after it.
+    expect(screen.getByLabelText("Date")).not.toHaveValue("2025-07-14");
+    expect(screen.getByLabelText(/Next one due/)).toHaveValue("");
+  });
+
+  it("logs the next one and closes the old due date in the one request", async () => {
+    let sent: Record<string, unknown> | null = null;
+    const next: Entry = {
+      ...rabies,
+      id: "a4",
+      happened_on: "2026-08-29",
+      due_on: "2027-08-29",
+      is_overdue: false,
+    };
+    signedInWith([{ entries: [rabies], next_cursor: null }], [outstanding]);
+    server.use(
+      http.post("http://localhost:8000/entries", async ({ request }) => {
+        sent = (await request.json()) as Record<string, unknown>;
+        // Closing it is the API's job, so the reload sees the item gone.
+        server.use(
+          http.get(`http://localhost:8000/pets/${biscuit.id}`, () =>
+            HttpResponse.json({ ...biscuit, due_items: [] }),
+          ),
+          http.get(`http://localhost:8000/pets/${biscuit.id}/entries`, () =>
+            HttpResponse.json({ entries: [next, rabies], next_cursor: null }),
+          ),
+        );
+        return HttpResponse.json(next, { status: 201 });
+      }),
+    );
+
+    renderRoute(feed);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Log the next one" }));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(screen.queryByText("Due 14 Jul 2026")).toBeNull());
+    expect(sent).toMatchObject({
+      pet_id: biscuit.id,
+      title: "Rabies booster",
+      closes_entry_id: rabies.id,
+    });
+    expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
+      "Rabies booster",
+      "Rabies booster",
+    ]);
   });
 });
