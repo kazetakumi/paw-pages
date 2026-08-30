@@ -16,6 +16,7 @@ from . import (
     pets,
     public,
     session,
+    supabase_admin,
     supabase_auth,
     supabase_storage,
 )
@@ -36,7 +37,11 @@ async def lifespan(app: FastAPI):
         headers={"apikey": settings.supabase_anon_key},
         timeout=30.0,
     )
+    # No key on this client: the service-role key rides on the one request that
+    # deletes an auth user and is attached to nothing else.
+    app.state.admin_client = httpx.AsyncClient(base_url=settings.supabase_url, timeout=15.0)
     yield
+    await app.state.admin_client.aclose()
     await app.state.storage_client.aclose()
     await app.state.auth_client.aclose()
     await app.state.pool.close()
@@ -340,6 +345,32 @@ async def export_account(
         media_type="application/zip",
         headers={"content-disposition": f'attachment; filename="{export.FILENAME}"'},
     )
+
+
+@app.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_me(
+    request: Request,
+    response: Response,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+    payload: dict = Depends(claims),
+) -> None:
+    """Leave, and take everything with you.
+
+    The photos go first and the auth user second, because the foreign-key
+    cascade does not reach storage: once the rows are gone nothing knows which
+    objects to remove. The paths are read as the handler, the objects deleted
+    with the handler's own token, and only the last call — the one no token of
+    theirs can make — carries the service-role key.
+    """
+    supabase_admin.check_configured()
+    paths = await conn.fetch("select photo_path from pets where photo_path is not null")
+    for row in paths:
+        await supabase_storage.remove(
+            request.app.state.storage_client, token, row["photo_path"]
+        )
+    await supabase_admin.delete_user(request.app.state.admin_client, payload["sub"])
+    session.clear(response)
 
 
 # Everything a pet shows on any screen. `age_*` is derived by the database on
