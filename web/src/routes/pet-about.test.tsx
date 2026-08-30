@@ -95,6 +95,13 @@ describe("a pet's About tab", () => {
 
     renderRoute(about);
     await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
+
+    // every identity field, editable after the fact
+    for (const field of ["Name", "Species", "Breed", "Sex", "Date of birth", "Colour"]) {
+      expect(screen.getByLabelText(field)).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText(/approximate/i)).toBeInTheDocument();
+
     const colour = screen.getByLabelText("Colour");
     await userEvent.clear(colour);
     await userEvent.type(colour, "Brindle");
