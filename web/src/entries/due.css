@@ -175,8 +175,8 @@
 
 /* ============ what a pet needs, on its own page ============ */
 .attention {
-  background: var(--stamp-wash);
-  border: 1px solid #e9d2cb;
+  background: var(--card);
+  border: 1px solid var(--rule);
   border-radius: 2px;
   padding: 18px 20px;
   margin-bottom: 14px;
@@ -190,9 +190,34 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
-  color: var(--stamp);
+  color: var(--ink-2);
   text-transform: uppercase;
   margin-bottom: 7px;
+}
+
+/* The alarm, only on something the database said is overdue. */
+.attention.over {
+  background: var(--stamp-wash);
+  border-color: #e9d2cb;
+}
+.attention.over .dt {
+  color: var(--stamp);
+}
+.attention.over .mini {
+  border-color: #dec3bb;
+  color: var(--stamp);
+}
+.attention.over .mini:hover {
+  border-color: var(--stamp);
+}
+/* Mark done stays quiet even here: only one of the two is the loud one. */
+.attention.over .mini.q {
+  color: var(--ink-2);
+  border-color: var(--rule);
+}
+.attention.over .mini.q:hover {
+  border-color: var(--ink);
+  color: var(--ink);
 }
 .attention .dw {
   font-family: var(--display);
@@ -214,21 +239,14 @@
   font-family: var(--body);
   font-size: 12.5px;
   font-weight: 600;
-  border: 1px solid #dec3bb;
+  border: 1px solid var(--rule);
   background: #fff;
-  color: var(--stamp);
+  color: var(--ink-2);
   padding: 7px 13px;
   border-radius: 2px;
   cursor: pointer;
 }
 .mini:hover {
-  border-color: var(--stamp);
-}
-.mini.q {
-  color: var(--ink-2);
-  border-color: var(--rule);
-}
-.mini.q:hover {
   border-color: var(--ink);
   color: var(--ink);
 }

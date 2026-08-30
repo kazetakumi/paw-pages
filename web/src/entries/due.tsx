@@ -108,7 +108,10 @@ export function Attention({
 }) {
   const isDesktop = useIsDesktop();
   return (
-    <div className="attention" data-layout={isDesktop ? "desktop" : "mobile"}>
+    <div
+      className={item.is_overdue ? "attention over" : "attention"}
+      data-layout={isDesktop ? "desktop" : "mobile"}
+    >
       <div className="dt">Due {formatDate(item.due_on)}</div>
       <div className="dw">{item.title}</div>
       <div className="ds">
