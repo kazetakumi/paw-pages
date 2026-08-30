@@ -720,3 +720,112 @@ img.av {
   display: block;
   margin-top: 14px;
 }
+
+/* ============ the archive panel, from design/pet-about-*.html ============ */
+.arch {
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 18px 22px;
+  background: #fafaf8;
+}
+.arch h3 {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+.arch .says {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0 0 14px;
+  max-width: 56ch;
+}
+.arch .says b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.arch .a {
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stamp);
+  border: 1px solid #dec3bb;
+  background: var(--card);
+  padding: 8px 14px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.arch .a:hover:enabled {
+  border-color: var(--stamp);
+}
+.arch .a:disabled {
+  color: var(--faint);
+  cursor: not-allowed;
+}
+.arch .keep {
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+.arch .keep:hover {
+  color: var(--ink);
+}
+.arch .whys {
+  border: 0;
+  padding: 0;
+  margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.arch .whys legend {
+  font-family: var(--data);
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 0;
+  margin-bottom: 9px;
+}
+.arch .why {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+/* Above the breakpoint the three reasons sit on one row and the two acts
+   beside each other; below it everything is stacked the width of the card. */
+.shell-desktop .arch .whys.row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+.shell-desktop .arch .whys.row legend {
+  margin: 0;
+}
+.shell-desktop .arch .acts {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shell-mobile .arch {
+  padding: 16px 15px;
+}
+.shell-mobile .arch .a,
+.shell-mobile .arch .keep {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 11px;
+  font-size: 13.5px;
+}

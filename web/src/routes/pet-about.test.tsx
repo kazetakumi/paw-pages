@@ -324,3 +324,108 @@ describe("a pet's photo, from the About tab", () => {
     expect(container.querySelector('[data-photo="desktop"]')).toBeNull();
   });
 });
+
+describe("archiving a pet", () => {
+  it("states what archiving does before anything is confirmed", async () => {
+    signedInWith(biscuit);
+
+    renderRoute(about);
+
+    const panel = await screen.findByRole("region", { name: "Archive" });
+
+    expect(panel).toHaveTextContent(/keeps Biscuit['’]s history and photo/i);
+    expect(panel).toHaveTextContent(/stops (his|her|their|its) due dates counting/i);
+    expect(panel).toHaveTextContent(/takes (his|her|their|its) public page offline/i);
+    expect(panel).toHaveTextContent(/undo it any time/i);
+    // Nothing has been asked of the API yet: this is the sentence, not the act.
+    expect(screen.queryByRole("button", { name: /^Archive Biscuit$/ })).toBeInTheDocument();
+  });
+
+  it("asks for a reason and sends the one chosen", async () => {
+    signedInWith(biscuit);
+    let sent: unknown = null;
+    server.use(
+      http.post(`http://localhost:8000/pets/${biscuit.id}/archive`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json(biscuit);
+      }),
+    );
+
+    server.use(
+      http.get("http://localhost:8000/dashboard", () =>
+        HttpResponse.json({
+          ledger: [],
+          pets: [],
+          active_pets: 0,
+          overdue: 0,
+          due_within_30_days: 0,
+          archived_pets: 1,
+          archived: [
+            {
+              id: biscuit.id,
+              name: "Biscuit",
+              archived_reason: "rehomed",
+              archived_on: "2026-08-30",
+            },
+          ],
+        }),
+      ),
+    );
+
+    renderRoute(about);
+    await userEvent.click(await screen.findByRole("button", { name: /^Archive Biscuit$/ }));
+    await userEvent.click(screen.getByRole("radio", { name: /rehomed/i }));
+    await userEvent.click(screen.getByRole("button", { name: /^Archive$/ }));
+
+    await waitFor(() => expect(sent).toEqual({ reason: "rehomed" }));
+    // Archived pets live on the home screen now, as a count rather than a card.
+    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
+  });
+
+  it("will not archive until a reason is chosen", async () => {
+    signedInWith(biscuit);
+
+    renderRoute(about);
+    await userEvent.click(await screen.findByRole("button", { name: /^Archive Biscuit$/ }));
+
+    expect(screen.getByRole("button", { name: /^Archive$/ })).toBeDisabled();
+    expect(screen.getByRole("region", { name: "Archive" })).toHaveTextContent(
+      /keeps Biscuit['’]s history and photo/i,
+    );
+  });
+
+  it("backs out without archiving", async () => {
+    signedInWith(biscuit);
+
+    renderRoute(about);
+    await userEvent.click(await screen.findByRole("button", { name: /^Archive Biscuit$/ }));
+    await userEvent.click(screen.getByRole("button", { name: /keep Biscuit/i }));
+
+    expect(screen.queryByRole("radio", { name: /rehomed/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Archive Biscuit$/ })).toBeInTheDocument();
+  });
+
+  it("gives the panel a desktop layout above the breakpoint", async () => {
+    signedInWith(biscuit);
+    setViewportWidth(1200);
+
+    const { container } = renderRoute(about);
+
+    await screen.findByRole("region", { name: "Archive" });
+
+    expect(container.querySelector('[data-archive="desktop"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-archive="mobile"]')).toBeNull();
+  });
+
+  it("gives it a mobile layout below the breakpoint", async () => {
+    signedInWith(biscuit);
+    setViewportWidth(390);
+
+    const { container } = renderRoute(about);
+
+    await screen.findByRole("region", { name: "Archive" });
+
+    expect(container.querySelector('[data-archive="mobile"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-archive="desktop"]')).toBeNull();
+  });
+});

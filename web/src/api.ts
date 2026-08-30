@@ -115,6 +115,26 @@ export const createPet = (fields: PetFields) => request<Pet>("POST", "/pets", fi
 export const updatePet = (id: string, fields: PetFields) =>
   request<Pet>("PATCH", `/pets/${id}`, fields);
 
+/** Why a pet was archived. The three the database's check allows, and no
+ *  fourth: there is no archiving without saying which. */
+export type ArchiveReason = "passed_away" | "rehomed" | "other";
+
+/** An archived pet as the home screen keeps it — findable, out of the way. */
+export type ArchivedPet = {
+  id: string;
+  name: string;
+  archived_reason: ArchiveReason;
+  archived_on: string;
+};
+
+/** Archiving sets two columns and nothing else. The ledger, the public page
+ *  and the photo all stop seeing the pet because the database's views exclude
+ *  it — nothing here filters an archived pet out of anything. */
+export const archivePet = (id: string, reason: ArchiveReason) =>
+  request<Pet>("POST", `/pets/${id}/archive`, { reason });
+
+export const restorePet = (id: string) => request<Pet>("POST", `/pets/${id}/restore`);
+
 /** The public-page switch. Its own call, because publishing a pet is not a
  *  correction to one and the identity form has no business carrying it. */
 export const setPetPublic = (id: string, isPublic: boolean) =>
@@ -188,6 +208,7 @@ export type Dashboard = {
   overdue: number;
   due_within_30_days: number;
   archived_pets: number;
+  archived: ArchivedPet[];
 };
 
 export const getDashboard = () => request<Dashboard>("GET", "/dashboard");
