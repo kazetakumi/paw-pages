@@ -1,0 +1,488 @@
+/* The landing page, from design/landing-web.html and design/landing-mobile.html.
+   Only one layout is ever mounted, so the same class names carry the two
+   shapes and [data-layout] only says what differs. Every date is in Space
+   Mono, and the one stamp on the page is the one in the record card. */
+
+.landing {
+  max-width: 1060px;
+  margin: 0 auto;
+}
+.landing .date {
+  font-family: var(--data);
+  white-space: nowrap;
+}
+
+/* ---- top ---- */
+.landing .topbar {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  height: 64px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--rule);
+}
+.landing .wordmark {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-right: auto;
+}
+.landing .wordmark .p2 {
+  color: var(--faint);
+}
+.landing .tlink {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.landing .tlink:hover {
+  color: var(--ink);
+}
+
+.landing .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #fff;
+  border: 1px solid var(--ink);
+  padding: 11px 19px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.landing .btn.ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+}
+.landing .btn.ghost:hover {
+  border-color: var(--ink);
+  background: var(--card);
+}
+.landing .btn.lg {
+  font-size: 15.5px;
+  padding: 14px 24px;
+}
+
+/* ---- hero ---- */
+.landing .hero {
+  padding: 82px 28px 88px;
+}
+.landing[data-layout="desktop"] .hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 64px;
+  align-items: center;
+}
+.landing[data-layout="mobile"] .hero {
+  padding: 32px 18px 34px;
+}
+.landing .eyebrow {
+  font-family: var(--data);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 20px;
+}
+.landing h1 {
+  font-family: var(--display);
+  font-size: 60px;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+  margin: 0 0 22px;
+}
+.landing[data-layout="mobile"] h1 {
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+.landing h1 .b {
+  display: block;
+  color: var(--ink-2);
+}
+.landing .lede {
+  font-size: 19px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 44ch;
+  margin: 0 0 32px;
+}
+.landing[data-layout="mobile"] .lede {
+  font-size: 16px;
+  margin-bottom: 22px;
+}
+.landing .cta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.landing[data-layout="mobile"] .cta {
+  flex-direction: column;
+  gap: 9px;
+}
+.landing[data-layout="mobile"] .cta .btn {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 15px;
+}
+.landing .fine {
+  font-family: var(--data);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-top: 20px;
+}
+.landing[data-layout="mobile"] .fine {
+  text-align: center;
+  margin-top: 16px;
+}
+
+/* ---- the record card: the hero image is the product ---- */
+.landing .doc {
+  background: var(--card);
+  border: 1px solid #cfd3d7;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(19, 32, 46, 0.12);
+}
+.landing[data-layout="mobile"] .doc {
+  margin: 0 18px 40px;
+  box-shadow: 0 12px 32px rgba(19, 32, 46, 0.11);
+}
+.landing .doc .kicker {
+  font-family: var(--data);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 16px 20px 0;
+}
+.landing .doc .id {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px 20px 16px;
+}
+.landing .doc .av {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex: none;
+  background: #dee5ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 600;
+  object-fit: cover;
+}
+.landing .doc .nm {
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+.landing .doc .sub {
+  font-size: 12.5px;
+  color: var(--faint);
+}
+.landing .doc .rec {
+  border-top: 1px solid var(--rule-2);
+}
+.landing .doc .r {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--rule-2);
+  position: relative;
+}
+.landing .doc .r:last-child {
+  border-bottom: 0;
+}
+.landing .doc .r .date {
+  font-size: 10.5px;
+  color: var(--faint);
+}
+.landing .doc .r .w {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+.landing .doc .r.over {
+  background: var(--stamp-wash);
+}
+.landing .doc .r.over .date {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.landing .doc .stamp {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-6deg);
+  font-size: 10.5px;
+  padding: 4px 9px 3px;
+}
+.landing .doc .stamp .days {
+  margin-left: 5px;
+}
+.landing .doc .foot {
+  padding: 12px 20px 14px;
+  border-top: 1px solid var(--rule-2);
+  font-family: var(--data);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: flex;
+}
+.landing .doc .foot .mk {
+  margin-left: auto;
+  font-family: var(--display);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+/* ---- sections ---- */
+.landing .s {
+  padding: 74px 28px;
+  border-top: 1px solid var(--rule);
+}
+.landing[data-layout="mobile"] .s {
+  padding: 38px 18px;
+}
+.landing .shead {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.landing .shead .no {
+  font-family: var(--data);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+}
+.landing h2 {
+  font-family: var(--display);
+  font-size: 33px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.landing[data-layout="mobile"] h2 {
+  font-size: 25px;
+  letter-spacing: -0.02em;
+}
+.landing .sub {
+  font-size: 17px;
+  color: var(--ink-2);
+  max-width: 56ch;
+  margin: 0 0 34px;
+}
+.landing[data-layout="mobile"] .sub {
+  font-size: 15.5px;
+  margin-bottom: 22px;
+}
+.landing .two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+}
+
+/* the entry list */
+.landing .list {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.landing[data-layout="mobile"] .list {
+  margin-bottom: 22px;
+}
+.landing .li {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.landing[data-layout="mobile"] .li {
+  display: block;
+  padding: 13px 18px;
+}
+.landing .li:last-child {
+  border-bottom: 0;
+}
+.landing .li .date {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.landing[data-layout="mobile"] .li .date {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+  margin-bottom: 3px;
+}
+.landing .li .t {
+  font-size: 15.5px;
+}
+.landing .li .t b {
+  font-family: var(--display);
+  font-weight: 600;
+}
+.landing .li .t span {
+  color: var(--faint);
+  font-size: 13.5px;
+  display: block;
+}
+
+/* the plain truths */
+.landing .truths {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.landing .truths li {
+  padding: 16px 0 16px 34px;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+  font-size: 16.5px;
+  color: var(--ink-2);
+}
+.landing[data-layout="mobile"] .truths li {
+  padding: 13px 0 13px 28px;
+  font-size: 15px;
+}
+.landing .truths li:last-child {
+  border-bottom: 0;
+}
+.landing .truths li b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.landing .truths li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 26px;
+  width: 16px;
+  height: 1px;
+  background: var(--faint);
+}
+
+/* the public page, in miniature */
+.landing .mini {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 20px;
+}
+.landing[data-layout="mobile"] .mini {
+  padding: 16px;
+  margin-bottom: 22px;
+}
+.landing .mini .u {
+  font-family: var(--data);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  background: var(--card);
+  border-radius: 2px;
+  padding: 9px 11px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.landing .mini .yes,
+.landing .mini .no {
+  display: flex;
+  gap: 9px;
+  padding: 7px 0;
+  font-size: 14.5px;
+}
+.landing .mini .no {
+  color: var(--faint);
+}
+.landing .mini .mk {
+  font-family: var(--data);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex: none;
+  width: 34px;
+  padding-top: 3px;
+}
+.landing .mini .yes .mk {
+  color: var(--seal);
+}
+
+/* ---- closing ---- */
+.landing .close {
+  text-align: center;
+  padding: 88px 28px 96px;
+  border-top: 1px solid var(--rule);
+}
+.landing[data-layout="mobile"] .close {
+  padding: 44px 18px 40px;
+}
+.landing .close h2 {
+  font-size: 40px;
+  margin-bottom: 14px;
+}
+.landing[data-layout="mobile"] .close h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+.landing .close p {
+  font-size: 18px;
+  color: var(--ink-2);
+  margin: 0 0 30px;
+}
+.landing[data-layout="mobile"] .close p {
+  font-size: 16px;
+  margin-bottom: 22px;
+}
+
+.landing footer {
+  border-top: 1px solid var(--rule);
+  background: #e9eae5;
+  padding: 26px 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.landing[data-layout="mobile"] footer {
+  padding: 20px 18px;
+  gap: 16px;
+}
+.landing footer .wordmark {
+  font-size: 12px;
+}
+.landing[data-layout="mobile"] footer .wordmark {
+  font-size: 11px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+.landing footer a {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.landing footer a:hover {
+  color: var(--ink);
+}

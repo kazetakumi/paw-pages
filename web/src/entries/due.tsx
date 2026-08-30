@@ -12,7 +12,7 @@ const dueIn = (days: number) =>
   days === 0 ? "Due today" : `In ${days} ${days === 1 ? "day" : "days"}`;
 
 /** The rubber-stamp impression, the one place stamp red is used. */
-function Stamp({ item, short }: { item: DueItem; short?: boolean }) {
+export function Stamp({ item, short }: { item: DueItem; short?: boolean }) {
   return (
     <span className="stamp">
       Overdue{" "}
