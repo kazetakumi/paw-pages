@@ -5,7 +5,7 @@ import httpx
 from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from pydantic import BaseModel
 
-from . import session, supabase_auth
+from . import pets, session, supabase_auth
 from .config import settings
 from .db import rls_connection
 
@@ -172,3 +172,32 @@ async def signout(response: Response) -> None:
 @app.get("/me")
 async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
     return await read_handler(conn)
+
+
+# ---------------------------------------------------------------- pets ------
+# No `where handler_id = ...` anywhere below: `db` has already become the
+# caller, so the handler_owns_pets policy is the filter.
+
+PET_COLUMNS = "id, name, species, slug"
+
+
+@app.get("/pets")
+async def list_pets(conn: asyncpg.Connection = Depends(db)) -> list[pets.PetOut]:
+    rows = await conn.fetch(
+        f"select {PET_COLUMNS} from pets where archived_at is null order by created_at"
+    )
+    return [pets.PetOut(**dict(row)) for row in rows]
+
+
+@app.post("/pets", status_code=status.HTTP_201_CREATED)
+async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -> pets.PetOut:
+    async def insert(slug: str):
+        return await conn.fetchrow(
+            "insert into pets (handler_id, name, species, slug)"
+            f" values ((select auth.uid()), $1, $2, $3) returning {PET_COLUMNS}",
+            body.name,
+            body.species,
+            slug,
+        )
+
+    return pets.PetOut(**dict(await pets.claim_slug(body.name, insert)))
