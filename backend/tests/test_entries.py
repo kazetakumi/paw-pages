@@ -127,3 +127,61 @@ async def test_recent_titles_are_the_handlers_own_distinct_last_four_across_all_
 
 async def test_a_handler_with_no_entries_gets_no_titles_to_suggest(signed_in):
     assert (await signed_in.get("/entry-titles/recent")).json() == []
+
+
+async def test_the_feed_pages_by_cursor_with_no_gap_or_repeat_at_the_boundary(signed_in, biscuit):
+    """Two entries share a date, so the boundary can only hold if the cursor
+    orders by id as well — exactly as entries_pet_feed_idx does."""
+    logged = [
+        ("Rabies booster", "2024-01-10"),
+        ("Grooming", "2024-02-10"),
+        ("Deworming", "2024-03-10"),
+        ("Vet visit", "2024-03-10"),
+        ("Nail trim", "2024-04-10"),
+        ("Flea drops", "2024-05-10"),
+        ("Weigh-in", "2024-06-10"),
+    ]
+    for title, happened_on in logged:
+        await signed_in.post(
+            "/entries", json={"pet_id": biscuit, "title": title, "happened_on": happened_on}
+        )
+
+    seen, cursor, pages = [], None, 0
+    while True:
+        query = f"?limit=3{f'&cursor={cursor}' if cursor else ''}"
+        page = (await signed_in.get(f"/pets/{biscuit}/entries{query}")).json()
+        seen += page["entries"]
+        pages += 1
+        cursor = page["next_cursor"]
+        if cursor is None:
+            break
+
+    assert pages == 3
+    assert [e["happened_on"] for e in seen] == sorted(
+        (h for _, h in logged), reverse=True
+    )
+    assert len(seen) == len(logged)
+    assert len({e["id"] for e in seen}) == len(logged)
+
+
+async def test_the_last_page_of_a_feed_offers_no_cursor(signed_in, biscuit):
+    await signed_in.post(
+        "/entries", json={"pet_id": biscuit, "title": "Nail trim", "happened_on": TODAY}
+    )
+
+    page = (await signed_in.get(f"/pets/{biscuit}/entries?limit=3")).json()
+
+    assert len(page["entries"]) == 1
+    assert page["next_cursor"] is None
+
+
+async def test_a_cursor_says_nothing_about_the_row_it_points_at(signed_in, biscuit):
+    for title in ["Rabies booster", "Grooming"]:
+        await signed_in.post(
+            "/entries", json={"pet_id": biscuit, "title": title, "happened_on": "2024-03-10"}
+        )
+
+    cursor = (await signed_in.get(f"/pets/{biscuit}/entries?limit=1")).json()["next_cursor"]
+
+    assert "2024" not in cursor
+    assert (await signed_in.get(f"/pets/{biscuit}/entries?cursor=nonsense")).status_code == 400

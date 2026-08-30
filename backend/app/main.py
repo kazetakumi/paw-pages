@@ -3,7 +3,7 @@ from uuid import UUID
 
 import asyncpg
 import httpx
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -302,13 +302,33 @@ async def create_entry(
 
 
 @app.get("/pets/{pet_id}/entries")
-async def pet_feed(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> entries.FeedPage:
+async def pet_feed(
+    pet_id: UUID,
+    cursor: str | None = None,
+    limit: int = Query(default=5, ge=1, le=50),
+    conn: asyncpg.Connection = Depends(db),
+) -> entries.FeedPage:
+    """One page of a pet's record, newest first.
+
+    Keyset, not offset: the row comparison is the same (happened_on desc, id
+    desc) the feed index is built on, so a page cannot gain or drop an entry
+    because something older was logged between two requests.
+    """
+    after = entries.decode_cursor(cursor) if cursor else (None, None)
     rows = await conn.fetch(
         f"select {entries.ENTRY_COLUMNS} {entries.ENTRY_SOURCE}"
-        f" where e.pet_id = $1 {entries.FEED_ORDER}",
+        " where e.pet_id = $1"
+        "   and ($2::date is null or (e.happened_on, e.id) < ($2, $3::uuid))"
+        f" {entries.FEED_ORDER} limit $4",
         pet_id,
+        *after,
+        limit + 1,
     )
-    return entries.FeedPage(entries=[entries.EntryOut(**dict(r)) for r in rows], next_cursor=None)
+    page = [entries.EntryOut(**dict(row)) for row in rows[:limit]]
+    return entries.FeedPage(
+        entries=page,
+        next_cursor=entries.encode_cursor(page[-1]) if len(rows) > limit else None,
+    )
 
 
 @app.patch("/entries/{entry_id}")
