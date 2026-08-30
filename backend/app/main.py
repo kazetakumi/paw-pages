@@ -191,6 +191,13 @@ async def me(conn: asyncpg.Connection = Depends(db)) -> HandlerOut:
     return await read_handler(conn)
 
 
+# Everything a pet shows on any screen. `age_*` is derived by the database on
+# every read rather than stored, so it cannot go stale.
+PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug,
+       extract(year  from age(date_of_birth))::int as age_years,
+       extract(month from age(date_of_birth))::int as age_months"""
+
+
 # ----------------------------------------------------------- dashboard -----
 
 
@@ -201,17 +208,18 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
     No `where handler_id = ...`: `due_items` is a security_invoker view, so the
     same four policies filter it that filter the tables underneath.
     """
-    return due.Dashboard(ledger=[due.DueItem(**dict(row)) for row in await conn.fetch(due.LEDGER)])
+    ledger = await conn.fetch(due.LEDGER)
+    cards = await conn.fetch(due.PET_CARDS.format(columns=PET_COLUMNS))
+    return due.Dashboard(
+        ledger=[due.DueItem(**dict(row)) for row in ledger],
+        pets=[due.PetCard(**dict(row)) for row in cards],
+    )
 
 
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
 # caller, so the handler_owns_pets policy is the filter. A pet another handler
 # owns is not forbidden, it is absent — which is a 404.
-
-PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug,
-       extract(year  from age(date_of_birth))::int as age_years,
-       extract(month from age(date_of_birth))::int as age_months"""
 
 NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
 

@@ -161,3 +161,35 @@ async def test_a_rejected_next_one_closes_nothing(signed_in, add_pet, log):
     ledger = (await signed_in.get("/dashboard")).json()["ledger"]
 
     assert [item["entry_id"] for item in ledger] == [outstanding]
+
+
+async def test_each_pet_card_carries_its_next_due_and_its_last_logged_date(
+    signed_in, add_pet, log
+):
+    biscuit = await add_pet("Biscuit")
+    momo = await add_pet("Momo", "cat")
+    await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
+    await log(biscuit, "DHPP booster", days_from_today(-400), days_from_today(23))
+    await log(biscuit, "Deworming", days_from_today(-3))
+    await log(momo, "Grooming", days_from_today(-9))
+
+    cards = {pet["name"]: pet for pet in (await signed_in.get("/dashboard")).json()["pets"]}
+
+    assert cards["Biscuit"]["next_due_on"] == days_from_today(-46)
+    assert cards["Biscuit"]["next_due_is_overdue"] is True
+    assert cards["Biscuit"]["last_logged_on"] == days_from_today(-3)
+    assert cards["Momo"]["next_due_on"] is None
+    assert cards["Momo"]["next_due_is_overdue"] is False
+    assert cards["Momo"]["last_logged_on"] == days_from_today(-9)
+    # Everything the pet list already showed, so no screen needs both calls.
+    assert cards["Biscuit"]["species"] == "dog"
+    assert cards["Biscuit"]["slug"].startswith("biscuit-")
+
+
+async def test_a_pet_with_nothing_logged_has_no_next_due_and_no_last_logged(signed_in, add_pet):
+    await add_pet("Momo", "cat")
+
+    card = (await signed_in.get("/dashboard")).json()["pets"][0]
+
+    assert (card["next_due_on"], card["last_logged_on"]) == (None, None)
+    assert card["next_due_is_overdue"] is False
