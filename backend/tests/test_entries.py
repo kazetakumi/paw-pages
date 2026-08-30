@@ -57,3 +57,45 @@ async def test_a_due_on_before_happened_on_comes_back_named(signed_in, biscuit):
 
     assert rejected.status_code == 422
     assert rejected.json()["detail"]["field"] == "due_on"
+
+
+async def test_the_vet_and_the_note_save_on_the_entry_and_come_back_in_the_feed(
+    signed_in, biscuit
+):
+    await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Vet visit",
+            "happened_on": YESTERDAY,
+            "vet": "Anvayaa Clinic",
+            "note": "Limping on the back right leg.",
+        },
+    )
+
+    entry = (await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"][0]
+
+    assert entry["vet"] == "Anvayaa Clinic"
+    assert entry["note"] == "Limping on the back right leg."
+
+
+async def test_an_entry_can_be_edited_and_deleted_after_saving(signed_in, biscuit):
+    created = await signed_in.post(
+        "/entries",
+        json={"pet_id": biscuit, "title": "Deworming", "happened_on": YESTERDAY, "vet": "Dr. Menon"},
+    )
+    entry_id = created.json()["id"]
+
+    edited = await signed_in.patch(
+        f"/entries/{entry_id}", json={"title": "Deworming tablet", "vet": None}
+    )
+
+    assert edited.status_code == 200
+    assert edited.json()["title"] == "Deworming tablet"
+    assert edited.json()["vet"] is None
+    assert edited.json()["happened_on"] == YESTERDAY
+
+    deleted = await signed_in.delete(f"/entries/{entry_id}")
+
+    assert deleted.status_code == 204
+    assert (await signed_in.get(f"/pets/{biscuit}/entries")).json()["entries"] == []

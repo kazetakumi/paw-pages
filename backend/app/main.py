@@ -309,3 +309,31 @@ async def pet_feed(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> entr
         pet_id,
     )
     return entries.FeedPage(entries=[entries.EntryOut(**dict(r)) for r in rows], next_cursor=None)
+
+
+@app.patch("/entries/{entry_id}")
+async def update_entry(
+    entry_id: UUID, body: entries.EntryPatch, conn: asyncpg.Connection = Depends(db)
+) -> entries.EntryOut:
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        return await read_entry(entry_id, conn)
+
+    assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=2))
+    try:
+        touched = await conn.fetchval(
+            f"update entries set {assignments} where id = $1 returning id",
+            entry_id,
+            *changes.values(),
+        )
+    except asyncpg.IntegrityConstraintViolationError as error:
+        raise entries.constraint_error(error)
+    if touched is None:
+        raise NO_SUCH_ENTRY
+    return await read_entry(entry_id, conn)
+
+
+@app.delete("/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
+    if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
+        raise NO_SUCH_ENTRY
