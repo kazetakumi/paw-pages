@@ -195,3 +195,18 @@ async def test_the_public_page_says_whether_there_is_a_photo_to_ask_for(
     page = await client.get(f"/public/pets/{biscuit['slug']}")
     assert page.json()["has_photo"] is True
     assert "photo_path" not in page.text
+
+
+async def test_a_storage_failure_leaves_the_row_and_the_bucket_in_step(
+    signed_in, biscuit, storage_stub
+):
+    """The object goes missing under us, so the delete storage is asked for
+    fails. The request is one transaction, so the row is not quietly emptied of
+    a photo the handler still believes is there."""
+    await upload(signed_in, biscuit["id"])
+    storage_stub.objects.clear()
+
+    refused = await signed_in.delete(f"/pets/{biscuit['id']}/photo")
+
+    assert refused.status_code == 502
+    assert (await signed_in.get(f"/pets/{biscuit['id']}")).json()["has_photo"] is True
