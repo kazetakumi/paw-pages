@@ -47,6 +47,51 @@ and on account deletion rather than only that a path was cleared. The admin
 stub really deletes the row in `auth.users`, so the cascade down to handlers,
 pets and entries is the real one.
 
+## Running it against the live project
+
+Neither suite ever talks to Supabase — Auth, Storage and the Admin API are all
+stubbed at the httpx transport, because none of them is ours to test. That is
+correct, and it is also why migration 0003's dead storage policies survived
+being written, applied and built against. The seam between this app and the
+live project is only exercised by hand.
+
+`backend/scripts/production_smoke.py` does that in one command: it signs up a
+throwaway account, creates a pet and an entry, checks the ledger's overdue
+arithmetic, uploads and serves a photo through the real storage policies, reads
+the public page as a visitor with no cookie, archives and restores, opens the
+export, and deletes the account at the end — which is the only thing the
+service-role key is ever used for.
+
+Before it can run:
+
+1. `SUPABASE_SERVICE_ROLE_KEY` in `backend/.env` — Dashboard → Project Settings
+   → API Keys → `service_role`. Without it `DELETE /me` answers 503 and
+   destroys nothing.
+2. `DATABASE_URL` in `backend/.env` — Dashboard → Project Settings → Database →
+   Connection string → Transaction pooler.
+3. **Authentication → Sign In / Providers → Email → Confirm email: off.**
+   Otherwise signup returns a user with no session and the backend answers 502.
+4. **Authentication → URL Configuration → Redirect URLs**: add
+   `http://localhost:5173/reset-password`. Supabase silently drops any
+   `redirect_to` that is not allow-listed.
+
+Then, with the backend running:
+
+```
+cd backend
+uv run uvicorn app.main:app --reload           # in one shell
+SMOKE_EMAIL=you+pawpages@yourdomain.com uv run python scripts/production_smoke.py
+```
+
+Pass an address you control: it signs up a real account. Supabase's email
+validator rejects `example.com`. The run deletes the account it made; if it
+stops early, check `auth.users` and remove it by hand.
+
+The password reset round trip is the one thing the script cannot close, because
+it needs a link out of a real inbox. Request a reset at `/forgot-password`,
+open the email, follow the link to `/reset-password`, set a new password and
+sign in with it.
+
 ### Web — the screen, with HTTP stubbed at the network boundary
 
 ```
