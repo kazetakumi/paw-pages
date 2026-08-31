@@ -6,7 +6,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        // override when 8000 is taken: VITE_PROXY_TARGET=http://127.0.0.1:8001
+        target: process.env.VITE_PROXY_TARGET ?? "http://localhost:8000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

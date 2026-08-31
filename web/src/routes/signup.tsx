@@ -7,13 +7,21 @@ import { PasswordField } from "../auth/PasswordField";
 export default function SignUp() {
   const navigate = useNavigate();
   const [emailProblem, setEmailProblem] = useState<string | null>(null);
+  const [mismatch, setMismatch] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     setEmailProblem(null);
+    setMismatch(null);
     setProblem(null);
+    // Checked here rather than by the API: the second field never leaves the
+    // browser, and a typo the handler cannot see is the thing it exists to catch.
+    if (String(form.get("password")) !== String(form.get("confirm"))) {
+      setMismatch("Those passwords do not match.");
+      return;
+    }
     try {
       await signUp(
         String(form.get("name")),
@@ -79,6 +87,15 @@ export default function SignUp() {
             placeholder="At least 8 characters"
             autoComplete="new-password"
             minLength={8}
+          />
+
+          <PasswordField
+            id="confirm"
+            label="Confirm password"
+            placeholder="Type it again"
+            autoComplete="new-password"
+            minLength={8}
+            problem={mismatch}
           />
 
           <button className="btn" type="submit">

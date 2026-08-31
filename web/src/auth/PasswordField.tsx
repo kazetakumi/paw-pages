@@ -8,6 +8,7 @@ export function PasswordField({
   autoComplete,
   minLength,
   aux,
+  problem,
 }: {
   id: string;
   label: string;
@@ -15,6 +16,7 @@ export function PasswordField({
   autoComplete: string;
   minLength?: number;
   aux?: ReactNode;
+  problem?: string | null;
 }) {
   const [shown, setShown] = useState(false);
 
@@ -36,8 +38,15 @@ export function PasswordField({
           autoComplete={autoComplete}
           minLength={minLength}
           required
+          aria-invalid={problem ? true : undefined}
+          aria-describedby={problem ? `${id}-problem` : undefined}
         />
       </div>
+      {problem && (
+        <p className="problem" id={`${id}-problem`}>
+          {problem}
+        </p>
+      )}
     </div>
   );
 }

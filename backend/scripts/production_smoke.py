@@ -62,19 +62,58 @@ async def main() -> int:
         r = await c.get("/me")
         check("GET /me with no cookie is 401", r.status_code == 401, f"got {r.status_code}")
 
-        r = await c.post(
-            "/auth/signup", json={"name": "Smoke Handler", "email": EMAIL, "password": PASSWORD}
-        )
-        if r.status_code != 201:
-            print(f"\nSignup failed: {r.status_code} {r.text[:400]}")
-            if r.status_code == 502:
-                print("This is the email-confirmation setting. Turn Confirm email off.")
-            return 1
-        check("signup returns 201", True)
+        # Attempting signup while Confirm email is on sends a real confirmation
+        # email and still yields no session, so allow skipping it outright.
+        if os.environ.get("SMOKE_SKIP_SIGNUP"):
+            print("  SKIP  signup (SMOKE_SKIP_SIGNUP set; no confirmation email sent)")
+            signed_up_through_the_app = False
+        else:
+            r = await c.post(
+                "/auth/signup", json={"name": "Smoke Handler", "email": EMAIL, "password": PASSWORD}
+            )
+            signed_up_through_the_app = r.status_code == 201
+            check("signup returns 201", signed_up_through_the_app, f"{r.status_code} {r.text[:200]}")
+
+        if not signed_up_through_the_app:
+            # Confirm email is still on, so Supabase answers signup with a user and
+            # no session. Provision the account through the Admin API instead and
+            # sign in, so the rest of the run still means something. The signup
+            # path itself stays unproven — that is what the toggle is for.
+            print("        (signup cannot return a session while Confirm email is on;")
+            print("         provisioning through the Admin API and signing in instead)")
+            key = os.environ.get("SMOKE_SERVICE_KEY", "")
+            sb = os.environ.get("SMOKE_SUPABASE_URL", "")
+            if not key or not sb:
+                print("Set SMOKE_SERVICE_KEY and SMOKE_SUPABASE_URL to use the fallback.")
+                return 1
+            async with httpx.AsyncClient(base_url=sb, timeout=30) as admin:
+                a = await admin.post(
+                    "/auth/v1/admin/users",
+                    headers={"apikey": key, "Authorization": f"Bearer {key}"},
+                    json={
+                        "email": EMAIL,
+                        "password": PASSWORD,
+                        "email_confirm": True,
+                        "user_metadata": {"name": "Smoke Handler"},
+                    },
+                )
+                if not a.is_success:
+                    print(f"Admin provisioning failed: {a.status_code} {a.text[:300]}")
+                    return 1
+            r = await c.post("/auth/signin", json={"email": EMAIL, "password": PASSWORD})
+            if r.status_code != 200:
+                print(f"Sign in failed: {r.status_code} {r.text[:300]}")
+                return 1
+            check("sign in returns a session", True)
 
         cookie = r.headers.get("set-cookie", "")
         check("cookie is HttpOnly", "httponly" in cookie.lower(), cookie[:120])
-        check("cookie is Secure", "secure" in cookie.lower(), cookie[:120])
+        # Secure cookies are not sent back over plain http, so a local run has to
+        # set COOKIE_SECURE=false. Only assert the flag when the base is https.
+        if BASE.startswith("https://"):
+            check("cookie is Secure", "secure" in cookie.lower(), cookie[:120])
+        else:
+            print("  SKIP  cookie is Secure (base is http; COOKIE_SECURE must be false locally)")
         check("cookie is SameSite=Lax", "samesite=lax" in cookie.lower(), cookie[:120])
         check("no token in the signup body", "access_token" not in r.text, r.text[:200])
 

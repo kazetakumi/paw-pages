@@ -41,6 +41,7 @@ describe("resetting a password", () => {
 
     renderRoute(LINK);
     await userEvent.type(screen.getByLabelText("New password"), "a whole new horse");
+    await userEvent.type(screen.getByLabelText("Confirm new password"), "a whole new horse");
     await userEvent.click(screen.getByRole("button", { name: "Set new password" }));
 
     expect(await screen.findByRole("link", { name: "Sign in" })).toHaveAttribute(
@@ -64,6 +65,7 @@ describe("resetting a password", () => {
 
     renderRoute(LINK);
     await userEvent.type(screen.getByLabelText("New password"), "a whole new horse");
+    await userEvent.type(screen.getByLabelText("Confirm new password"), "a whole new horse");
     await userEvent.click(screen.getByRole("button", { name: "Set new password" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("expired");
@@ -82,4 +84,41 @@ describe("resetting a password", () => {
     );
     expect(screen.queryByLabelText("New password")).toBeNull();
   });
+
+  it("refuses to set a password when the two do not match", async () => {
+    let reached = false;
+    server.use(
+      http.post("http://localhost:8000/auth/password-reset/confirm", () => {
+        reached = true;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderRoute(LINK);
+    await userEvent.type(screen.getByLabelText("New password"), "a whole new horse");
+    await userEvent.type(screen.getByLabelText("Confirm new password"), "a whole new horsr");
+
+    await userEvent.click(screen.getByRole("button", { name: "Set new password" }));
+
+    expect(await screen.findByText("Those passwords do not match.")).toBeInTheDocument();
+    expect(reached).toBe(false);
+  });
+
+  it("sets the password once the two agree", async () => {
+    let sent: unknown = null;
+    server.use(
+      http.post("http://localhost:8000/auth/password-reset/confirm", async ({ request }) => {
+        sent = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderRoute(LINK);
+    await userEvent.type(screen.getByLabelText("New password"), "a whole new horse");
+    await userEvent.type(screen.getByLabelText("Confirm new password"), "a whole new horse");
+
+    await userEvent.click(screen.getByRole("button", { name: "Set new password" }));
+
+    expect(await screen.findByText(/sign in with your new password/i)).toBeInTheDocument();
+    expect(sent).not.toBeNull();
+  });
+
 });

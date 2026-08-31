@@ -23,12 +23,20 @@ export default function ResetPassword() {
   // straight through to our API, is spent once, and is never a session.
   const token = new URLSearchParams(useLocation().hash.slice(1)).get("access_token");
   const [done, setDone] = useState(false);
+  const [mismatch, setMismatch] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    setMismatch(null);
     setProblem(null);
+    // The second field never leaves the browser; it exists to catch a typo in
+    // a password the handler is setting blind.
+    if (String(form.get("password")) !== String(form.get("confirm"))) {
+      setMismatch("Those passwords do not match.");
+      return;
+    }
     try {
       await confirmPasswordReset(token!, String(form.get("password")));
       setDone(true);
@@ -72,6 +80,14 @@ export default function ResetPassword() {
           placeholder="At least 8 characters"
           autoComplete="new-password"
           minLength={8}
+        />
+        <PasswordField
+          id="confirm"
+          label="Confirm new password"
+          placeholder="Type it again"
+          autoComplete="new-password"
+          minLength={8}
+          problem={mismatch}
         />
         <button className="btn" type="submit">
           Set new password
