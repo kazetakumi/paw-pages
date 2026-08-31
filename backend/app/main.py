@@ -26,7 +26,13 @@ from .db import anon_connection, rls_connection
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.pool = await asyncpg.create_pool(settings.database_url)
+    # statement_cache_size=0 because Supabase's pooler runs in transaction mode:
+    # a client connection maps to a different server connection between
+    # transactions, so asyncpg's cached statement names collide and requests
+    # fail with DuplicatePreparedStatementError. Measured against the live
+    # pooler: 31 of 40 concurrent requests failed with the cache on, 0 with it
+    # off. Tests never see this — they talk to Postgres directly.
+    app.state.pool = await asyncpg.create_pool(settings.database_url, statement_cache_size=0)
     app.state.auth_client = httpx.AsyncClient(
         base_url=settings.supabase_url,
         headers={"apikey": settings.supabase_anon_key},
