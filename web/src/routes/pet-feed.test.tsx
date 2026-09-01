@@ -136,7 +136,8 @@ describe("a pet's feed", () => {
     renderRoute(feed);
 
     const first = (await screen.findByRole("heading", { name: "Deworming" })).closest("article")!;
-    expect(within(first).getByText("12 Aug 2026")).toBeInTheDocument();
+    // The date is drawn on two lines — day and month, year beneath.
+    expect(within(first).getByText(/12 Aug/)).toHaveTextContent("2026");
     expect(within(first).getByText("Half tablet, took it in cheese.")).toBeInTheDocument();
     expect(within(first).getByText(/Next due 12 Nov 2026/)).toBeInTheDocument();
 

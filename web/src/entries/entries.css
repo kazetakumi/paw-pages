@@ -16,9 +16,15 @@
 }
 .entry .when {
   font-family: var(--data);
-  color: var(--faint);
+  color: var(--ink-2);
   white-space: nowrap;
   flex: none;
+}
+.entry .when .yr {
+  display: block;
+  color: var(--faint);
+  font-size: 11px;
+  margin-top: 2px;
 }
 .entry .what {
   min-width: 0;
@@ -36,21 +42,31 @@
 .entry .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-top: 8px;
+  gap: 7px;
+  margin-top: 9px;
 }
+/* Bordered chips rather than loose text, as drawn. */
 .entry .tag {
   font-family: var(--data);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 3px 8px;
+}
+.entry .tag.vet {
   color: var(--faint);
 }
 .entry .tag.due {
   color: var(--seal);
+  border-color: #c9dbd1;
 }
 /* Stamp red, only on something actually overdue. */
 .entry .tag.due.overdue {
   color: var(--stamp);
+  border-color: #e3c4bc;
   font-weight: 700;
 }
 
@@ -79,15 +95,21 @@
   padding: 18px 22px;
 }
 .shell-desktop .entry .when {
-  font-size: 12px;
-  width: 92px;
-  padding-top: 3px;
+  font-size: 12.5px;
+  width: 118px;
+  padding-right: 22px;
+  border-right: 1px solid var(--rule-2);
 }
+/* Title and note run together on one line, as drawn — the note is a
+   continuation of the title, not a paragraph under it. */
 .shell-desktop .entry h3 {
-  font-size: 17px;
+  display: inline;
+  font-size: 17.5px;
 }
 .shell-desktop .entry .note {
-  font-size: 14px;
+  display: inline;
+  font-size: 14.5px;
+  margin: 0 0 0 7px;
 }
 
 .shell-mobile .entry {

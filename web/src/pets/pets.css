@@ -478,6 +478,11 @@
   justify-content: space-between;
   gap: 24px;
 }
+.shell-desktop .head .acts {
+  display: flex;
+  gap: 10px;
+  flex: none;
+}
 /* Below the breakpoint the same control floats over the list instead, so a
    handler never has to scroll back up to log something. */
 .fab {
@@ -666,6 +671,14 @@
 /* ---- the photo control, on the About tab ---------------------------------
    The picker is the control; the portrait above it is the preview, so there is
    no second copy of the same image on the screen. */
+/* The picker, the remove control and the hint stack down the value column
+   rather than drifting to its right edge. */
+.shell-desktop .photo .row .v {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
 .photo .hint {
   display: block;
   color: var(--faint);

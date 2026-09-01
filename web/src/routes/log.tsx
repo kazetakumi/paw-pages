@@ -38,7 +38,7 @@ export default function Log() {
   const from = search.get("pet") ?? undefined;
 
   return (
-    <Shell name={loaded.handler.name}>
+    <Shell name={loaded.handler.name} width="form">
       <div className="about">
         <Link className="back" to={from ? `/pets/${from}` : "/home"}>
           &larr; Back

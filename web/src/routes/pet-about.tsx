@@ -227,7 +227,7 @@ export default function PetAbout() {
   const { handler, pet } = record;
 
   return (
-    <Shell name={handler.name}>
+    <Shell name={handler.name} width="pet">
       <About
         pet={pet}
         onEdit={() => setEditing(true)}

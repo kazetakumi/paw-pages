@@ -410,7 +410,7 @@ export default function Account() {
   );
 
   return (
-    <Shell name={account.name}>
+    <Shell name={account.name} width="account">
       <Layout
         account={account}
         you={rowsFor(credentials(account))}

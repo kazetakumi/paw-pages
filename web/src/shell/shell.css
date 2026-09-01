@@ -51,6 +51,16 @@
   margin: 0 auto;
   padding: 38px 28px 110px;
 }
+/* Each drawing fixes its own column. From design/*-web.html. */
+.shell-desktop .page[data-width="pet"] {
+  max-width: 800px;
+}
+.shell-desktop .page[data-width="account"] {
+  max-width: 760px;
+}
+.shell-desktop .page[data-width="form"] {
+  max-width: 660px;
+}
 
 /* ============ mobile: header + avatar, from design/dashboard-mobile.html === */
 .shell-mobile {
@@ -97,7 +107,10 @@
 .wordmark .p2 {
   color: var(--faint);
 }
-.chip {
+/* The handler's initials in the bar. Scoped, because the log form has chips of
+   its own and a bare `.chip` here squashed them into 30px circles. */
+.topbar .chip,
+.shell-mobile .top .chip {
   width: 30px;
   height: 30px;
   border-radius: 50%;

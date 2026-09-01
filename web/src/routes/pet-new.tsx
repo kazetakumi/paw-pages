@@ -23,7 +23,7 @@ export default function PetNew() {
   if (!handler) return null;
 
   return (
-    <Shell name={handler.name}>
+    <Shell name={handler.name} width="form">
       <div className="about">
         <Link className="back" to="/home">
           &larr; Home

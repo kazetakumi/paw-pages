@@ -1,3 +1,11 @@
+/* The dashboard's header pushes its two halves apart; this one does not — the
+   avatar and the title sit together on the left, as drawn. */
+.shell-desktop .account .head {
+  justify-content: flex-start;
+  align-items: center;
+  gap: 20px;
+}
+
 /* The account screen, from design/account-web.html and design/account-mobile.html.
    The sections, cards and rows come from pets.css, which already carries them
    for the About tab; only what is new here is below. */

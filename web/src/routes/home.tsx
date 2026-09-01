@@ -138,12 +138,17 @@ export default function Home() {
           <h1 className="greeting">Your pets</h1>
           <Tally board={board} />
         </div>
-        {/* Above the breakpoint it sits in the header beside the heading;
-            below it, it floats over the list at the bottom of the screen. */}
+        {/* Above the breakpoint the two actions sit in the header beside the
+            heading, as drawn; below it, logging floats over the list instead. */}
         {isDesktop && (
-          <Link className="btn" to="/log" data-log="desktop">
-            Log an entry
-          </Link>
+          <div className="acts">
+            <Link className="btn ghost" to="/pets/new">
+              Add a pet
+            </Link>
+            <Link className="btn" to="/log" data-log="desktop">
+              Log an entry
+            </Link>
+          </div>
         )}
       </div>
       <Ledger items={board.ledger} />

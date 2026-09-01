@@ -41,13 +41,13 @@
   color: var(--faint);
 }
 
-.sheet {
+.auth .sheet {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 2px;
   padding: 30px 28px 26px;
 }
-.sheet h1 {
+.auth .sheet h1 {
   font-family: var(--display);
   font-size: 27px;
   font-weight: 600;
@@ -55,16 +55,16 @@
   margin: 0 0 6px;
   line-height: 1.1;
 }
-.lede {
+.auth .lede {
   font-size: 14.5px;
   color: var(--ink-2);
   margin: 0 0 28px;
 }
 
-.f {
+.auth .f {
   margin-bottom: 22px;
 }
-.lab {
+.auth .lab {
   font-family: var(--data);
   font-size: 10px;
   font-weight: 700;
@@ -76,10 +76,10 @@
   gap: 10px;
   margin-bottom: 4px;
 }
-.lab label {
+.auth .lab label {
   margin-right: auto;
 }
-.lab .aux {
+.auth .lab .aux {
   font-family: var(--data);
   font-size: 10px;
   font-weight: 400;
@@ -91,19 +91,19 @@
   padding: 0;
   cursor: pointer;
 }
-.lab .aux:hover {
+.auth .lab .aux:hover {
   color: var(--ink);
 }
-.field {
+.auth .field {
   border-bottom: 1px solid var(--rule);
   padding-bottom: 2px;
   transition: border-color 0.15s;
 }
-.field:focus-within {
+.auth .field:focus-within {
   border-bottom-color: var(--ink);
   box-shadow: 0 1px 0 0 var(--ink);
 }
-.field input {
+.auth .field input {
   width: 100%;
   border: 0;
   background: transparent;
@@ -112,28 +112,28 @@
   font-size: 17px;
   color: var(--ink);
 }
-.field input:focus {
+.auth .field input:focus {
   outline: none;
 }
-.field input::placeholder {
+.auth .field input::placeholder {
   color: #b9c0c7;
 }
-.field input[aria-invalid="true"] {
+.auth .field input[aria-invalid="true"] {
   border-bottom: 1px solid var(--stamp);
   margin-bottom: -1px;
 }
-.hint {
+.auth .hint {
   font-size: 12.5px;
   color: var(--faint);
   margin-top: 8px;
 }
-.problem {
+.auth .problem {
   font-size: 12.5px;
   color: var(--stamp);
   margin-top: 8px;
 }
 
-.btn {
+.auth .btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,35 +149,35 @@
   cursor: pointer;
   margin-top: 6px;
 }
-.btn:hover {
+.auth .btn:hover {
   background: #000;
 }
-.btn:disabled {
+.auth .btn:disabled {
   opacity: 0.55;
   cursor: default;
 }
 
-.note {
+.auth .note {
   font-size: 12.5px;
   color: var(--faint);
   margin: 16px 0 0;
   line-height: 1.55;
   text-align: center;
 }
-.note.bad {
+.auth .note.bad {
   color: var(--stamp);
 }
-.alt {
+.auth .alt {
   text-align: center;
   margin-top: 24px;
   font-size: 14px;
   color: var(--ink-2);
 }
-.alt a {
+.auth .alt a {
   border-bottom: 1px solid var(--rule);
   padding-bottom: 1px;
   color: var(--ink);
 }
-.alt a:hover {
+.auth .alt a:hover {
   border-color: var(--ink);
 }

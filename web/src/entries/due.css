@@ -97,6 +97,10 @@
   border-right: 1px solid var(--rule-2);
 }
 .shell-desktop .lrow.over .date {
+  /* colour repeated here because `.shell-desktop .lrow .date` above outranks
+     the unprefixed `.lrow.over .date` rule and would grey the date back out */
+  color: var(--stamp);
+  font-weight: 700;
   border-right-color: #edd5ce;
 }
 .shell-desktop .lrow .what {

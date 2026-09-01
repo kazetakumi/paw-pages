@@ -12,7 +12,19 @@ function initials(name: string) {
     .join("");
 }
 
-function ShellDesktop({ name, children }: { name: string; children: ReactNode }) {
+/** The drawn column width per screen. The dashboard is the widest; the log form
+ *  is the narrowest. Anything wider than its drawing reads as a broken page. */
+export type PageWidth = "wide" | "pet" | "account" | "form";
+
+function ShellDesktop({
+  name,
+  width,
+  children,
+}: {
+  name: string;
+  width: PageWidth;
+  children: ReactNode;
+}) {
   return (
     <div className="shell-desktop" data-layout="desktop">
       <header className="topbar">
@@ -33,7 +45,9 @@ function ShellDesktop({ name, children }: { name: string; children: ReactNode })
           </div>
         </div>
       </header>
-      <main className="page">{children}</main>
+      <main className="page" data-width={width}>
+        {children}
+      </main>
     </div>
   );
 }
@@ -54,7 +68,20 @@ function ShellMobile({ name, children }: { name: string; children: ReactNode }) 
   );
 }
 
-export function Shell({ name, children }: { name: string; children: ReactNode }) {
-  const Layout = useIsDesktop() ? ShellDesktop : ShellMobile;
-  return <Layout name={name}>{children}</Layout>;
+export function Shell({
+  name,
+  width = "wide",
+  children,
+}: {
+  name: string;
+  width?: PageWidth;
+  children: ReactNode;
+}) {
+  return useIsDesktop() ? (
+    <ShellDesktop name={name} width={width}>
+      {children}
+    </ShellDesktop>
+  ) : (
+    <ShellMobile name={name}>{children}</ShellMobile>
+  );
 }

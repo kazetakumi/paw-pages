@@ -141,7 +141,11 @@ describe("the home screen", () => {
     expect(within(card).getByText(/Indian Pariah/)).toHaveTextContent("male");
     expect(within(card).getByText(/Indian Pariah/)).toHaveTextContent("4 yrs 5 mo");
     expect(screen.getByRole("link", { name: /Momo/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /add a pet/i })).toHaveAttribute("href", "/pets/new");
+    // Two ways in, as the drawing has them: the header button and the card at
+    // the end of the grid. Both go to the same place.
+    const addPet = screen.getAllByRole("link", { name: /add a pet/i });
+    expect(addPet).toHaveLength(2);
+    for (const link of addPet) expect(link).toHaveAttribute("href", "/pets/new");
   });
 
   it("lists the same pets in the mobile layout below the breakpoint", async () => {
@@ -184,7 +188,7 @@ describe("the home screen", () => {
 
     renderRoute("/home");
 
-    expect(await screen.findByRole("link", { name: /add a pet/i })).toBeInTheDocument();
+    expect((await screen.findAllByRole("link", { name: /add a pet/i }))[0]).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Biscuit/ })).not.toBeInTheDocument();
   });
 

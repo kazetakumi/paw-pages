@@ -16,7 +16,7 @@ import {
 } from "../api";
 import { Attention } from "../entries/due";
 import { EntryForm } from "../entries/EntryForm";
-import { formatDate, summaryOf } from "../pets/pet";
+import { formatDate, formatDayMonth, summaryOf } from "../pets/pet";
 import { PetAvatar } from "../pets/PetAvatar";
 import { Shell } from "../shell/Shell";
 import { useIsDesktop } from "../shell/useIsDesktop";
@@ -36,7 +36,11 @@ function EntryCard({
 }) {
   return (
     <article className="entry">
-      <div className="when">{formatDate(entry.happened_on)}</div>
+      {/* Day and month on one line, the year quietly under it, as drawn. */}
+      <div className="when">
+        {formatDayMonth(entry.happened_on)}
+        <span className="yr">{entry.happened_on.slice(0, 4)}</span>
+      </div>
       <div className="what">
         <h3>{entry.title}</h3>
         {entry.note && <p className="note">{entry.note}</p>}
@@ -191,7 +195,7 @@ export default function PetFeed() {
   const { pet } = record;
 
   return (
-    <Shell name={record.handler.name}>
+    <Shell name={record.handler.name} width="pet">
       <Feed pet={pet}>
         {pet.due_items.length > 0 && (
           <>
