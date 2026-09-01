@@ -49,8 +49,19 @@ describe("a pet's About tab", () => {
     }
     expect(screen.getByText("dog")).toBeInTheDocument();
     expect(screen.getByText("Indian Pariah")).toBeInTheDocument();
-    expect(screen.getByText("male")).toBeInTheDocument();
+    expect(screen.getByText("Male")).toBeInTheDocument();
     expect(screen.getByText("Tan & white")).toBeInTheDocument();
+  });
+
+  it("capitalises the sex in the identity row but leaves the header line alone", async () => {
+    signedInWith(biscuit);
+    setViewportWidth(1200);
+
+    renderRoute(about);
+
+    // The drawing has "Male" in the row and "male" in the line under the name.
+    expect(await screen.findByText("Male")).toBeInTheDocument();
+    expect(screen.getByText(/Indian Pariah ·/)).toHaveTextContent("male");
   });
 
   it("shows the same identity in the mobile layout below the breakpoint", async () => {
@@ -428,4 +439,5 @@ describe("archiving a pet", () => {
     expect(container.querySelector('[data-archive="mobile"]')).toBeInTheDocument();
     expect(container.querySelector('[data-archive="desktop"]')).toBeNull();
   });
+
 });

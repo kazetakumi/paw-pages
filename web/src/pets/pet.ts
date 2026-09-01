@@ -11,6 +11,11 @@ export function ageOf(pet: Pet): string | null {
   return months === 0 ? yrs : `${yrs} ${months} mo`;
 }
 
+/** A stored value shown at the head of its own row. The line under the pet's
+ *  name keeps the value as written; only the identity row is capitalised. */
+export const capitalised = (value: string | null) =>
+  value ? value[0]!.toUpperCase() + value.slice(1) : value;
+
 /** Breed, sex and age — whichever of them this pet actually has. */
 export const summaryOf = (pet: Pet) =>
   [pet.breed || pet.species, pet.sex, ageOf(pet)].filter(Boolean).join(" · ");

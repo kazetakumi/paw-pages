@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMe, getPet, updatePet, Unauthorized, type Handler, type Pet } from "../api";
-import { ageOf, formatDate, summaryOf } from "../pets/pet";
+import { ageOf, capitalised, formatDate, summaryOf } from "../pets/pet";
 import { ArchivePanel } from "../pets/ArchivePanel";
 import { PetAvatar } from "../pets/PetAvatar";
 import { PetForm } from "../pets/PetForm";
@@ -69,7 +69,7 @@ function AboutDesktop({ pet, onEdit, form, photo, publicPage, archive }: LayoutP
           </div>
           <div className="row">
             <span className="k">Sex</span>
-            <Value text={pet.sex} />
+            <Value text={capitalised(pet.sex)} />
           </div>
           <div className="row">
             <span className="k">Date of birth</span>
@@ -161,7 +161,7 @@ function AboutMobile({ pet, onEdit, form, photo, publicPage, archive }: LayoutPr
           </div>
           <div className="row">
             <span className="k">Sex</span>
-            <Value text={pet.sex} />
+            <Value text={capitalised(pet.sex)} />
           </div>
           <div className="row">
             <span className="k">Born</span>
