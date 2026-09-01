@@ -222,11 +222,13 @@
   flex: 1;
   min-width: 0;
 }
-.shell-mobile .account .row .v {
+/* An email is one unbreakable token. It wraps rather than being cut off with
+   an ellipsis — a handler needs to read the whole address. */
+.shell-mobile .account .row .v,
+.shell-mobile .account .row .sub {
   text-align: left;
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 .shell-mobile .account .row .sub {
   font-size: 11.5px;

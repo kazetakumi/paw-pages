@@ -35,7 +35,7 @@ function EntryCard({
   onDelete: () => void;
 }) {
   return (
-    <article className="entry">
+    <article className={entry.is_overdue ? "entry late" : "entry"}>
       {/* Day and month on one line, the year quietly under it, as drawn. */}
       <div className="when">
         {formatDayMonth(entry.happened_on)}

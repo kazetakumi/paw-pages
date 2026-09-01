@@ -138,7 +138,15 @@
   padding: 14px 15px;
 }
 .shell-mobile .lrow.over {
+  /* `.shell-mobile .lrow` above sets the card background and the date colour at
+     the same specificity as `.lrow.over`, so both are restated here or the
+     overdue row comes out plain white. */
+  background: var(--stamp-wash);
   border-color: #e9d2cb;
+}
+.shell-mobile .lrow.over .date {
+  color: var(--stamp);
+  font-weight: 700;
 }
 .shell-mobile .lrow .date {
   font-size: 11px;

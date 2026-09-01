@@ -20,11 +20,25 @@
   white-space: nowrap;
   flex: none;
 }
-.entry .when .yr {
+/* Desktop stacks the year under the day; the narrow layout keeps the whole
+   date on one line, as each drawing has it. */
+.shell-desktop .entry .when .yr {
   display: block;
   color: var(--faint);
   font-size: 11px;
   margin-top: 2px;
+}
+.shell-mobile .entry .when .yr {
+  margin-left: 4px;
+}
+/* An entry whose due date has passed is marked in the history too, so the feed
+   and the ledger can never say different things. */
+.entry.late {
+  background: var(--stamp-wash);
+}
+.entry.late .when {
+  color: var(--stamp);
+  font-weight: 700;
 }
 .entry .what {
   min-width: 0;
