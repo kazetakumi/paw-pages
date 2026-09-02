@@ -9,3 +9,5 @@ dist/
 __pycache__/
 .pytest_cache/
 *.tsbuildinfo
+deploy/logs/
+deploy/running.pids
