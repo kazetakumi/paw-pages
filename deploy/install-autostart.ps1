@@ -1,6 +1,7 @@
-# Registers a scheduled task so a reboot does not take the sites down. Runs at
-# logon rather than at boot because uv, node and cloudflared all resolve from
-# the user PATH and the tunnel credentials live under the user profile.
+# Registers a scheduled task so the two app servers come back after a reboot.
+# Runs at logon rather than at boot because uv and node resolve from the user
+# PATH. The tunnel itself is a service and starts earlier, without a login --
+# it just answers 502 until this task brings the origins up.
 #
 #   .\deploy\install-autostart.ps1     register (or update) the task
 #
@@ -11,7 +12,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `
-    -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\start.ps1`" -Tunnel pawpages" `
+    -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\start.ps1`"" `
     -WorkingDirectory $root
 
 # Give the network a moment; cloudflared would retry anyway, but this keeps the

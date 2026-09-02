@@ -1,18 +1,15 @@
-# Starts the home server: uvicorn on 8001, Caddy on 8080 in front of it, the
-# Daybook server on 3000, and the Cloudflare tunnel that fronts both apps.
-# Stop it all with deploy\stop.ps1.
+# Starts the app servers: uvicorn on 8001, Caddy on 8080 in front of it, and
+# the Daybook server on 3000. Stop them with deploy\stop.ps1.
 #
-#   .\deploy\start.ps1 -Build            rebuild web\dist first
-#   .\deploy\start.ps1 -Tunnel pawpages  also bring up the named tunnel
-#   .\deploy\start.ps1 -NoDaybook        paw-pages only
+#   .\deploy\start.ps1 -Build       rebuild web\dist first
+#   .\deploy\start.ps1 -NoDaybook   paw-pages only
 #
-# Without -Tunnel it runs local-only on http://127.0.0.1:8080, which is how you
-# test the whole stack before the domain is live.
+# The Cloudflare tunnel is not started here -- it runs as a Windows service so
+# it survives a reboot without a login. See deploy\install-tunnel-service.ps1.
 
 param(
     [switch]$Build,
-    [switch]$NoDaybook,
-    [string]$Tunnel = $env:PAW_TUNNEL
+    [switch]$NoDaybook
 )
 
 $ErrorActionPreference = "Stop"
@@ -55,12 +52,6 @@ if (-not $NoDaybook -and (Test-Path $daybook)) {
     $procs += Start-Process -FilePath "npm.cmd" -ArgumentList "start" `
         -WorkingDirectory $daybook -PassThru -WindowStyle Hidden `
         -RedirectStandardOutput "$logs\daybook.log" -RedirectStandardError "$logs\daybook.err"
-}
-
-if ($Tunnel) {
-    $procs += Start-Process -FilePath "cloudflared" `
-        -ArgumentList "tunnel","run",$Tunnel -PassThru -WindowStyle Hidden `
-        -RedirectStandardOutput "$logs\cloudflared.log" -RedirectStandardError "$logs\cloudflared.err"
 }
 
 $procs | ForEach-Object { $_.Id } | Set-Content (Join-Path $PSScriptRoot "running.pids") -Encoding utf8
