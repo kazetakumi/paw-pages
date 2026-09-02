@@ -1,11 +1,15 @@
-# Starts the app servers: uvicorn on 8001, Caddy on 8080 in front of it, and
-# the Daybook server on 3000. Stop them with deploy\stop.ps1.
+# Runs the app servers in the foreground of this machine for local work:
+# uvicorn on 8001, Caddy on 8080 in front of it, and Daybook on 3000. Stop them
+# with deploy\stop.ps1.
 #
 #   .\deploy\start.ps1 -Build       rebuild web\dist first
 #   .\deploy\start.ps1 -NoDaybook   paw-pages only
 #
-# The Cloudflare tunnel is not started here -- it runs as a Windows service so
-# it survives a reboot without a login. See deploy\install-tunnel-service.ps1.
+# In production these three run as Windows services instead, alongside the
+# tunnel -- see deploy\install-app-services.ps1 and install-tunnel-service.ps1.
+# Stop the services before running this, or the ports collide:
+#
+#   Stop-Service pawpages-web, pawpages-api, daybook
 
 param(
     [switch]$Build,
