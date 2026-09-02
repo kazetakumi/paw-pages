@@ -59,6 +59,12 @@ Add-AppService "pawpages-api" $python `
     (Join-Path $root "backend") `
     @("COOKIE_SECURE=true", "WEB_URL=https://pawpages.kazetakumi.in", "DOCS_ENABLED=false")
 
+# The pool is opened at startup, so the api exits if the database host cannot be
+# resolved yet -- which is what happens for the first few seconds after a boot.
+# nssm restarts it and the third try succeeds; waiting for the resolver first
+# keeps those two crashes out of the logs.
+& $nssm set "pawpages-api" DependOnService Dnscache | Out-Null
+
 Add-AppService "pawpages-web" $caddy "run --config deploy\Caddyfile" $root $null
 
 Add-AppService "daybook" $node "node_modules\tsx\dist\cli.mjs src/server/index.ts" $daybook $null
