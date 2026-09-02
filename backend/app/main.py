@@ -53,7 +53,13 @@ async def lifespan(app: FastAPI):
     await app.state.pool.close()
 
 
-app = FastAPI(title="Paw Pages", lifespan=lifespan)
+app = FastAPI(
+    title="Paw Pages",
+    lifespan=lifespan,
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
+)
 
 
 @app.exception_handler(RequestValidationError)
