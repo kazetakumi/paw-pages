@@ -1,14 +1,17 @@
-# Starts the home server: uvicorn on 8001, Caddy on 8080 in front of it, and
-# the Cloudflare tunnel that makes it public. Stop it with deploy\stop.ps1.
+# Starts the home server: uvicorn on 8001, Caddy on 8080 in front of it, the
+# Daybook server on 3000, and the Cloudflare tunnel that fronts both apps.
+# Stop it all with deploy\stop.ps1.
 #
-#   .\deploy\start.ps1 -Build          rebuild web\dist first
+#   .\deploy\start.ps1 -Build            rebuild web\dist first
 #   .\deploy\start.ps1 -Tunnel pawpages  also bring up the named tunnel
+#   .\deploy\start.ps1 -NoDaybook        paw-pages only
 #
 # Without -Tunnel it runs local-only on http://127.0.0.1:8080, which is how you
 # test the whole stack before the domain is live.
 
 param(
     [switch]$Build,
+    [switch]$NoDaybook,
     [string]$Tunnel = $env:PAW_TUNNEL
 )
 
@@ -44,6 +47,15 @@ $procs += Start-Process -FilePath "caddy" `
     -ArgumentList "run","--config","deploy\Caddyfile" `
     -WorkingDirectory $root -PassThru -WindowStyle Hidden `
     -RedirectStandardOutput "$logs\caddy.log" -RedirectStandardError "$logs\caddy.err"
+
+# Sibling repo, served on daybook.kazetakumi.in by the same tunnel. It serves
+# its own dist/ and /api/* off one port, so it needs nothing in front of it.
+$daybook = Join-Path (Split-Path -Parent $root) "daybook"
+if (-not $NoDaybook -and (Test-Path $daybook)) {
+    $procs += Start-Process -FilePath "npm.cmd" -ArgumentList "start" `
+        -WorkingDirectory $daybook -PassThru -WindowStyle Hidden `
+        -RedirectStandardOutput "$logs\daybook.log" -RedirectStandardError "$logs\daybook.err"
+}
 
 if ($Tunnel) {
     $procs += Start-Process -FilePath "cloudflared" `

@@ -1,7 +1,10 @@
 # Cloudflare terminates TLS at its edge and cloudflared dials out from here, so
-# this listens on plain HTTP and is never reachable from outside the machine.
+# this listens on plain HTTP. Bound to loopback so the only way in is the
+# tunnel -- without it the app is also served unencrypted to the whole LAN.
 # Run it from the repo root so `web/dist` resolves the same way on Linux later.
 :8080 {
+	bind 127.0.0.1
+
 	handle_path /api/* {
 		reverse_proxy 127.0.0.1:8001
 	}
