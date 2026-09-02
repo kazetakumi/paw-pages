@@ -5,6 +5,14 @@
 :8080 {
 	bind 127.0.0.1
 
+	# Backstop for Cloudflare's "Always Use HTTPS". The session cookie is Secure,
+	# so a page served over plain http drops it and sign-in fails silently -- and
+	# once the edge redirects that page's /api calls, they turn cross-origin and
+	# die on CORS. Cloudflare says which scheme the visitor used; a request that
+	# came in without the header is the tunnel or a local probe, and is left alone.
+	@insecure header X-Forwarded-Proto http
+	redir @insecure https://{host}{uri} permanent
+
 	handle_path /api/* {
 		reverse_proxy 127.0.0.1:8001
 	}
