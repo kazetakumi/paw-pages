@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   createEntry,
   deleteEntry,
+  entryPhotoUrl,
   getMe,
   getPet,
   listEntries,
@@ -44,6 +45,11 @@ function EntryCard({
       <div className="what">
         <h3>{entry.title}</h3>
         {entry.note && <p className="note">{entry.note}</p>}
+        {/* Read with the handler's own cookie out of the private bucket, the
+            same as a pet's. No Supabase domain reaches the markup. */}
+        {entry.has_photo && (
+          <img className="shot" src={entryPhotoUrl(entry.id)} alt={entry.title} loading="lazy" />
+        )}
         {(entry.due_on || entry.vet || entry.weight_value) && (
           <div className="tags">
             {entry.due_on && (
@@ -250,6 +256,8 @@ export default function PetFeed() {
                   <EntryForm
                     pets={[pet]}
                     entry={entry}
+                    entryId={entry.id}
+                    hasPhoto={entry.has_photo}
                     save={(fields) => updateEntry(entry.id, fields)}
                     onSaved={(saved) => {
                       setEntries((shown) =>

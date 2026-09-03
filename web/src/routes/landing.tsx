@@ -40,6 +40,7 @@ const LOGGED: Entry[] = [
     note: "Half tablet, took it in cheese.",
     weight_value: null,
     weight_unit: null,
+    has_photo: false,
     is_overdue: false,
   },
   {
@@ -52,6 +53,7 @@ const LOGGED: Entry[] = [
     note: "Limping on the back right leg. Nothing found.",
     weight_value: "12.40",
     weight_unit: "kg",
+    has_photo: false,
     is_overdue: false,
   },
   {
@@ -64,6 +66,7 @@ const LOGGED: Entry[] = [
     note: "Batch 4471-B. Next due Apr 2029.",
     weight_value: null,
     weight_unit: null,
+    has_photo: false,
     is_overdue: false,
   },
   {
@@ -76,6 +79,7 @@ const LOGGED: Entry[] = [
     note: "Full clip and nails.",
     weight_value: null,
     weight_unit: null,
+    has_photo: false,
     is_overdue: false,
   },
 ];

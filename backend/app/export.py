@@ -22,8 +22,14 @@ PETS = """select id, name, species, breed, sex, date_of_birth, dob_is_approx, co
 from pets order by created_at"""
 
 ENTRIES = """select id, pet_id, title, happened_on, due_on, due_closed_at, vet, note,
-       weight_value, weight_unit, created_at
+       weight_value, weight_unit, photo_path, created_at
 from entries order by happened_on, id"""
+
+
+def entry_photo_name(entry_id: str, path: str) -> str:
+    """An entry's photo under its own id, so two entries on one pet cannot
+    collide the way two names could."""
+    return f"photos/entries/{entry_id}{PurePosixPath(path).suffix}"
 
 
 def photo_name(slug: str, path: str) -> str:

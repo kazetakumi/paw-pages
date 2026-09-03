@@ -1,5 +1,14 @@
-import { useState, type ReactNode } from "react";
-import { ApiError, FieldError, type Entry, type EntryFields, type Pet } from "../api";
+import { useState, type ChangeEvent, type ReactNode } from "react";
+import {
+  ApiError,
+  entryPhotoUrl,
+  FieldError,
+  removeEntryPhoto,
+  uploadEntryPhoto,
+  type Entry,
+  type EntryFields,
+  type Pet,
+} from "../api";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import { addMonths, INTERVALS, shiftDays, today } from "./entry";
 
@@ -10,6 +19,10 @@ type Props = {
   entry?: Partial<EntryFields>;
   /** The pet the form was opened from, pre-selected. */
   petId?: string;
+  /** The entry being corrected, when there is one. Only the photo needs it:
+   *  a new entry has no id to hang one on until it has been saved. */
+  entryId?: string;
+  hasPhoto?: boolean;
   /** Titles the handler has used before. Their own words, never a vocabulary.
    *  The edit form offers none: a correction already has its words. */
   titles?: string[];
@@ -46,7 +59,20 @@ const Optional = () => <span className="opt"> optional</span>;
 
 /** One form for a rabies booster, a vet visit and a nail trim, and the same
  *  form for correcting one afterwards. The title is typed, never picked. */
-export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCancel }: Props) {
+/** The bucket's own allowed types, so the picker offers what it will take. */
+const ACCEPT = "image/jpeg,image/png,image/webp,image/heic";
+
+export function EntryForm({
+  pets,
+  entry,
+  petId,
+  entryId,
+  hasPhoto = false,
+  titles = [],
+  save,
+  onSaved,
+  onCancel,
+}: Props) {
   const [fields, setFields] = useState({
     pet_id: entry?.pet_id ?? petId ?? pets[0]?.id ?? "",
     title: entry?.title ?? "",
@@ -60,6 +86,12 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
     weight_unit: entry?.weight_unit ?? "kg",
   });
   const [problem, setProblem] = useState<Error | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
+  // A photo needs an entry to hang on, so a new one is saved first and the
+  // upload follows. Holding what came back means a retry after a failed
+  // upload retries the upload, rather than writing the entry twice.
+  const [written, setWritten] = useState<Entry | null>(null);
+  const [carries, setCarries] = useState(hasPhoto);
   const isDesktop = useIsDesktop();
 
   const set = (patch: Partial<typeof fields>) => setFields((was) => ({ ...was, ...patch }));
@@ -74,8 +106,9 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
     event.preventDefault();
     setProblem(null);
     try {
-      onSaved(
-        await save({
+      const saved =
+        written ??
+        (await save({
           pet_id: fields.pet_id,
           title: fields.title.trim(),
           happened_on: fields.happened_on,
@@ -86,8 +119,12 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
           // backstop rather than something the handler ever runs into.
           weight_value: fields.weight_value.trim() || null,
           weight_unit: fields.weight_value.trim() ? fields.weight_unit : null,
-        }),
-      );
+        }));
+      if (!photo) return onSaved(saved);
+      // Only a photo needs the entry remembered: if the upload fails, the
+      // next Save retries just the upload instead of writing a second entry.
+      setWritten(saved);
+      onSaved(await uploadEntryPhoto(saved.id, photo));
     } catch (failure) {
       if (failure instanceof FieldError || failure instanceof ApiError) setProblem(failure);
       else throw failure;
@@ -268,6 +305,48 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
     </Field>
   );
 
+  async function dropPhoto() {
+    if (!entryId) return;
+    await removeEntryPhoto(entryId);
+    setCarries(false);
+    setPhoto(null);
+  }
+
+  const picture = (
+    <Field
+      id="photo"
+      label={
+        <>
+          Photo
+          <Optional />
+        </>
+      }
+      problem={rejected("photo")}
+    >
+      {/* Shown only when the entry already has one: a new entry has nothing to
+          fetch until it has been saved. */}
+      {entryId && carries && !photo && (
+        <img className="shot" src={entryPhotoUrl(entryId)} alt="" />
+      )}
+      <input
+        id="photo"
+        className="file"
+        type="file"
+        accept={ACCEPT}
+        onChange={(event: ChangeEvent<HTMLInputElement>) =>
+          setPhoto(event.target.files?.[0] ?? null)
+        }
+        {...flag("photo")}
+      />
+      <span className="hint">JPEG, PNG, WebP or HEIC, up to 5 MB. Never shown on a public page.</span>
+      {entryId && carries && (
+        <button className="rm" type="button" onClick={dropPhoto}>
+          Remove photo
+        </button>
+      )}
+    </Field>
+  );
+
   const note = (
     <Field
       id="note"
@@ -290,8 +369,11 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
 
   return (
     <form className="petform entryform" onSubmit={onSubmit}>
-      {/* The drawn desktop screen pairs the date with the vet on one row and
-          puts the vet above the due date; the mobile one stacks and reorders. */}
+      {/* One order in both, as of v1.1: the record first, then the two optional
+          attachments. The two dates are adjacent because they are the same
+          widget and the due-date chips count from the one above. Desktop keeps
+          the drawn date-and-vet pairing on one row; mobile stacks the same
+          sequence. `design/` still shows the v1 arrangement. */}
       {isDesktop ? (
         <>
           {pet}
@@ -300,19 +382,21 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
             {date}
             {vet}
           </div>
-          {weight}
           {due}
           {note}
+          {weight}
+          {picture}
         </>
       ) : (
         <>
           {pet}
           {title}
           {date}
-          {weight}
-          {due}
           {vet}
+          {due}
           {note}
+          {weight}
+          {picture}
         </>
       )}
 

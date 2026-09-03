@@ -203,10 +203,12 @@ export type Entry = {
    *  Formatted for display, never parsed — the same rule dates follow. */
   weight_value: string | null;
   weight_unit: string | null;
+  /** Whether there is a photo to ask `entryPhotoUrl` for. Never the path. */
+  has_photo: boolean;
   is_overdue: boolean;
 };
 
-export type EntryFields = Omit<Entry, "id" | "is_overdue">;
+export type EntryFields = Omit<Entry, "id" | "is_overdue" | "has_photo">;
 
 /** One page of a pet's feed. The cursor is opaque: carried back untouched. */
 export type FeedPage = { entries: Entry[]; next_cursor: string | null };
@@ -305,3 +307,13 @@ export const uploadPhoto = (petId: string, file: File) =>
   request<Pet>("PUT", `/pets/${petId}/photo`, file);
 
 export const removePhoto = (petId: string) => request<Pet>("DELETE", `/pets/${petId}/photo`);
+
+/** The same three routes for an entry's own photo. Private even on a public
+ *  page: `public_entries` never carried one. */
+export const entryPhotoUrl = (entryId: string) => `${BASE}/entries/${entryId}/photo`;
+
+export const uploadEntryPhoto = (entryId: string, file: File) =>
+  request<Entry>("PUT", `/entries/${entryId}/photo`, file);
+
+export const removeEntryPhoto = (entryId: string) =>
+  request<Entry>("DELETE", `/entries/${entryId}/photo`);

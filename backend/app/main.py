@@ -350,6 +350,13 @@ async def export_account(
             )
             if found is not None:
                 photos[export.photo_name(pet["slug"], pet["photo_path"])] = found[0]
+    for entry in entry_rows:
+        if entry["photo_path"]:
+            found = await supabase_storage.download(
+                request.app.state.storage_client, token, entry["photo_path"]
+            )
+            if found is not None:
+                photos[export.entry_photo_name(str(entry["id"]), entry["photo_path"])] = found[0]
 
     buffer = export.build(account, pets_rows, entry_rows, photos)
     return StreamingResponse(
@@ -376,7 +383,11 @@ async def delete_me(
     theirs can make — carries the service-role key.
     """
     supabase_admin.check_configured()
-    paths = await conn.fetch("select photo_path from pets where photo_path is not null")
+    paths = await conn.fetch(
+        "select photo_path from pets where photo_path is not null"
+        " union all"
+        " select photo_path from entries where photo_path is not null"
+    )
     for row in paths:
         await supabase_storage.remove(
             request.app.state.storage_client, token, row["photo_path"]
@@ -630,9 +641,30 @@ async def update_entry(
 
 
 @app.delete("/entries/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_entry(entry_id: UUID, conn: asyncpg.Connection = Depends(db)) -> None:
-    if await conn.fetchval("delete from entries where id = $1 returning id", entry_id) is None:
+async def delete_entry(
+    entry_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> None:
+    """Delete the row, then the object it pointed at.
+
+    The row goes first so a storage failure cannot leave an entry the handler
+    cannot get rid of. That trades a possible orphan for a delete that always
+    works, which is the right way round: nothing here ever shows an object the
+    database has stopped naming.
+    """
+    # `returning photo_path` alone cannot tell "no such entry" from "an entry
+    # with no photo" — both are null. The id says which one happened.
+    row = await conn.fetchrow(
+        "delete from entries where id = $1 returning id, photo_path", entry_id
+    )
+    if row is None:
         raise NO_SUCH_ENTRY
+    if row["photo_path"]:
+        await supabase_storage.remove(
+            request.app.state.storage_client, token, row["photo_path"]
+        )
 
 
 @app.post("/entries/{entry_id}/mark-done")
@@ -766,6 +798,79 @@ async def read_photo(
     if path is None:
         raise NO_SUCH_PHOTO
     return await stream_photo(request, token, path, NO_SUCH_PHOTO)
+
+
+NO_SUCH_ENTRY_PHOTO = HTTPException(status.HTTP_404_NOT_FOUND, "No such photo.")
+
+
+async def entry_pet(entry_id: UUID, conn: asyncpg.Connection) -> UUID:
+    """The pet an entry belongs to, or 404.
+
+    RLS is the filter, so an entry under someone else's pet is simply not
+    there — the same answer a missing id gets, and deliberately the same one,
+    because which of the two it was is not the caller's business.
+    """
+    pet_id = await conn.fetchval("select pet_id from entries where id = $1", entry_id)
+    if pet_id is None:
+        raise NO_SUCH_ENTRY
+    return pet_id
+
+
+@app.put("/entries/{entry_id}/photo")
+async def put_entry_photo(
+    entry_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> entries.EntryOut:
+    """Upload a photo for an entry, or replace the one already there.
+
+    Stored under the entry's *pet*, not the entry, because segment one of the
+    path is what all four policies in 0004 key off. Same order as a pet's
+    photo: upload, point the row at it, then delete what it replaced.
+    """
+    content = await request.body()
+    content_type = supabase_storage.check(request.headers.get("content-type"), len(content))
+
+    pet_id = await entry_pet(entry_id, conn)
+    previous = await conn.fetchval("select photo_path from entries where id = $1", entry_id)
+
+    path = supabase_storage.path_for(pet_id, content_type)
+    client = request.app.state.storage_client
+    await supabase_storage.upload(client, token, path, content, content_type)
+    await conn.execute("update entries set photo_path = $2 where id = $1", entry_id, path)
+    if previous:
+        await supabase_storage.remove(client, token, previous)
+    return await read_entry(entry_id, conn)
+
+
+@app.delete("/entries/{entry_id}/photo")
+async def delete_entry_photo(
+    entry_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> entries.EntryOut:
+    """Take the photo away, object and all. The entry itself stays."""
+    await entry_pet(entry_id, conn)
+    previous = await conn.fetchval("select photo_path from entries where id = $1", entry_id)
+    await conn.execute("update entries set photo_path = null where id = $1", entry_id)
+    if previous:
+        await supabase_storage.remove(request.app.state.storage_client, token, previous)
+    return await read_entry(entry_id, conn)
+
+
+@app.get("/entries/{entry_id}/photo")
+async def read_entry_photo(
+    entry_id: UUID,
+    request: Request,
+    conn: asyncpg.Connection = Depends(db),
+    token: str = Depends(access_token),
+) -> Response:
+    path = await conn.fetchval("select photo_path from entries where id = $1", entry_id)
+    if path is None:
+        raise NO_SUCH_ENTRY_PHOTO
+    return await stream_photo(request, token, path, NO_SUCH_ENTRY_PHOTO)
 
 
 @app.get("/public/pets/{slug}/photo")

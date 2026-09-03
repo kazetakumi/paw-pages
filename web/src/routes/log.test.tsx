@@ -325,4 +325,119 @@ describe("the log form", () => {
     await waitFor(() => expect(sent).toHaveLength(1));
     expect(sent[0]).toMatchObject({ weight_value: null, weight_unit: null });
   });
+  it("uploads a chosen photo after the entry it belongs to is saved", async () => {
+    const sent = signedIn();
+    const uploaded: string[] = [];
+    server.use(
+      http.put("http://localhost:8000/entries/:id/photo", ({ params }) => {
+        uploaded.push(params["id"] as string);
+        return HttpResponse.json({ id: params["id"], has_photo: true, pet_id: biscuit.id });
+      }),
+    );
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Vet visit");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.upload(
+      screen.getByLabelText(/Photo/),
+      new File(["bytes"], "rash.jpg", { type: "image/jpeg" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    // The entry is written first: the photo has nothing to hang on until then.
+    await waitFor(() => expect(uploaded).toEqual(["e1"]));
+    expect(sent).toHaveLength(1);
+  });
+
+  it("writes the entry once when the photo upload fails and Save is pressed again", async () => {
+    const sent = signedIn();
+    let attempts = 0;
+    server.use(
+      http.put("http://localhost:8000/entries/:id/photo", () => {
+        attempts += 1;
+        return attempts === 1
+          ? new HttpResponse(null, { status: 500 })
+          : HttpResponse.json({ id: "e1", has_photo: true, pet_id: biscuit.id });
+      }),
+    );
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Vet visit");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.upload(
+      screen.getByLabelText(/Photo/),
+      new File(["bytes"], "rash.jpg", { type: "image/jpeg" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+    await screen.findByRole("alert");
+
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    // Two upload attempts, but only ever one entry.
+    await waitFor(() => expect(attempts).toBe(2));
+    expect(sent).toHaveLength(1);
+  });
+
+  it("saves an entry with no photo when none was chosen", async () => {
+    const sent = signedIn();
+    let uploads = 0;
+    server.use(
+      http.put("http://localhost:8000/entries/:id/photo", () => {
+        uploads += 1;
+        return HttpResponse.json({});
+      }),
+    );
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Nail trim");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(uploads).toBe(0);
+  });
+  /** The order is a decision, so it is pinned. `.f > label` is every field's
+   *  own label in document order; the unit select's hidden label sits inside
+   *  the weight control rather than the field, so it does not appear here. */
+  const fieldOrder = (container: HTMLElement) =>
+    [...container.querySelectorAll(".f > label")].map((one) =>
+      one.textContent!.replace(/\s*optional$/, "").trim(),
+    );
+
+  const ORDER = [
+    "Pet",
+    "What happened",
+    "Date",
+    "Vet or clinic",
+    "Next one due",
+    "Notes",
+    "Weight",
+    "Photo",
+  ];
+
+  it("orders the fields with the record first and the attachments last, on desktop", async () => {
+    signedIn();
+    setViewportWidth(1200);
+
+    const { container } = renderRoute("/log");
+
+    await screen.findByLabelText("What happened");
+    expect(fieldOrder(container)).toEqual(ORDER);
+  });
+
+  it("uses that same order in the mobile layout", async () => {
+    signedIn();
+    setViewportWidth(390);
+
+    const { container } = renderRoute("/log");
+
+    await screen.findByLabelText("What happened");
+    expect(fieldOrder(container)).toEqual(ORDER);
+  });
 });

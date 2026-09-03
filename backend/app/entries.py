@@ -70,6 +70,8 @@ class EntryOut(BaseModel):
     note: str | None
     weight_value: Decimal | None
     weight_unit: str | None
+    # The path itself never leaves the backend, the same as a pet's.
+    has_photo: bool
     # From the `due_items` view, which owns the one definition of overdue.
     # Never worked out here and never worked out in the browser.
     is_overdue: bool
@@ -85,6 +87,7 @@ class FeedPage(BaseModel):
 # entry its overdue flag without this file knowing what overdue means.
 ENTRY_COLUMNS = """e.id, e.pet_id, e.title, e.happened_on, e.due_on, e.vet, e.note,
        e.weight_value, e.weight_unit,
+       (e.photo_path is not null) as has_photo,
        coalesce(d.is_overdue, false) as is_overdue"""
 ENTRY_SOURCE = "from entries e left join due_items d on d.entry_id = e.id"
 

@@ -33,6 +33,7 @@ const entry = (fields: Partial<Entry> & { id: string; title: string; happened_on
   note: null,
   weight_value: null,
   weight_unit: null,
+  has_photo: false,
   is_overdue: false,
   ...fields,
 });
@@ -412,5 +413,32 @@ describe("a pet's photo on the feed", () => {
 
     await screen.findByRole("heading", { name: "Vet visit" });
     expect(container.querySelector(".tag.weight")).toBeNull();
+  });
+  it("shows an entry's own photo in the feed", async () => {
+    const withShot = entry({
+      id: "a5",
+      title: "Vet visit",
+      happened_on: "2026-08-20",
+      has_photo: true,
+    });
+    signedInWith([{ entries: [withShot], next_cursor: null }]);
+    setViewportWidth(1200);
+
+    const { container } = renderRoute(feed);
+
+    await screen.findByRole("heading", { name: "Vet visit" });
+    const shot = container.querySelector("img.shot") as HTMLImageElement;
+    // Our own route, never a Supabase domain: the bucket stays private.
+    expect(shot.getAttribute("src")).toBe("http://localhost:8000/entries/a5/photo");
+  });
+
+  it("shows no photo on an entry without one", async () => {
+    signedInWith([{ entries: [vetVisit], next_cursor: null }]);
+    setViewportWidth(1200);
+
+    const { container } = renderRoute(feed);
+
+    await screen.findByRole("heading", { name: "Vet visit" });
+    expect(container.querySelector("img.shot")).toBeNull();
   });
 });

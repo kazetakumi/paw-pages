@@ -293,3 +293,49 @@
 .entry .tag.weight {
   font-family: "Space Mono", ui-monospace, monospace;
 }
+
+/* An entry's own photo: sized to the column, never cropped to a square. The
+   feed is a record, so the picture is evidence rather than decoration. */
+.entry .shot {
+  display: block;
+  max-width: 320px;
+  width: 100%;
+  height: auto;
+  margin: 10px 0 2px;
+  border: 1px solid var(--rule, #dce0e4);
+  border-radius: 3px;
+}
+
+.shell-mobile .entry .shot {
+  max-width: 100%;
+}
+
+/* The same picture inside the form, smaller: it is there to say which photo is
+   on the entry, not to be looked at. */
+.entryform .shot {
+  display: block;
+  max-width: 160px;
+  width: 100%;
+  height: auto;
+  margin-bottom: 8px;
+  border: 1px solid var(--rule, #dce0e4);
+  border-radius: 3px;
+}
+
+.entryform .file {
+  display: block;
+  width: 100%;
+}
+
+.entryform .rm {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--stamp, #b23a24);
+  cursor: pointer;
+  text-decoration: underline;
+}
