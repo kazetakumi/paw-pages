@@ -9,7 +9,8 @@ import base64
 import binascii
 import re
 from datetime import date
-from typing import Annotated
+from decimal import Decimal
+from typing import Annotated, Literal
 from uuid import UUID
 
 import asyncpg
@@ -19,6 +20,9 @@ from pydantic import BaseModel, StringConstraints
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 Vet = Annotated[str, StringConstraints(strip_whitespace=True, max_length=120)]
 Note = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)]
+# Stored as the handler typed it. The database owns "greater than zero" and
+# "both or neither", the same way it owns "not in the future" for a date.
+WeightUnit = Literal["kg", "lb"]
 
 
 class EntryIn(BaseModel):
@@ -35,6 +39,8 @@ class EntryIn(BaseModel):
     due_on: date | None = None
     vet: Vet | None = None
     note: Note | None = None
+    weight_value: Decimal | None = None
+    weight_unit: WeightUnit | None = None
     closes_entry_id: UUID | None = None
 
 
@@ -50,6 +56,8 @@ class EntryPatch(BaseModel):
     due_on: date | None = None
     vet: Vet | None = None
     note: Note | None = None
+    weight_value: Decimal | None = None
+    weight_unit: WeightUnit | None = None
 
 
 class EntryOut(BaseModel):
@@ -60,6 +68,8 @@ class EntryOut(BaseModel):
     due_on: date | None
     vet: str | None
     note: str | None
+    weight_value: Decimal | None
+    weight_unit: str | None
     # From the `due_items` view, which owns the one definition of overdue.
     # Never worked out here and never worked out in the browser.
     is_overdue: bool
@@ -74,6 +84,7 @@ class FeedPage(BaseModel):
 # `due_items` already excludes closed and archived, so a left join gives every
 # entry its overdue flag without this file knowing what overdue means.
 ENTRY_COLUMNS = """e.id, e.pet_id, e.title, e.happened_on, e.due_on, e.vet, e.note,
+       e.weight_value, e.weight_unit,
        coalesce(d.is_overdue, false) as is_overdue"""
 ENTRY_SOURCE = "from entries e left join due_items d on d.entry_id = e.id"
 
@@ -103,6 +114,7 @@ CHECK_FIELDS = {
         "The next one cannot be due before the date this happened.",
     ),
     "entries_happened_on_check": ("happened_on", "That date is in the future."),
+    "weight_is_complete": ("weight_value", "A weight needs a unit."),
 }
 
 

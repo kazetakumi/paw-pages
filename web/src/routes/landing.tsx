@@ -38,6 +38,8 @@ const LOGGED: Entry[] = [
     due_on: null,
     vet: null,
     note: "Half tablet, took it in cheese.",
+    weight_value: null,
+    weight_unit: null,
     is_overdue: false,
   },
   {
@@ -48,6 +50,8 @@ const LOGGED: Entry[] = [
     due_on: null,
     vet: "Anvayaa Clinic",
     note: "Limping on the back right leg. Nothing found.",
+    weight_value: "12.40",
+    weight_unit: "kg",
     is_overdue: false,
   },
   {
@@ -58,6 +62,8 @@ const LOGGED: Entry[] = [
     due_on: "2029-04-20",
     vet: "Anvayaa Clinic",
     note: "Batch 4471-B. Next due Apr 2029.",
+    weight_value: null,
+    weight_unit: null,
     is_overdue: false,
   },
   {
@@ -68,6 +74,8 @@ const LOGGED: Entry[] = [
     due_on: null,
     vet: null,
     note: "Full clip and nails.",
+    weight_value: null,
+    weight_unit: null,
     is_overdue: false,
   },
 ];

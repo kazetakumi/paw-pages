@@ -88,6 +88,8 @@ describe("the log form", () => {
       due_on: null,
       vet: null,
       note: null,
+      weight_value: null,
+      weight_unit: null,
     });
   });
 
@@ -277,5 +279,50 @@ describe("the log form", () => {
 
     expect(await screen.findByLabelText("What happened")).toHaveValue("");
     expect(screen.queryByText(/used/i)).toBeNull();
+  });
+  it("saves a weight with the unit that was picked", async () => {
+    const sent = signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Weighed");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.type(screen.getByLabelText(/Weight/), "12.4");
+    await userEvent.selectOptions(screen.getByLabelText("Unit"), "lb");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ weight_value: "12.4", weight_unit: "lb" });
+  });
+
+  it("defaults the unit to kg without making the handler pick one", async () => {
+    const sent = signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Weighed");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.type(screen.getByLabelText(/Weight/), "12.4");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ weight_value: "12.4", weight_unit: "kg" });
+  });
+
+  it("sends neither half when the weight is left blank", async () => {
+    const sent = signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Nail trim");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.selectOptions(screen.getByLabelText("Unit"), "lb");
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ weight_value: null, weight_unit: null });
   });
 });

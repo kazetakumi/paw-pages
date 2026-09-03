@@ -257,3 +257,39 @@
   color: var(--faint);
   letter-spacing: 0.06em;
 }
+
+/* Weight: a number and its unit read as one control, so they sit on one line
+   with the select sized to its content. */
+.entryform .weight {
+  display: flex;
+  gap: 8px;
+}
+
+.entryform .weight input {
+  flex: 1;
+  min-width: 0;
+}
+
+.entryform .weight select {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* The unit select is labelled for a screen reader; sighted handlers read the
+   unit off the options themselves. */
+.entryform .weight .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* A weight is a number, so it takes Space Mono like every date does. */
+.entry .tag.weight {
+  font-family: "Space Mono", ui-monospace, monospace;
+}

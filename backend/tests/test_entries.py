@@ -274,3 +274,85 @@ async def test_a_due_date_that_has_passed_comes_back_overdue_from_the_database(
     assert [e["title"] for e in feed][0] in ("Deworming", "Grooming")
     assert [e["title"] for e in feed][-1] == "Rabies booster"
     assert {e["title"]: e["is_overdue"] for e in feed}["Rabies booster"] is True
+
+
+async def test_an_entry_carries_an_optional_weight(signed_in, biscuit):
+    created = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Weighed",
+            "happened_on": TODAY,
+            "weight_value": "12.40",
+            "weight_unit": "kg",
+        },
+    )
+
+    assert created.status_code == 201
+    entry = created.json()
+    assert (entry["weight_value"], entry["weight_unit"]) == ("12.40", "kg")
+
+    feed = await signed_in.get(f"/pets/{biscuit}/entries")
+    assert feed.json()["entries"][0]["weight_value"] == "12.40"
+
+
+async def test_an_entry_without_a_weight_reports_none(signed_in, biscuit):
+    created = await signed_in.post(
+        "/entries", json={"pet_id": biscuit, "title": "Nail trim", "happened_on": TODAY}
+    )
+
+    entry = created.json()
+    assert (entry["weight_value"], entry["weight_unit"]) == (None, None)
+
+
+async def test_a_weight_without_a_unit_comes_back_named(signed_in, biscuit):
+    rejected = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Weighed",
+            "happened_on": TODAY,
+            "weight_value": "12.40",
+        },
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "weight_value"
+    assert "constraint" not in rejected.text.lower()
+
+
+async def test_a_weight_of_zero_comes_back_named(signed_in, biscuit):
+    rejected = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Weighed",
+            "happened_on": TODAY,
+            "weight_value": "0",
+            "weight_unit": "kg",
+        },
+    )
+
+    assert rejected.status_code == 422
+    assert rejected.json()["detail"]["field"] == "weight_value"
+
+
+async def test_a_correction_can_clear_a_weight(signed_in, biscuit):
+    created = await signed_in.post(
+        "/entries",
+        json={
+            "pet_id": biscuit,
+            "title": "Weighed",
+            "happened_on": TODAY,
+            "weight_value": "12.40",
+            "weight_unit": "kg",
+        },
+    )
+    entry_id = created.json()["id"]
+
+    cleared = await signed_in.patch(
+        f"/entries/{entry_id}", json={"weight_value": None, "weight_unit": None}
+    )
+
+    assert cleared.status_code == 200
+    assert cleared.json()["weight_value"] is None

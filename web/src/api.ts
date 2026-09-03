@@ -199,6 +199,10 @@ export type Entry = {
   due_on: string | null;
   vet: string | null;
   note: string | null;
+  /** A decimal the API sends as a string, so no float ever rounds it.
+   *  Formatted for display, never parsed — the same rule dates follow. */
+  weight_value: string | null;
+  weight_unit: string | null;
   is_overdue: boolean;
 };
 

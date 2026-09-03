@@ -54,6 +54,10 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
     due_on: entry?.due_on ?? "",
     vet: entry?.vet ?? "",
     note: entry?.note ?? "",
+    weight_value: entry?.weight_value ?? "",
+    // A unit with no number is not sent, so a default here costs nothing
+    // and saves the common case a decision.
+    weight_unit: entry?.weight_unit ?? "kg",
   });
   const [problem, setProblem] = useState<Error | null>(null);
   const isDesktop = useIsDesktop();
@@ -78,6 +82,10 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
           due_on: fields.due_on || null,
           vet: fields.vet.trim() || null,
           note: fields.note.trim() || null,
+          // Both or neither, so the database's weight_is_complete stays a
+          // backstop rather than something the handler ever runs into.
+          weight_value: fields.weight_value.trim() || null,
+          weight_unit: fields.weight_value.trim() ? fields.weight_unit : null,
         }),
       );
     } catch (failure) {
@@ -223,6 +231,43 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
     </div>
   );
 
+  const weight = (
+    <Field
+      id="weight_value"
+      label={
+        <>
+          Weight
+          <Optional />
+        </>
+      }
+      problem={rejected("weight_value")}
+    >
+      <div className="weight">
+        <input
+          id="weight_value"
+          type="number"
+          inputMode="decimal"
+          step="0.01"
+          min="0"
+          value={fields.weight_value}
+          onChange={(event) => set({ weight_value: event.target.value })}
+          {...flag("weight_value")}
+        />
+        <label className="sr" htmlFor="weight_unit">
+          Unit
+        </label>
+        <select
+          id="weight_unit"
+          value={fields.weight_unit}
+          onChange={(event) => set({ weight_unit: event.target.value })}
+        >
+          <option value="kg">kg</option>
+          <option value="lb">lb</option>
+        </select>
+      </div>
+    </Field>
+  );
+
   const note = (
     <Field
       id="note"
@@ -255,6 +300,7 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
             {date}
             {vet}
           </div>
+          {weight}
           {due}
           {note}
         </>
@@ -263,6 +309,7 @@ export function EntryForm({ pets, entry, petId, titles = [], save, onSaved, onCa
           {pet}
           {title}
           {date}
+          {weight}
           {due}
           {vet}
           {note}

@@ -44,7 +44,7 @@ function EntryCard({
       <div className="what">
         <h3>{entry.title}</h3>
         {entry.note && <p className="note">{entry.note}</p>}
-        {(entry.due_on || entry.vet) && (
+        {(entry.due_on || entry.vet || entry.weight_value) && (
           <div className="tags">
             {entry.due_on && (
               <span className={entry.is_overdue ? "tag due overdue" : "tag due"}>
@@ -53,6 +53,13 @@ function EntryCard({
               </span>
             )}
             {entry.vet && <span className="tag vet">{entry.vet}</span>}
+            {/* Shown exactly as it was stored — the unit is the handler's,
+                never converted here. */}
+            {entry.weight_value && (
+              <span className="tag weight">
+                {entry.weight_value} {entry.weight_unit}
+              </span>
+            )}
           </div>
         )}
         <div className="acts">

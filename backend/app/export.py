@@ -21,7 +21,8 @@ PETS = """select id, name, species, breed, sex, date_of_birth, dob_is_approx, co
        slug, is_public, archived_at, archived_reason, photo_path, created_at
 from pets order by created_at"""
 
-ENTRIES = """select id, pet_id, title, happened_on, due_on, due_closed_at, vet, note, created_at
+ENTRIES = """select id, pet_id, title, happened_on, due_on, due_closed_at, vet, note,
+       weight_value, weight_unit, created_at
 from entries order by happened_on, id"""
 
 

@@ -31,6 +31,8 @@ const entry = (fields: Partial<Entry> & { id: string; title: string; happened_on
   due_on: null,
   vet: null,
   note: null,
+  weight_value: null,
+  weight_unit: null,
   is_overdue: false,
   ...fields,
 });
@@ -385,5 +387,30 @@ describe("a pet's photo on the feed", () => {
       "src",
       `http://localhost:8000/pets/${biscuit.id}/photo`,
     );
+  });
+  it("shows a weight on the entry it was recorded with", async () => {
+    const weighed = entry({
+      id: "a4",
+      title: "Weighed",
+      happened_on: "2026-08-20",
+      weight_value: "12.40",
+      weight_unit: "kg",
+    });
+    signedInWith([{ entries: [weighed], next_cursor: null }]);
+    setViewportWidth(1200);
+
+    renderRoute(feed);
+
+    expect(await screen.findByText("12.40 kg")).toBeInTheDocument();
+  });
+
+  it("shows no weight tag on an entry that has none", async () => {
+    signedInWith([{ entries: [vetVisit], next_cursor: null }]);
+    setViewportWidth(1200);
+
+    const { container } = renderRoute(feed);
+
+    await screen.findByRole("heading", { name: "Vet visit" });
+    expect(container.querySelector(".tag.weight")).toBeNull();
   });
 });
