@@ -19,7 +19,7 @@ Source of truth, in order:
 | `board/board.html` | The ten tickets and their dependency chain |
 | `board/NN-*.html` | One ticket: what to build, acceptance criteria, done means |
 | `design/*.html` | The eight screens, desktop and mobile, as drawn |
-| `supabase/migrations/*.sql` | The live schema. **Do not change it.** 0004 repaired the storage policies; there is no further migration to write. |
+| `supabase/migrations/*.sql` | The live schema. `0001`–`0004` are frozen — never edit an applied migration. v1.1 adds `0005` onward, additive only; see rule 9. |
 
 ## Stack, fixed
 
@@ -53,11 +53,23 @@ Do not add a state library, a component library, an ORM or a migration tool.
    it was given and never offsets or reinterprets one.
 8. **Due and overdue are computed in the database**, in the `due_items` view.
    Neither the backend nor the frontend reimplements them.
-9. **The schema does not change.** If you think you need a migration, you have
-   misread the ticket — stop and say so. The one exception already happened:
-   0004 repaired 0003's five storage policies, every one of which denied
-   everyone because `name` inside the subquery bound to `pets.name` rather than
-   `storage.objects.name`. Do not reopen that.
+9. **0001–0004 are frozen. New migrations start at 0005 and are additive only.**
+   Do not edit an applied migration. `0004` repaired `0003`'s five storage
+   policies, every one of which denied everyone because `name` inside the
+   subquery bound to `pets.name` rather than `storage.objects.name`. Do not
+   reopen that.
+
+   Additive means a new table, a new **nullable** column, or a new index —
+   something the running v1 cannot observe. The backend reads explicit column
+   lists everywhere (`entries.py` `ENTRY_COLUMNS`, `public.py`, `export.py`),
+   never `select *`, so a new column reaches no response until someone adds it
+   to a list on purpose.
+
+   Not additive, and not to be done against the live project: editing an
+   existing RLS or storage policy, altering or renaming a v1 column, adding a
+   `not null` column. v1 serves live traffic from this same database and a
+   policy edit applies on commit. If a ticket needs one of these, stop and say
+   so — it needs a Supabase dev branch, not a migration.
 
 ## Domain language
 
@@ -98,7 +110,7 @@ web/
   src/routes/     one module per route
   src/test/       MSW handlers, fixtures, setup
   package.json
-supabase/migrations/   the four migrations — read-only
+supabase/migrations/   0001–0004 frozen; v1.1 adds 0005 onward
 ```
 
 ## Routes
@@ -192,8 +204,19 @@ TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
 COOKIE_SECURE=false   # true in production
 ```
 
-The Supabase project is `paw-pages` (`ywfmrpmvfcaokzavcuzx`, ap-south-1). All
-four migrations are already applied there. Do not apply migrations to it.
+The Supabase project is `paw-pages` (`ywfmrpmvfcaokzavcuzx`, ap-south-1), and
+`0001`–`0004` are already applied there. **It is also the live production
+database** — v1 serves real traffic from it, so v1.1 shares it deliberately
+rather than paying for a dev branch. Apply `0005` onward only under rule 9's
+additive-only limit, and never while a v1 request could be mid-flight in a way
+that matters. Iterate with `execute_sql` and write the migration once the shape
+settles, so the applied history stays clean.
+
+v1.1 is developed in a separate git worktree at `D:\kaze\POCs\paw-pages-v1.1.0`
+(branch `v1.1.0`). Build there, never in `D:\kaze\POCs\paw-pages` — the
+`pawpages-web` service serves `web/dist` straight out of that tree, so a build
+there replaces the live site the moment it finishes. Prod holds ports 8001 and
+8080; run v1.1 on 8002 with `VITE_PROXY_TARGET=http://127.0.0.1:8002`.
 
 ## Working agreement
 
