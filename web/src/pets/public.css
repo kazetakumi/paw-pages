@@ -274,3 +274,22 @@
 .pubpage[data-layout="mobile"] .foot {
   padding: 16px 20px 20px;
 }
+
+/* A published photo: the proof under the line it belongs to. Desktop's record
+   is a three-column grid, so it spans all three and sits under the title
+   rather than squeezing into the middle one. */
+.pubpage .r .pf {
+  display: block;
+  max-width: 260px;
+  width: 100%;
+  height: auto;
+  margin-top: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.pubpage[data-layout="desktop"] .r .pf {
+  grid-column: 2 / -1;
+}
+.pubpage[data-layout="mobile"] .r .pf {
+  max-width: 100%;
+}

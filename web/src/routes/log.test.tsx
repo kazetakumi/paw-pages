@@ -90,6 +90,7 @@ describe("the log form", () => {
       note: null,
       weight_value: null,
       weight_unit: null,
+      photo_is_public: false,
     });
   });
 
@@ -439,5 +440,66 @@ describe("the log form", () => {
 
     await screen.findByLabelText("What happened");
     expect(fieldOrder(container)).toEqual(ORDER);
+  });
+  it("offers no publish toggle until a photo is chosen", async () => {
+    signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await screen.findByLabelText("What happened");
+    expect(screen.queryByLabelText(/Show this photo on the public page/)).toBeNull();
+  });
+
+  it("warns what publishing means, where the choice is made", async () => {
+    signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.upload(
+      await screen.findByLabelText(/Photo/),
+      new File(["bytes"], "cert.jpg", { type: "image/jpeg" }),
+    );
+
+    expect(screen.getByLabelText(/Show this photo on the public page/)).not.toBeChecked();
+    expect(screen.getByText(/name, address and phone number/)).toBeInTheDocument();
+  });
+
+  it("leaves a photo unpublished unless the toggle is ticked", async () => {
+    const sent = signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Rabies booster");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.upload(
+      screen.getByLabelText(/Photo/),
+      new File(["bytes"], "cert.jpg", { type: "image/jpeg" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ photo_is_public: false });
+  });
+
+  it("publishes the photo when the toggle is ticked", async () => {
+    const sent = signedIn();
+    setViewportWidth(1200);
+
+    renderRoute("/log");
+
+    await userEvent.type(await screen.findByLabelText("What happened"), "Rabies booster");
+    await typeDate("Date", "2026-08-29");
+    await userEvent.upload(
+      screen.getByLabelText(/Photo/),
+      new File(["bytes"], "cert.jpg", { type: "image/jpeg" }),
+    );
+    await userEvent.click(screen.getByLabelText(/Show this photo on the public page/));
+    await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toMatchObject({ photo_is_public: true });
   });
 });

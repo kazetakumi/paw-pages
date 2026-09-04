@@ -41,6 +41,7 @@ class EntryIn(BaseModel):
     note: Note | None = None
     weight_value: Decimal | None = None
     weight_unit: WeightUnit | None = None
+    photo_is_public: bool = False
     closes_entry_id: UUID | None = None
 
 
@@ -58,6 +59,7 @@ class EntryPatch(BaseModel):
     note: Note | None = None
     weight_value: Decimal | None = None
     weight_unit: WeightUnit | None = None
+    photo_is_public: bool | None = None
 
 
 class EntryOut(BaseModel):
@@ -72,6 +74,8 @@ class EntryOut(BaseModel):
     weight_unit: str | None
     # The path itself never leaves the backend, the same as a pet's.
     has_photo: bool
+    # Whether that photo is on the pet's public page. Off until asked.
+    photo_is_public: bool
     # From the `due_items` view, which owns the one definition of overdue.
     # Never worked out here and never worked out in the browser.
     is_overdue: bool
@@ -88,6 +92,7 @@ class FeedPage(BaseModel):
 ENTRY_COLUMNS = """e.id, e.pet_id, e.title, e.happened_on, e.due_on, e.vet, e.note,
        e.weight_value, e.weight_unit,
        (e.photo_path is not null) as has_photo,
+       e.photo_is_public,
        coalesce(d.is_overdue, false) as is_overdue"""
 ENTRY_SOURCE = "from entries e left join due_items d on d.entry_id = e.id"
 

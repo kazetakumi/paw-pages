@@ -205,6 +205,8 @@ export type Entry = {
   weight_unit: string | null;
   /** Whether there is a photo to ask `entryPhotoUrl` for. Never the path. */
   has_photo: boolean;
+  /** Whether that photo is on the pet's public page. Off until asked. */
+  photo_is_public: boolean;
   is_overdue: boolean;
 };
 
@@ -274,7 +276,14 @@ export const markDone = (entryId: string) =>
 
 /** One line of a public record. No note, no vet, no id: the API never sends
  *  them, and no is_overdue either — the public page makes no accusation. */
-export type PublicEntry = { title: string; happened_on: string; due_on: string | null };
+export type PublicEntry = {
+  title: string;
+  happened_on: string;
+  due_on: string | null;
+  /** Present only when the handler published that entry's photo. Null is
+   *  "there is nothing to show", never a photo being withheld. */
+  photo_id: string | null;
+};
 
 /** A pet as a visitor holding the link sees it. `born` is already coarsened to
  *  a month and a year by the database; the exact date never leaves it. */
@@ -302,6 +311,11 @@ export const getPublicPage = (slug: string) =>
  *  resolving at the same instant the page it belongs to goes dark. */
 export const photoUrl = (petId: string) => `${BASE}/pets/${petId}/photo`;
 export const publicPhotoUrl = (slug: string) => `${BASE}/public/pets/${slug}/photo`;
+
+/** A published entry photo, read as `anon`. The slug is in the path as well
+ *  as the id, so one public page cannot be used to read another's. */
+export const publicEntryPhotoUrl = (slug: string, photoId: string) =>
+  `${BASE}/public/pets/${slug}/entries/${photoId}/photo`;
 
 export const uploadPhoto = (petId: string, file: File) =>
   request<Pet>("PUT", `/pets/${petId}/photo`, file);

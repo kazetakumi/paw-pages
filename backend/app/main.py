@@ -873,6 +873,23 @@ async def read_entry_photo(
     return await stream_photo(request, token, path, NO_SUCH_ENTRY_PHOTO)
 
 
+@app.get("/public/pets/{slug}/entries/{entry_id}/photo")
+async def public_entry_photo(
+    slug: str, entry_id: UUID, request: Request, conn: asyncpg.Connection = Depends(anon_db)
+) -> Response:
+    """A published entry photo, read as nobody.
+
+    `public_entries` is the only place the path can come from, and it hands one
+    over only when the handler published that photo *and* the pet is public and
+    unarchived. Matching the slug as well as the id is what stops one public
+    page being used to read another's.
+    """
+    path = await conn.fetchval(public.ENTRY_PHOTO, slug, entry_id)
+    if path is None:
+        raise NO_SUCH_PAGE
+    return await stream_photo(request, settings.supabase_anon_key, path, NO_SUCH_PAGE)
+
+
 @app.get("/public/pets/{slug}/photo")
 async def public_photo(
     slug: str, request: Request, conn: asyncpg.Connection = Depends(anon_db)

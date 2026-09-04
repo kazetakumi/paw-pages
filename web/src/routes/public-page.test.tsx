@@ -21,9 +21,9 @@ const biscuit: PublicPet = {
   has_photo: false,
   updated_on: "2026-08-12",
   entries: [
-    { title: "Deworming", happened_on: "2026-08-12", due_on: "2026-11-12" },
-    { title: "Vet visit", happened_on: "2026-06-02", due_on: null },
-    { title: "Rabies booster", happened_on: "2025-07-14", due_on: "2026-07-14" },
+    { title: "Deworming", happened_on: "2026-08-12", due_on: "2026-11-12" , photo_id: null },
+    { title: "Vet visit", happened_on: "2026-06-02", due_on: null , photo_id: null },
+    { title: "Rabies booster", happened_on: "2025-07-14", due_on: "2026-07-14" , photo_id: null },
   ],
 };
 
@@ -156,5 +156,33 @@ describe("a public page's photo", () => {
     expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
     expect(screen.getByText("B")).toBeInTheDocument();
+  });
+  it("shows a published entry photo, read through our own route", async () => {
+    published({
+      ...biscuit,
+      entries: [
+        { title: "Rabies booster", happened_on: "2025-07-14", due_on: "2026-07-14", photo_id: "a3" },
+      ],
+    });
+    setViewportWidth(1200);
+
+    const { container } = renderRoute("/p/biscuit-a4f2");
+
+    await screen.findByText("Rabies booster");
+    const proof = container.querySelector("img.pf") as HTMLImageElement;
+    // The slug travels with the id: one page cannot read another's photo.
+    expect(proof.getAttribute("src")).toBe(
+      "http://localhost:8000/public/pets/biscuit-a4f2/entries/a3/photo",
+    );
+  });
+
+  it("shows nothing where an entry published no photo", async () => {
+    published(biscuit);
+    setViewportWidth(1200);
+
+    const { container } = renderRoute("/p/biscuit-a4f2");
+
+    await screen.findByText("Deworming");
+    expect(container.querySelector("img.pf")).toBeNull();
   });
 });

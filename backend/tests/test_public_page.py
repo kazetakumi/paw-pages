@@ -210,7 +210,12 @@ async def test_the_endpoint_itself_goes_through_anons_grant_on_the_views(publish
 async def test_every_entry_appears_as_a_date_a_title_and_the_next_due_date(
     published, signed_in, client
 ):
-    """All entries or none — there is no per-entry visibility switch."""
+    """All entries or none: the lines themselves have no per-entry switch.
+
+    Since 0007 a *photo* does, but the entry it hangs on is published with
+    the pet either way. `photo_id` is null on every line here because none
+    of them published one.
+    """
     await signed_in.post(
         "/entries",
         json={"pet_id": published["id"], "title": "Grooming", "happened_on": "2026-03-18"},
@@ -219,6 +224,11 @@ async def test_every_entry_appears_as_a_date_a_title_and_the_next_due_date(
     page = (await client.get(f"/public/pets/{published['slug']}")).json()
 
     assert page["entries"] == [
-        {"title": "Grooming", "happened_on": "2026-03-18", "due_on": None},
-        {"title": "Rabies booster", "happened_on": "2025-07-14", "due_on": "2026-07-14"},
+        {"title": "Grooming", "happened_on": "2026-03-18", "due_on": None, "photo_id": None},
+        {
+            "title": "Rabies booster",
+            "happened_on": "2025-07-14",
+            "due_on": "2026-07-14",
+            "photo_id": None,
+        },
     ]

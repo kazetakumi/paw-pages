@@ -34,6 +34,7 @@ const entry = (fields: Partial<Entry> & { id: string; title: string; happened_on
   weight_value: null,
   weight_unit: null,
   has_photo: false,
+  photo_is_public: false,
   is_overdue: false,
   ...fields,
 });

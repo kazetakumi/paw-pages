@@ -139,8 +139,8 @@ async def test_a_photo_on_someone_elses_entry_is_not_found(
 
 
 async def test_an_entry_photo_is_not_on_the_public_page(signed_in, biscuit, entry, storage_stub):
-    # `public_entries` never carried a photo and this did not change that. A
-    # visitor gets the pet's picture and nothing from the record itself.
+    # Uploading is not publishing. A visitor gets the pet's own picture and
+    # nothing off the record until an entry's photo is published by hand.
     await upload(signed_in, entry)
     await signed_in.patch(f"/pets/{biscuit}", json={"is_public": True})
     slug = (await signed_in.get(f"/pets/{biscuit}")).json()["slug"]
@@ -148,7 +148,9 @@ async def test_an_entry_photo_is_not_on_the_public_page(signed_in, biscuit, entr
     page = await signed_in.get(f"/public/pets/{slug}")
 
     assert page.status_code == 200
-    assert all("photo" not in line for line in page.json()["entries"][0])
+    # Since 0007 the line carries a `photo_id`, but only once the handler
+    # publishes that photo. Uploading one does not.
+    assert page.json()["entries"][0]["photo_id"] is None
 
 
 async def test_the_export_carries_an_entry_photo(signed_in, entry, storage_stub):

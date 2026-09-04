@@ -41,6 +41,7 @@ const LOGGED: Entry[] = [
     weight_value: null,
     weight_unit: null,
     has_photo: false,
+    photo_is_public: false,
     is_overdue: false,
   },
   {
@@ -54,6 +55,7 @@ const LOGGED: Entry[] = [
     weight_value: "12.40",
     weight_unit: "kg",
     has_photo: false,
+    photo_is_public: false,
     is_overdue: false,
   },
   {
@@ -67,6 +69,7 @@ const LOGGED: Entry[] = [
     weight_value: null,
     weight_unit: null,
     has_photo: false,
+    photo_is_public: false,
     is_overdue: false,
   },
   {
@@ -80,6 +83,7 @@ const LOGGED: Entry[] = [
     weight_value: null,
     weight_unit: null,
     has_photo: false,
+    photo_is_public: false,
     is_overdue: false,
   },
 ];

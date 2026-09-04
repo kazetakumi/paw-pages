@@ -57,11 +57,11 @@ function Field({
 
 const Optional = () => <span className="opt"> optional</span>;
 
-/** One form for a rabies booster, a vet visit and a nail trim, and the same
- *  form for correcting one afterwards. The title is typed, never picked. */
 /** The bucket's own allowed types, so the picker offers what it will take. */
 const ACCEPT = "image/jpeg,image/png,image/webp,image/heic";
 
+/** One form for a rabies booster, a vet visit and a nail trim, and the same
+ *  form for correcting one afterwards. The title is typed, never picked. */
 export function EntryForm({
   pets,
   entry,
@@ -84,6 +84,7 @@ export function EntryForm({
     // A unit with no number is not sent, so a default here costs nothing
     // and saves the common case a decision.
     weight_unit: entry?.weight_unit ?? "kg",
+    photo_is_public: entry?.photo_is_public ?? false,
   });
   const [problem, setProblem] = useState<Error | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
@@ -119,6 +120,7 @@ export function EntryForm({
           // backstop rather than something the handler ever runs into.
           weight_value: fields.weight_value.trim() || null,
           weight_unit: fields.weight_value.trim() ? fields.weight_unit : null,
+          photo_is_public: fields.photo_is_public,
         }));
       if (!photo) return onSaved(saved);
       // Only a photo needs the entry remembered: if the upload fails, the
@@ -338,7 +340,23 @@ export function EntryForm({
         }
         {...flag("photo")}
       />
-      <span className="hint">JPEG, PNG, WebP or HEIC, up to 5 MB. Never shown on a public page.</span>
+      <span className="hint">JPEG, PNG, WebP or HEIC, up to 5 MB.</span>
+      {(photo || carries) && (
+        <div className="pub">
+          <label>
+            <input
+              type="checkbox"
+              checked={fields.photo_is_public}
+              onChange={(event) => set({ photo_is_public: event.target.checked })}
+            />{" "}
+            Show this photo on the public page
+          </label>
+          <p className="warn">
+            Anyone with the link can see it. A vaccination certificate usually shows your own
+            name, address and phone number.
+          </p>
+        </div>
+      )}
       {entryId && carries && (
         <button className="rm" type="button" onClick={dropPhoto}>
           Remove photo

@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getPublicPage, type PublicEntry, type PublicPet } from "../api";
+import {
+  getPublicPage,
+  publicEntryPhotoUrl,
+  type PublicEntry,
+  type PublicPet,
+} from "../api";
 import { formatDate } from "../pets/pet";
 import { PublicPetAvatar } from "../pets/PetAvatar";
 import { useIsDesktop } from "../shell/useIsDesktop";
@@ -48,7 +53,7 @@ function Cell({ k, v }: { k: string; v: string | null }) {
 /** One line of the record. A due date prints in the same neutral grey whatever
  *  its date: the public page never stamps an accusation on the handler, so it
  *  does not ask the API whether anything is overdue and is not told. */
-function Record({ entries }: { entries: PublicEntry[] }) {
+function Record({ entries, slug }: { entries: PublicEntry[]; slug: string }) {
   return (
     <div className="rec">
       {entries.map((entry) => (
@@ -56,6 +61,16 @@ function Record({ entries }: { entries: PublicEntry[] }) {
           <span className="d">{formatDate(entry.happened_on)}</span>
           <span className="w">{entry.title}</span>
           {entry.due_on ? <span className="nx">Next {formatDate(entry.due_on)}</span> : <span />}
+          {/* The proof, when the handler published one. Read as `anon` out
+              of the same private bucket — a link, never a Supabase URL. */}
+          {entry.photo_id && (
+            <img
+              className="pf"
+              src={publicEntryPhotoUrl(slug, entry.photo_id)}
+              alt={`${entry.title}, ${formatDate(entry.happened_on)}`}
+              loading="lazy"
+            />
+          )}
         </div>
       ))}
     </div>
@@ -112,7 +127,7 @@ function PageDesktop({ pet }: { pet: PublicPet }) {
               {pet.entries.length} {pet.entries.length === 1 ? "entry" : "entries"}
             </span>
           </div>
-          <Record entries={pet.entries} />
+          <Record entries={pet.entries} slug={pet.slug} />
         </div>
 
         <Footer pet={pet} />
@@ -150,7 +165,7 @@ function PageMobile({ pet }: { pet: PublicPet }) {
             <span className="line" />
             <span className="n">{pet.entries.length}</span>
           </div>
-          <Record entries={pet.entries} />
+          <Record entries={pet.entries} slug={pet.slug} />
         </div>
 
         <Footer pet={pet} />
