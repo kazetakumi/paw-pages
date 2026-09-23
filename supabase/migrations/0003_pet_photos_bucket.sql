@@ -22,7 +22,7 @@ create policy "handler reads own pet photos"
   using (
     bucket_id = 'pet-photos'
     and exists (
-      select 1 from pets p
+      select 1 from pawpages_pets p
       where p.id::text = (storage.foldername(name))[1]
         and p.handler_id = (select auth.uid())
     )
@@ -33,7 +33,7 @@ create policy "handler uploads own pet photos"
   with check (
     bucket_id = 'pet-photos'
     and exists (
-      select 1 from pets p
+      select 1 from pawpages_pets p
       where p.id::text = (storage.foldername(name))[1]
         and p.handler_id = (select auth.uid())
     )
@@ -44,7 +44,7 @@ create policy "handler replaces own pet photos"
   using (
     bucket_id = 'pet-photos'
     and exists (
-      select 1 from pets p
+      select 1 from pawpages_pets p
       where p.id::text = (storage.foldername(name))[1]
         and p.handler_id = (select auth.uid())
     )
@@ -52,7 +52,7 @@ create policy "handler replaces own pet photos"
   with check (
     bucket_id = 'pet-photos'
     and exists (
-      select 1 from pets p
+      select 1 from pawpages_pets p
       where p.id::text = (storage.foldername(name))[1]
         and p.handler_id = (select auth.uid())
     )
@@ -63,7 +63,7 @@ create policy "handler deletes own pet photos"
   using (
     bucket_id = 'pet-photos'
     and exists (
-      select 1 from pets p
+      select 1 from pawpages_pets p
       where p.id::text = (storage.foldername(name))[1]
         and p.handler_id = (select auth.uid())
     )
@@ -81,7 +81,7 @@ create policy "anyone reads photos of public pets"
   using (
     bucket_id = 'pet-photos'
     and exists (
-      select 1 from pets p
+      select 1 from pawpages_pets p
       where p.id::text = (storage.foldername(name))[1]
         and p.is_public
         and p.archived_at is null

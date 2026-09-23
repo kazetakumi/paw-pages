@@ -19,11 +19,11 @@ DOCUMENT = "paw-pages.json"
 # ...`: this runs on the RLS connection, so the policies are the filter.
 PETS = """select id, name, species, breed, sex, date_of_birth, dob_is_approx, colour,
        slug, is_public, archived_at, archived_reason, photo_path, created_at
-from pets order by created_at"""
+from pawpages_pets order by created_at"""
 
 ENTRIES = """select id, pet_id, title, happened_on, due_on, due_closed_at, vet, note,
        weight_value, weight_unit, photo_path, created_at
-from entries order by happened_on, id"""
+from pawpages_entries order by happened_on, id"""
 
 
 def entry_photo_name(entry_id: str, path: str) -> str:

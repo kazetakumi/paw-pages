@@ -167,17 +167,18 @@ async def anon_db(request: Request):
 
 # Everything the account screen opens with, in one row. The two counts are
 # subqueries with no `where handler_id = ...`: the same policies that filter
-# `handlers` filter `pets` and `entries`, so they can only count the caller's.
+# `pawpages_handlers` filter `pawpages_pets` and `pawpages_entries`, so they
+# can only count the caller's.
 HANDLER_COLUMNS = """id, name, created_at::date as joined_on,
        date_of_birth, gender, nationality,
        extract(year from age(date_of_birth))::int as age,
-       (select count(*) from pets) as pet_count,
-       (select count(*) from entries) as entry_count"""
+       (select count(*) from pawpages_pets) as pet_count,
+       (select count(*) from pawpages_entries) as entry_count"""
 
 
 async def read_handler(conn: asyncpg.Connection, email: str) -> handler.HandlerOut:
-    # No `where id = ...`: the handler_reads_self policy is the filter.
-    row = await conn.fetchrow(f"select {HANDLER_COLUMNS} from handlers")
+    # No `where id = ...`: the pawpages_handler_reads_self policy is the filter.
+    row = await conn.fetchrow(f"select {HANDLER_COLUMNS} from pawpages_handlers")
     if row is None:
         raise NOT_SIGNED_IN
     return handler.HandlerOut(**dict(row), email=email)
@@ -271,14 +272,14 @@ async def update_me(
 ) -> handler.HandlerOut:
     """What the app calls them, and the three optional fields.
 
-    No `where id = ...`: the handler_updates_self policy is the filter, so the
+    No `where id = ...`: the pawpages_handler_updates_self policy is the filter, so the
     only row this can reach is the caller's own.
     """
     changes = body.model_dump(exclude_unset=True)
     if changes:
         assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=1))
         try:
-            await conn.execute(f"update handlers set {assignments}", *changes.values())
+            await conn.execute(f"update pawpages_handlers set {assignments}", *changes.values())
         except asyncpg.IntegrityConstraintViolationError as error:
             raise pets.constraint_error(error)
     return await read_handler(conn, payload["email"])
@@ -384,9 +385,9 @@ async def delete_me(
     """
     supabase_admin.check_configured()
     paths = await conn.fetch(
-        "select photo_path from pets where photo_path is not null"
+        "select photo_path from pawpages_pets where photo_path is not null"
         " union all"
-        " select photo_path from entries where photo_path is not null"
+        " select photo_path from pawpages_entries where photo_path is not null"
     )
     for row in paths:
         await supabase_storage.remove(
@@ -411,7 +412,7 @@ PET_COLUMNS = """id, name, species, breed, sex, date_of_birth, dob_is_approx, co
 async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
     """Everything the home screen opens with, in one request.
 
-    No `where handler_id = ...`: `due_items` is a security_invoker view, so the
+    No `where handler_id = ...`: `pawpages_due_items` is a security_invoker view, so the
     same four policies filter it that filter the tables underneath.
     """
     ledger = await conn.fetch(due.LEDGER.format(where=""))
@@ -428,7 +429,7 @@ async def dashboard(conn: asyncpg.Connection = Depends(db)) -> due.Dashboard:
 
 # ---------------------------------------------------------------- pets ------
 # No `where handler_id = ...` anywhere below: `db` has already become the
-# caller, so the handler_owns_pets policy is the filter. A pet another handler
+# caller, so the pawpages_handler_owns_pets policy is the filter. A pet another handler
 # owns is not forbidden, it is absent — which is a 404.
 
 NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
@@ -437,7 +438,7 @@ NO_SUCH_PET = HTTPException(status.HTTP_404_NOT_FOUND, "No such pet.")
 @app.get("/pets")
 async def list_pets(conn: asyncpg.Connection = Depends(db)) -> list[pets.PetOut]:
     rows = await conn.fetch(
-        f"select {PET_COLUMNS} from pets where archived_at is null order by created_at"
+        f"select {PET_COLUMNS} from pawpages_pets where archived_at is null order by created_at"
     )
     return [pets.PetOut(**dict(row)) for row in rows]
 
@@ -453,7 +454,7 @@ async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -
         # the request transaction and leave nothing to retry into.
         async with conn.transaction():
             return await conn.fetchrow(
-                f"insert into pets (handler_id, slug, {columns})"
+                f"insert into pawpages_pets (handler_id, slug, {columns})"
                 f" values ((select auth.uid()), $1, {values}) returning {PET_COLUMNS}",
                 slug,
                 *fields.values(),
@@ -468,7 +469,7 @@ async def create_pet(body: pets.PetIn, conn: asyncpg.Connection = Depends(db)) -
 
 @app.get("/pets/{pet_id}")
 async def read_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> due.PetRecord:
-    row = await conn.fetchrow(f"select {PET_COLUMNS} from pets where id = $1", pet_id)
+    row = await conn.fetchrow(f"select {PET_COLUMNS} from pawpages_pets where id = $1", pet_id)
     if row is None:
         raise NO_SUCH_PET
     # The same view the home ledger reads, so the two cannot disagree.
@@ -489,7 +490,7 @@ async def update_pet(
     assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=2))
     try:
         row = await conn.fetchrow(
-            f"update pets set {assignments} where id = $1 returning {PET_COLUMNS}",
+            f"update pawpages_pets set {assignments} where id = $1 returning {PET_COLUMNS}",
             pet_id,
             *changes.values(),
         )
@@ -506,13 +507,13 @@ async def archive_pet(
 ) -> pets.PetOut:
     """Stop tracking a pet without losing it.
 
-    Two columns, and nothing else: `due_items`, `public_pets` and
-    `public_entries` all carry `archived_at is null`, so the ledger empties and
-    the public page goes dark on this one update. The entries and the photo are
-    not touched — archiving is not a soft delete.
+    Two columns, and nothing else: `pawpages_due_items`, `pawpages_public_pets`
+    and `pawpages_public_entries` all carry `archived_at is null`, so the
+    ledger empties and the public page goes dark on this one update. The
+    entries and the photo are not touched — archiving is not a soft delete.
     """
     row = await conn.fetchrow(
-        f"update pets set archived_at = now(), archived_reason = $2"
+        f"update pawpages_pets set archived_at = now(), archived_reason = $2"
         f" where id = $1 returning {PET_COLUMNS}",
         pet_id,
         body.reason,
@@ -527,7 +528,7 @@ async def restore_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> p
     """Undo it. Both columns clear together, and everything the views hid comes
     back with them — same slug, same entries, same photo."""
     row = await conn.fetchrow(
-        f"update pets set archived_at = null, archived_reason = null"
+        f"update pawpages_pets set archived_at = null, archived_reason = null"
         f" where id = $1 returning {PET_COLUMNS}",
         pet_id,
     )
@@ -538,8 +539,8 @@ async def restore_pet(pet_id: UUID, conn: asyncpg.Connection = Depends(db)) -> p
 
 # ------------------------------------------------------------- entries -----
 # Same story as pets: `db` has already become the caller, so the
-# handler_owns_entries policy is the filter and another handler's entry is
-# absent rather than forbidden.
+# pawpages_handler_owns_entries policy is the filter and another handler's
+# entry is absent rather than forbidden.
 
 NO_SUCH_ENTRY = HTTPException(status.HTTP_404_NOT_FOUND, "No such entry.")
 
@@ -557,7 +558,7 @@ async def close_due_date(entry_id: UUID, conn: asyncpg.Connection) -> None:
     """Stop an entry's due date standing. Nothing does this automatically:
     free-text titles mean the app cannot know two entries are the same series."""
     closed = await conn.fetchval(
-        "update entries set due_closed_at = now()"
+        "update pawpages_entries set due_closed_at = now()"
         " where id = $1 and due_on is not null returning id",
         entry_id,
     )
@@ -574,12 +575,13 @@ async def create_entry(
     values = ", ".join(f"${n}" for n in range(1, len(fields) + 1))
     try:
         entry_id = await conn.fetchval(
-            f"insert into entries ({columns}) values ({values}) returning id", *fields.values()
+            f"insert into pawpages_entries ({columns}) values ({values}) returning id",
+            *fields.values(),
         )
     except asyncpg.IntegrityConstraintViolationError as error:
         raise entries.constraint_error(error)
     except asyncpg.InsufficientPrivilegeError:
-        # The insert check on handler_owns_entries: that pet is not theirs.
+        # The insert check on pawpages_handler_owns_entries: that pet is not theirs.
         raise NO_SUCH_PET
     # The request is already one transaction, so "log the next one" saves the
     # new entry and closes the old due date together or does neither.
@@ -629,7 +631,7 @@ async def update_entry(
     assignments = ", ".join(f"{column} = ${n}" for n, column in enumerate(changes, start=2))
     try:
         touched = await conn.fetchval(
-            f"update entries set {assignments} where id = $1 returning id",
+            f"update pawpages_entries set {assignments} where id = $1 returning id",
             entry_id,
             *changes.values(),
         )
@@ -657,7 +659,7 @@ async def delete_entry(
     # `returning photo_path` alone cannot tell "no such entry" from "an entry
     # with no photo" — both are null. The id says which one happened.
     row = await conn.fetchrow(
-        "delete from entries where id = $1 returning id, photo_path", entry_id
+        "delete from pawpages_entries where id = $1 returning id, photo_path", entry_id
     )
     if row is None:
         raise NO_SUCH_ENTRY
@@ -683,7 +685,7 @@ async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[st
     """
     rows = await conn.fetch(
         "select title from ("
-        "  select distinct on (title) title, happened_on, id from entries"
+        "  select distinct on (title) title, happened_on, id from pawpages_entries"
         "  order by title, happened_on desc, id desc"
         ") used order by used.happened_on desc, used.id desc limit 4"
     )
@@ -693,8 +695,8 @@ async def recent_entry_titles(conn: asyncpg.Connection = Depends(db)) -> list[st
 # -------------------------------------------------------------- public -----
 
 # The one answer to a slug that is absent, private or archived alike. All three
-# are simply a row `public_pets` does not return, so nothing here has to work at
-# telling them apart — there is only ever one branch to take.
+# are simply a row `pawpages_public_pets` does not return, so nothing here has
+# to work at telling them apart — there is only ever one branch to take.
 NO_SUCH_PAGE = HTTPException(status.HTTP_404_NOT_FOUND, "No such page.")
 
 
@@ -749,7 +751,7 @@ async def put_photo(
     content = await request.body()
     content_type = supabase_storage.check(request.headers.get("content-type"), len(content))
 
-    previous = await conn.fetchrow("select photo_path from pets where id = $1", pet_id)
+    previous = await conn.fetchrow("select photo_path from pawpages_pets where id = $1", pet_id)
     if previous is None:
         raise NO_SUCH_PET
 
@@ -757,7 +759,9 @@ async def put_photo(
     client = request.app.state.storage_client
     await supabase_storage.upload(client, token, path, content, content_type)
     row = await conn.fetchrow(
-        f"update pets set photo_path = $2 where id = $1 returning {PET_COLUMNS}", pet_id, path
+        f"update pawpages_pets set photo_path = $2 where id = $1 returning {PET_COLUMNS}",
+        pet_id,
+        path,
     )
     # The foreign key cascade does not reach storage and there is no cleanup
     # job, so the object it replaced is deleted here or never.
@@ -774,11 +778,12 @@ async def delete_photo(
     token: str = Depends(access_token),
 ) -> pets.PetOut:
     """Take the photo away, object and all, and fall back to the initial."""
-    previous = await conn.fetchrow("select photo_path from pets where id = $1", pet_id)
+    previous = await conn.fetchrow("select photo_path from pawpages_pets where id = $1", pet_id)
     if previous is None:
         raise NO_SUCH_PET
     row = await conn.fetchrow(
-        f"update pets set photo_path = null where id = $1 returning {PET_COLUMNS}", pet_id
+        f"update pawpages_pets set photo_path = null where id = $1 returning {PET_COLUMNS}",
+        pet_id,
     )
     if previous["photo_path"]:
         await supabase_storage.remove(
@@ -794,7 +799,7 @@ async def read_photo(
     conn: asyncpg.Connection = Depends(db),
     token: str = Depends(access_token),
 ) -> Response:
-    path = await conn.fetchval("select photo_path from pets where id = $1", pet_id)
+    path = await conn.fetchval("select photo_path from pawpages_pets where id = $1", pet_id)
     if path is None:
         raise NO_SUCH_PHOTO
     return await stream_photo(request, token, path, NO_SUCH_PHOTO)
@@ -810,7 +815,7 @@ async def entry_pet(entry_id: UUID, conn: asyncpg.Connection) -> UUID:
     there — the same answer a missing id gets, and deliberately the same one,
     because which of the two it was is not the caller's business.
     """
-    pet_id = await conn.fetchval("select pet_id from entries where id = $1", entry_id)
+    pet_id = await conn.fetchval("select pet_id from pawpages_entries where id = $1", entry_id)
     if pet_id is None:
         raise NO_SUCH_ENTRY
     return pet_id
@@ -833,12 +838,16 @@ async def put_entry_photo(
     content_type = supabase_storage.check(request.headers.get("content-type"), len(content))
 
     pet_id = await entry_pet(entry_id, conn)
-    previous = await conn.fetchval("select photo_path from entries where id = $1", entry_id)
+    previous = await conn.fetchval(
+        "select photo_path from pawpages_entries where id = $1", entry_id
+    )
 
     path = supabase_storage.path_for(pet_id, content_type)
     client = request.app.state.storage_client
     await supabase_storage.upload(client, token, path, content, content_type)
-    await conn.execute("update entries set photo_path = $2 where id = $1", entry_id, path)
+    await conn.execute(
+        "update pawpages_entries set photo_path = $2 where id = $1", entry_id, path
+    )
     if previous:
         await supabase_storage.remove(client, token, previous)
     return await read_entry(entry_id, conn)
@@ -853,8 +862,10 @@ async def delete_entry_photo(
 ) -> entries.EntryOut:
     """Take the photo away, object and all. The entry itself stays."""
     await entry_pet(entry_id, conn)
-    previous = await conn.fetchval("select photo_path from entries where id = $1", entry_id)
-    await conn.execute("update entries set photo_path = null where id = $1", entry_id)
+    previous = await conn.fetchval(
+        "select photo_path from pawpages_entries where id = $1", entry_id
+    )
+    await conn.execute("update pawpages_entries set photo_path = null where id = $1", entry_id)
     if previous:
         await supabase_storage.remove(request.app.state.storage_client, token, previous)
     return await read_entry(entry_id, conn)
@@ -867,7 +878,7 @@ async def read_entry_photo(
     conn: asyncpg.Connection = Depends(db),
     token: str = Depends(access_token),
 ) -> Response:
-    path = await conn.fetchval("select photo_path from entries where id = $1", entry_id)
+    path = await conn.fetchval("select photo_path from pawpages_entries where id = $1", entry_id)
     if path is None:
         raise NO_SUCH_ENTRY_PHOTO
     return await stream_photo(request, token, path, NO_SUCH_ENTRY_PHOTO)
@@ -879,7 +890,7 @@ async def public_entry_photo(
 ) -> Response:
     """A published entry photo, read as nobody.
 
-    `public_entries` is the only place the path can come from, and it hands one
+    `pawpages_public_entries` is the only place the path can come from, and it hands one
     over only when the handler published that photo *and* the pet is public and
     unarchived. Matching the slug as well as the id is what stops one public
     page being used to read another's.
@@ -896,11 +907,13 @@ async def public_photo(
 ) -> Response:
     """The visitor's copy of the same bytes, read as nobody.
 
-    `public_pets` is the only place the path can come from, and the anon key is
-    the only token this carries, so a pet that is private or archived has no
-    photo here for the same reason it has no page.
+    `pawpages_public_pets` is the only place the path can come from, and the
+    anon key is the only token this carries, so a pet that is private or
+    archived has no photo here for the same reason it has no page.
     """
-    path = await conn.fetchval("select photo_path from public_pets where slug = $1", slug)
+    path = await conn.fetchval(
+        "select photo_path from pawpages_public_pets where slug = $1", slug
+    )
     if path is None:
         raise NO_SUCH_PAGE
     return await stream_photo(request, settings.supabase_anon_key, path, NO_SUCH_PAGE)

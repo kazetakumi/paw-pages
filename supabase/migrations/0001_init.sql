@@ -2,16 +2,17 @@
 -- Postgres 17 / Supabase. Auth is handled by Supabase Auth (auth.users);
 -- nothing here stores credentials.
 --
--- Three tables: handlers, pets, entries. Two views for the public pet page.
+-- Three tables: pawpages_handlers, pawpages_pets, pawpages_entries. Two views
+-- for the public pet page.
 
 
 -- ============================================================================
--- handlers
+-- pawpages_handlers
 -- ============================================================================
 -- One row per signed-up person, keyed to auth.users. Holds only what the app
 -- shows; email and password live in auth.users and are never duplicated here.
 
-create table handlers (
+create table pawpages_handlers (
   id             uuid primary key references auth.users (id) on delete cascade,
   name           text not null check (length(btrim(name)) between 1 and 80),
 
@@ -24,7 +25,7 @@ create table handlers (
   updated_at     timestamptz not null default now()
 );
 
-comment on column handlers.date_of_birth is
+comment on column pawpages_handlers.date_of_birth is
   'Age is derived from this at read time and never stored.';
 
 
@@ -37,7 +38,7 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into handlers (id, name)
+  insert into pawpages_handlers (id, name)
   values (new.id, coalesce(nullif(btrim(new.raw_user_meta_data ->> 'name'), ''), 'Handler'));
   return new;
 end;
@@ -49,12 +50,12 @@ create trigger on_auth_user_created
 
 
 -- ============================================================================
--- pets
+-- pawpages_pets
 -- ============================================================================
 
-create table pets (
+create table pawpages_pets (
   id               uuid primary key default gen_random_uuid(),
-  handler_id       uuid not null references handlers (id) on delete cascade,
+  handler_id       uuid not null references pawpages_handlers (id) on delete cascade,
 
   name             text not null check (length(btrim(name)) between 1 and 60),
   species          text not null check (length(btrim(species)) between 1 and 40),
@@ -80,31 +81,31 @@ create table pets (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
 
-  constraint archive_is_complete check (
+  constraint pawpages_archive_is_complete check (
     (archived_at is null and archived_reason is null) or
     (archived_at is not null and archived_reason is not null)
   ),
-  constraint dob_approx_needs_a_date check (
+  constraint pawpages_dob_approx_needs_a_date check (
     not dob_is_approx or date_of_birth is not null
   )
 );
 
-comment on column pets.species is
+comment on column pawpages_pets.species is
   'Free text. Nothing in v1 branches on species; a check list would only block rabbits.';
-comment on column pets.archived_at is
+comment on column pawpages_pets.archived_at is
   'Archived pets are excluded from every due-date query and their public page goes offline.';
 
 
 -- ============================================================================
--- entries
+-- pawpages_entries
 -- ============================================================================
 -- One universal shape for everything: a shot, a vet visit, a nail trim.
 -- `title` is free text by decision, so the app can never group two entries
 -- into a series — which is why a due date has to be closed by hand.
 
-create table entries (
+create table pawpages_entries (
   id             uuid primary key default gen_random_uuid(),
-  pet_id         uuid not null references pets (id) on delete cascade,
+  pet_id         uuid not null references pawpages_pets (id) on delete cascade,
 
   title          text not null check (length(btrim(title)) between 1 and 120),
   happened_on    date not null check (happened_on <= current_date),
@@ -118,16 +119,16 @@ create table entries (
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now(),
 
-  constraint due_after_it_happened check (due_on is null or due_on >= happened_on),
-  constraint cannot_close_a_due_date_that_does_not_exist check (
+  constraint pawpages_due_after_it_happened check (due_on is null or due_on >= happened_on),
+  constraint pawpages_cannot_close_a_due_date_that_does_not_exist check (
     due_closed_at is null or due_on is not null
   )
 );
 
-comment on column entries.due_closed_at is
+comment on column pawpages_entries.due_closed_at is
   'Free-text titles mean nothing closes automatically. Overdue is: '
   'due_on < current_date and due_closed_at is null.';
-comment on column entries.vet is
+comment on column pawpages_entries.vet is
   'Recorded per entry, not on the pet — pets change vets and old entries should keep theirs.';
 
 
@@ -136,16 +137,16 @@ comment on column entries.vet is
 -- ============================================================================
 
 -- the pet list, active pets first
-create index pets_handler_active_idx on pets (handler_id) where archived_at is null;
+create index pawpages_pets_handler_active_idx on pawpages_pets (handler_id) where archived_at is null;
 
 -- public page lookup by URL
-create index pets_public_slug_idx on pets (slug) where is_public and archived_at is null;
+create index pawpages_pets_public_slug_idx on pawpages_pets (slug) where is_public and archived_at is null;
 
 -- a pet's feed, newest first
-create index entries_pet_feed_idx on entries (pet_id, happened_on desc, id desc);
+create index pawpages_entries_pet_feed_idx on pawpages_entries (pet_id, happened_on desc, id desc);
 
 -- the dashboard ledger: only entries that still owe something
-create index entries_open_due_idx on entries (pet_id, due_on)
+create index pawpages_entries_open_due_idx on pawpages_entries (pet_id, due_on)
   where due_on is not null and due_closed_at is null;
 
 
@@ -155,7 +156,7 @@ create index entries_open_due_idx on entries (pet_id, due_on)
 -- One definition of "due" and "overdue", so the dashboard, the pet page and
 -- any future export cannot disagree about it.
 
-create view due_items with (security_invoker = true) as
+create view pawpages_due_items with (security_invoker = true) as
 select
   e.id            as entry_id,
   p.id            as pet_id,
@@ -165,13 +166,13 @@ select
   e.due_on,
   e.due_on - current_date as days_until,
   e.due_on < current_date as is_overdue
-from entries e
-join pets p on p.id = e.pet_id
+from pawpages_entries e
+join pawpages_pets p on p.id = e.pet_id
 where e.due_on is not null
   and e.due_closed_at is null
   and p.archived_at is null;
 
-comment on view due_items is
+comment on view pawpages_due_items is
   'Feeds the home-screen ledger and each pet''s "needs attention" panel. '
   'Archived pets are excluded here so no screen has to remember to.';
 
@@ -182,35 +183,36 @@ comment on view due_items is
 -- A handler can only ever reach their own rows, enforced by Postgres rather
 -- than by remembering to add a WHERE clause.
 
-alter table handlers enable row level security;
-alter table pets     enable row level security;
-alter table entries  enable row level security;
+alter table pawpages_handlers enable row level security;
+alter table pawpages_pets     enable row level security;
+alter table pawpages_entries  enable row level security;
 
-create policy handler_reads_self on handlers
+create policy pawpages_handler_reads_self on pawpages_handlers
   for select to authenticated using (id = (select auth.uid()));
 
-create policy handler_updates_self on handlers
+create policy pawpages_handler_updates_self on pawpages_handlers
   for update to authenticated
   using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
-create policy handler_owns_pets on pets
+create policy pawpages_handler_owns_pets on pawpages_pets
   for all to authenticated
   using (handler_id = (select auth.uid()))
   with check (handler_id = (select auth.uid()));
 
-create policy handler_owns_entries on entries
+create policy pawpages_handler_owns_entries on pawpages_entries
   for all to authenticated
   using (exists (
-    select 1 from pets p
-    where p.id = entries.pet_id and p.handler_id = (select auth.uid())
+    select 1 from pawpages_pets p
+    where p.id = pawpages_entries.pet_id and p.handler_id = (select auth.uid())
   ))
   with check (exists (
-    select 1 from pets p
-    where p.id = entries.pet_id and p.handler_id = (select auth.uid())
+    select 1 from pawpages_pets p
+    where p.id = pawpages_entries.pet_id and p.handler_id = (select auth.uid())
   ));
 
--- No delete policy on handlers: account deletion happens through auth.users,
--- and cascades down through handlers → pets → entries.
+-- No delete policy on pawpages_handlers: account deletion happens through
+-- auth.users, and cascades down through pawpages_handlers → pawpages_pets →
+-- pawpages_entries.
 
 
 -- ============================================================================
@@ -223,7 +225,7 @@ create policy handler_owns_entries on entries
 -- These run with the owner's privileges (security_invoker off), which is the
 -- point — the view is the gate.
 
-create view public_pets as
+create view pawpages_public_pets as
 select
   p.slug,
   p.name,
@@ -238,24 +240,24 @@ select
   extract(year  from age(p.date_of_birth))::int         as age_years,
   extract(month from age(p.date_of_birth))::int         as age_months,
   p.updated_at
-from pets p
+from pawpages_pets p
 where p.is_public
   and p.archived_at is null;
 
-create view public_entries as
+create view pawpages_public_entries as
 select
   p.slug,
   e.title,
   e.happened_on,
   e.due_on
   -- deliberately absent: note, vet, due_closed_at, ids
-from entries e
-join pets p on p.id = e.pet_id
+from pawpages_entries e
+join pawpages_pets p on p.id = e.pet_id
 where p.is_public
   and p.archived_at is null;
 
-revoke all on public_pets, public_entries from public;
-grant select on public_pets, public_entries to anon, authenticated;
+revoke all on pawpages_public_pets, pawpages_public_entries from public;
+grant select on pawpages_public_pets, pawpages_public_entries to anon, authenticated;
 
 
 -- ============================================================================
@@ -270,9 +272,9 @@ begin
 end;
 $$;
 
-create trigger handlers_touch before update on handlers
+create trigger pawpages_handlers_touch before update on pawpages_handlers
   for each row execute function touch_updated_at();
-create trigger pets_touch before update on pets
+create trigger pawpages_pets_touch before update on pawpages_pets
   for each row execute function touch_updated_at();
-create trigger entries_touch before update on entries
+create trigger pawpages_entries_touch before update on pawpages_entries
   for each row execute function touch_updated_at();

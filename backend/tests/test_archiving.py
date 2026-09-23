@@ -1,9 +1,9 @@
 """Archiving a pet, and putting it back.
 
-Nothing here filters archived pets out by hand. `due_items`, `public_pets` and
-`public_entries` all carry `archived_at is null`, so these tests set the two
-columns through the endpoint and then ask the ledger and the public page what
-they can see.
+Nothing here filters archived pets out by hand. `pawpages_due_items`,
+`pawpages_public_pets` and `pawpages_public_entries` all carry
+`archived_at is null`, so these tests set the two columns through the endpoint
+and then ask the ledger and the public page what they can see.
 """
 
 from datetime import date, timedelta
@@ -48,8 +48,8 @@ async def log(signed_in):
 
 
 async def test_an_archive_with_no_reason_is_rejected_naming_the_field(signed_in, add_pet):
-    """`archive_is_complete` says the two columns travel together, so there is
-    no such thing as archiving without saying why."""
+    """`pawpages_archive_is_complete` says the two columns travel together, so
+    there is no such thing as archiving without saying why."""
     toffee = await add_pet("Toffee")
 
     refused = await signed_in.post(f"/pets/{toffee['id']}/archive", json={})
@@ -90,8 +90,9 @@ async def published(signed_in, add_pet, log):
 async def test_archiving_empties_the_ledger_and_darkens_the_page_in_one_request(
     signed_in, client, published
 ):
-    """One update to two columns. The exclusions live in `due_items` and
-    `public_pets`, so neither the ledger query nor the public route filters."""
+    """One update to two columns. The exclusions live in `pawpages_due_items`
+    and `pawpages_public_pets`, so neither the ledger query nor the public
+    route filters."""
     before = (await signed_in.get("/dashboard")).json()
     assert [item["title"] for item in before["ledger"]] == ["Rabies booster"]
     assert (await client.get(f"/public/pets/{published['slug']}")).status_code == 200

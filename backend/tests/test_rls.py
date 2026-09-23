@@ -3,7 +3,7 @@ import pytest
 
 async def add_pet(conn, name: str, slug: str) -> str:
     return await conn.fetchval(
-        "insert into pets (handler_id, name, species, slug)"
+        "insert into pawpages_pets (handler_id, name, species, slug)"
         " values ((select auth.uid()), $1, 'dog', $2) returning id",
         name,
         slug,
@@ -26,17 +26,17 @@ async def test_handler_b_reads_none_of_handler_as_rows(as_handler, seed_handler)
     async with as_handler(a) as conn:
         pet = await add_pet(conn, "Biscuit", "biscuit-a1b2")
         await conn.execute(
-            "insert into entries (pet_id, title, happened_on)"
+            "insert into pawpages_entries (pet_id, title, happened_on)"
             " values ($1, 'Rabies booster', current_date)",
             pet,
         )
 
     async with as_handler(b) as conn:
         # No ownership filter anywhere: the policies are the filter.
-        assert await conn.fetch("select * from pets") == []
-        assert await conn.fetch("select * from entries") == []
-        assert await conn.fetchval("select count(*) from handlers") == 1
-        assert await conn.fetchval("select name from handlers") == "Bela"
+        assert await conn.fetch("select * from pawpages_pets") == []
+        assert await conn.fetch("select * from pawpages_entries") == []
+        assert await conn.fetchval("select count(*) from pawpages_handlers") == 1
+        assert await conn.fetchval("select name from pawpages_handlers") == "Bela"
 
 
 async def test_handler_b_cannot_write_over_handler_as_rows(as_handler, seed_handler):
@@ -47,11 +47,11 @@ async def test_handler_b_cannot_write_over_handler_as_rows(as_handler, seed_hand
         pet = await add_pet(conn, "Biscuit", "biscuit-a1b2")
 
     async with as_handler(b) as conn:
-        assert await conn.execute("update pets set name = 'Stolen' where id = $1", pet) == "UPDATE 0"
-        assert await conn.execute("delete from pets where id = $1", pet) == "DELETE 0"
+        assert await conn.execute("update pawpages_pets set name = 'Stolen' where id = $1", pet) == "UPDATE 0"
+        assert await conn.execute("delete from pawpages_pets where id = $1", pet) == "DELETE 0"
 
     async with as_handler(a) as conn:
-        assert await conn.fetchval("select name from pets") == "Biscuit"
+        assert await conn.fetchval("select name from pawpages_pets") == "Biscuit"
 
 
 async def test_a_pet_cannot_be_filed_under_another_handler(as_handler, seed_handler):
@@ -61,7 +61,7 @@ async def test_a_pet_cannot_be_filed_under_another_handler(as_handler, seed_hand
     with pytest.raises(Exception, match="row-level security"):
         async with as_handler(b) as conn:
             await conn.execute(
-                "insert into pets (handler_id, name, species, slug)"
+                "insert into pawpages_pets (handler_id, name, species, slug)"
                 " values ($1, 'Biscuit', 'dog', 'biscuit-a1b2')",
                 a,
             )

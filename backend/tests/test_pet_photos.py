@@ -132,14 +132,14 @@ async def test_an_archived_pets_photo_stops_resolving_when_its_page_goes_dark(
     signed_in, biscuit, client, app
 ):
     """Archiving is ticket 08, so the pet is archived in SQL. Nothing in this
-    module reacts to it: the photo and the page both come off `public_pets`."""
+    module reacts to it: the photo and the page both come off `pawpages_public_pets`."""
     await upload(signed_in, biscuit["id"])
     await signed_in.patch(f"/pets/{biscuit['id']}", json={"is_public": True})
     assert (await client.get(f"/public/pets/{biscuit['slug']}/photo")).status_code == 200
 
     async with app.state.pool.acquire() as conn:
         await conn.execute(
-            "update pets set archived_at = now(), archived_reason = 'passed_away' where id = $1",
+            "update pawpages_pets set archived_at = now(), archived_reason = 'passed_away' where id = $1",
             UUID(biscuit["id"]),
         )
 

@@ -44,8 +44,8 @@ httpx transport because none is ours to test: Supabase Auth in
 `backend/tests/supabase_admin_stub.py`. The storage stub really holds the
 uploaded bytes, so a test can prove an object was deleted on replace, on remove
 and on account deletion rather than only that a path was cleared. The admin
-stub really deletes the row in `auth.users`, so the cascade down to handlers,
-pets and entries is the real one.
+stub really deletes the row in `auth.users`, so the cascade down to
+`pawpages_handlers`, `pawpages_pets` and `pawpages_entries` is the real one.
 
 ## Running it against the live project
 

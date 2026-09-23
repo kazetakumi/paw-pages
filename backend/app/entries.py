@@ -1,8 +1,8 @@
 """Entries: the models the endpoints speak, and the feed's opaque cursor.
 
 One universal shape for a rabies booster, a vet visit and a nail trim. As in
-`pets`, the database is the authority on what an entry may contain and these
-models only mirror its checks, so a rejected field comes back named.
+`pawpages_pets`, the database is the authority on what an entry may contain and
+these models only mirror its checks, so a rejected field comes back named.
 """
 
 import base64
@@ -45,7 +45,7 @@ class EntryIn(BaseModel):
     closes_entry_id: UUID | None = None
 
 
-# Everything on EntryIn that is not a column on `entries`.
+# Everything on EntryIn that is not a column on `pawpages_entries`.
 NOT_COLUMNS = {"closes_entry_id"}
 
 
@@ -76,8 +76,8 @@ class EntryOut(BaseModel):
     has_photo: bool
     # Whether that photo is on the pet's public page. Off until asked.
     photo_is_public: bool
-    # From the `due_items` view, which owns the one definition of overdue.
-    # Never worked out here and never worked out in the browser.
+    # From the `pawpages_due_items` view, which owns the one definition of
+    # overdue. Never worked out here and never worked out in the browser.
     is_overdue: bool
 
 
@@ -87,16 +87,19 @@ class FeedPage(BaseModel):
     next_cursor: str | None
 
 
-# `due_items` already excludes closed and archived, so a left join gives every
-# entry its overdue flag without this file knowing what overdue means.
+# `pawpages_due_items` already excludes closed and archived, so a left join
+# gives every entry its overdue flag without this file knowing what overdue
+# means.
 ENTRY_COLUMNS = """e.id, e.pet_id, e.title, e.happened_on, e.due_on, e.vet, e.note,
        e.weight_value, e.weight_unit,
        (e.photo_path is not null) as has_photo,
        e.photo_is_public,
        coalesce(d.is_overdue, false) as is_overdue"""
-ENTRY_SOURCE = "from entries e left join due_items d on d.entry_id = e.id"
+ENTRY_SOURCE = (
+    "from pawpages_entries e left join pawpages_due_items d on d.entry_id = e.id"
+)
 
-# Matches entries_pet_feed_idx on (pet_id, happened_on desc, id desc).
+# Matches pawpages_entries_pet_feed_idx on (pet_id, happened_on desc, id desc).
 FEED_ORDER = "order by e.happened_on desc, e.id desc"
 
 
@@ -117,12 +120,12 @@ def decode_cursor(cursor: str) -> tuple[date, UUID]:
 # The constraints Pydantic cannot mirror, because they are about the row rather
 # than one field. The database stays the authority; this only names the field.
 CHECK_FIELDS = {
-    "due_after_it_happened": (
+    "pawpages_due_after_it_happened": (
         "due_on",
         "The next one cannot be due before the date this happened.",
     ),
-    "entries_happened_on_check": ("happened_on", "That date is in the future."),
-    "weight_is_complete": ("weight_value", "A weight needs a unit."),
+    "pawpages_entries_happened_on_check": ("happened_on", "That date is in the future."),
+    "pawpages_weight_is_complete": ("weight_value", "A weight needs a unit."),
 }
 
 
@@ -137,7 +140,7 @@ def constraint_error(error: asyncpg.IntegrityConstraintViolationError) -> HTTPEx
     if name in CHECK_FIELDS:
         field, message = CHECK_FIELDS[name]
     else:
-        column = re.fullmatch(r"entries_(.+)_check", name)
+        column = re.fullmatch(r"pawpages_entries_(.+)_check", name)
         field = column.group(1) if column else "title"
         message = "That value is not allowed."
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"field": field, "message": message})

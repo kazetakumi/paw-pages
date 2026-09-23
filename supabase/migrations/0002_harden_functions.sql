@@ -20,12 +20,12 @@ revoke execute on function touch_updated_at() from public, anon, authenticated;
 
 -- The linter still reports both public views as SECURITY DEFINER. That is the
 -- design, not an oversight — recorded here so nobody "fixes" it later.
-comment on view public_pets is
+comment on view pawpages_public_pets is
   'Deliberately SECURITY DEFINER. Anonymous visitors have no policy on pets or '
   'entries, so this view is their only route in, and it exposes a fixed column '
   'list with the exact date of birth withheld. The database, not the frontend, '
   'is what keeps notes and vet names off a public URL.';
 
-comment on view public_entries is
-  'Deliberately SECURITY DEFINER. See public_pets. Columns note, vet, '
+comment on view pawpages_public_entries is
+  'Deliberately SECURITY DEFINER. See pawpages_public_pets. Columns note, vet, '
   'due_closed_at and all row ids are absent by construction.';

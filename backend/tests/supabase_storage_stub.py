@@ -10,8 +10,8 @@ the owner's route reads as the handler and the visitor's route reads as `anon`.
 
 Nothing about the database is stubbed. Which pet a photo belongs to, whether
 the caller owns it and whether a visitor may see it are all decided by real
-rows, real RLS and the real `public_pets` view on the backend's own connection,
-before a single byte is asked for here.
+rows, real RLS and the real `pawpages_public_pets` view on the backend's own
+connection, before a single byte is asked for here.
 """
 
 import httpx

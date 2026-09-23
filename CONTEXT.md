@@ -47,17 +47,24 @@ Do not add a state library, a component library, an ORM or a migration tool.
    account deletion. Anything else it touches is a bug.
 5. **Photos are proxied.** Served from our API out of the private `pet-photos`
    bucket. No signed URLs, no Supabase domain in the markup.
-6. **Public requests run as `anon`** through `public_pets` / `public_entries`
-   only, so a backend bug still cannot leak a note or a vet name.
+6. **Public requests run as `anon`** through `pawpages_public_pets` /
+   `pawpages_public_entries` only, so a backend bug still cannot leak a note or
+   a vet name.
 7. **Dates are calendar dates**, never timestamps. The frontend formats the date
    it was given and never offsets or reinterprets one.
-8. **Due and overdue are computed in the database**, in the `due_items` view.
-   Neither the backend nor the frontend reimplements them.
+8. **Due and overdue are computed in the database**, in the `pawpages_due_items`
+   view. Neither the backend nor the frontend reimplements them.
 9. **0001–0004 are frozen. New migrations start at 0005 and are additive only.**
    Do not edit an applied migration. `0004` repaired `0003`'s five storage
    policies, every one of which denied everyone because `name` inside the
-   subquery bound to `pets.name` rather than `storage.objects.name`. Do not
-   reopen that.
+   subquery bound to `pawpages_pets.name` rather than `storage.objects.name`.
+   Do not reopen that.
+
+   Every table, view, index, named constraint and per-table trigger/policy
+   carries a `pawpages_` prefix — this database hosts more than one app's
+   schema side by side. The two trigger functions (`handle_new_user`,
+   `touch_updated_at`) and the `on_auth_user_created` trigger on `auth.users`
+   are the only exceptions.
 
    Additive means a new table, a new **nullable** column, or a new index —
    something the running v1 cannot observe. The backend reads explicit column
@@ -83,7 +90,7 @@ Use these words in code, tests and UI. Do not invent synonyms.
 - **entry** — one thing that happened: a **title** (free text), a
   **happened_on** date, and optionally a **vet**, a **note** and a **due_on**.
   One universal shape for a rabies booster, a vet visit and a nail trim.
-- **due item** — a row of `due_items`: an entry with an open `due_on`, on an
+- **due item** — a row of `pawpages_due_items`: an entry with an open `due_on`, on an
   unarchived pet. **overdue** means `due_on < current_date` and
   `due_closed_at is null`.
 - **ledger** — the cross-pet list of due items, oldest problem first.

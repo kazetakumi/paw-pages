@@ -199,6 +199,6 @@ async def test_a_second_handler_cannot_delete_the_first_handlers_pet(
     bela = await seed_handler("Bela", "bela@example.com")
 
     async with as_handler(bela) as conn:
-        assert await conn.execute("delete from pets where id = $1", mine["id"]) == "DELETE 0"
+        assert await conn.execute("delete from pawpages_pets where id = $1", mine["id"]) == "DELETE 0"
 
     assert (await signed_in.get(f"/pets/{mine['id']}")).status_code == 200

@@ -2,8 +2,8 @@
 
 The third external service the API tests stub, and stubbed the same way as
 Auth and Storage. Like the real thing it deletes the row in `auth.users`, which
-is what the foreign keys cascade from: handlers, then pets, then entries. The
-cascade itself is the real one, in the real database.
+is what the foreign keys cascade from: pawpages_handlers, then pawpages_pets,
+then pawpages_entries. The cascade itself is the real one, in the real database.
 
 It records the bearer of every call, which is how a test shows the service-role
 key reaches this service and no other. Any path but the one it is allowed is an

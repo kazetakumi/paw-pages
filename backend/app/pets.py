@@ -19,7 +19,7 @@ SLUG_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789"
 SLUG_SUFFIX_LENGTH = 4
 SLUG_ATTEMPTS = 5
 
-# Mirrors of the checks on `pets`. Free text within a length cap: nothing in v1
+# Mirrors of the checks on `pawpages_pets`. Free text within a length cap: nothing in v1
 # branches on species, so a tortoise is as welcome as a dog.
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
 Species = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
@@ -33,7 +33,7 @@ ArchiveReason = Literal["passed_away", "rehomed", "other"]
 
 class ArchiveIn(BaseModel):
     """Why the pet is being archived. There is no archiving without a reason:
-    the `archive_is_complete` constraint says the two columns travel together."""
+    the `pawpages_archive_is_complete` constraint says the two columns travel together."""
 
     reason: ArchiveReason
 
@@ -114,15 +114,18 @@ async def claim_slug(name: str, insert):
 # The constraints Pydantic cannot mirror, because they are about the row rather
 # than one field. The database stays the authority; this only names the field.
 CHECK_FIELDS = {
-    "handlers_date_of_birth_check": (
+    "pawpages_handlers_date_of_birth_check": (
         "date_of_birth",
         "A date of birth cannot be in the future.",
     ),
-    "dob_approx_needs_a_date": (
+    "pawpages_dob_approx_needs_a_date": (
         "dob_is_approx",
         "Mark a date of birth approximate only when there is a date.",
     ),
-    "pets_date_of_birth_check": ("date_of_birth", "A date of birth cannot be in the future."),
+    "pawpages_pets_date_of_birth_check": (
+        "date_of_birth",
+        "A date of birth cannot be in the future.",
+    ),
 }
 
 
@@ -137,7 +140,7 @@ def constraint_error(error: asyncpg.IntegrityConstraintViolationError) -> HTTPEx
     if name in CHECK_FIELDS:
         field, message = CHECK_FIELDS[name]
     else:
-        column = re.fullmatch(r"(?:pets|handlers)_(.+)_check", name)
+        column = re.fullmatch(r"pawpages_(?:pets|handlers)_(.+)_check", name)
         field = column.group(1) if column else "name"
         message = "That value is not allowed."
     return HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, {"field": field, "message": message})

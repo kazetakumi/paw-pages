@@ -26,8 +26,9 @@ async def anon_connection(pool: asyncpg.Pool):
     """A connection that is nobody, for the length of one transaction.
 
     The same shape as `rls_connection`, minus the claims there is no caller to
-    set. `anon` has no policy on `pets` or `entries`, so the only rows it can
-    reach at all are the ones `public_pets` and `public_entries` hand over.
+    set. `anon` has no policy on `pawpages_pets` or `pawpages_entries`, so the
+    only rows it can reach at all are the ones `pawpages_public_pets` and
+    `pawpages_public_entries` hand over.
     """
     async with pool.acquire() as conn:
         async with conn.transaction():

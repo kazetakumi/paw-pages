@@ -1,8 +1,9 @@
-"""The ledger: what the `due_items` view says is outstanding.
+"""The ledger: what the `pawpages_due_items` view says is outstanding.
 
-`due_items` is the one definition of due and overdue. Nothing here works out
-what overdue means — `days_until` and `is_overdue` are selected, never derived,
-and the archived-pet exclusion lives inside the view rather than in a filter.
+`pawpages_due_items` is the one definition of due and overdue. Nothing here
+works out what overdue means — `days_until` and `is_overdue` are selected,
+never derived, and the archived-pet exclusion lives inside the view rather
+than in a filter.
 """
 
 from datetime import date
@@ -46,7 +47,7 @@ class ArchivedPet(BaseModel):
     """An archived pet as the home screen keeps it: findable, out of the way.
 
     Why and when, and nothing a card would need — an archived pet has no next
-    due date, because `due_items` has no row for it.
+    due date, because `pawpages_due_items` has no row for it.
     """
 
     id: UUID
@@ -66,11 +67,11 @@ class Dashboard(BaseModel):
     archived: list[ArchivedPet]
 
 
-# `due_items` owns due and overdue; the join back to `entries` only fetches
-# the two columns the view leaves out.
+# `pawpages_due_items` owns due and overdue; the join back to
+# `pawpages_entries` only fetches the two columns the view leaves out.
 LEDGER = """select d.entry_id, d.pet_id, d.pet_name, d.title, d.due_on, d.days_until,
        d.is_overdue, e.happened_on, e.vet
-       from due_items d join entries e on e.id = d.entry_id
+       from pawpages_due_items d join pawpages_entries e on e.id = d.entry_id
        {where} order by d.due_on, d.entry_id"""
 
 # The nearest outstanding item comes from the view, so an archived pet has no
@@ -78,10 +79,10 @@ LEDGER = """select d.entry_id, d.pet_id, d.pet_name, d.title, d.due_on, d.days_u
 PET_CARDS = """select {columns},
        d.due_on as next_due_on,
        coalesce(d.is_overdue, false) as next_due_is_overdue,
-       (select max(happened_on) from entries e where e.pet_id = p.id) as last_logged_on
-       from pets p
+       (select max(happened_on) from pawpages_entries e where e.pet_id = p.id) as last_logged_on
+       from pawpages_pets p
        left join lateral (
-         select due_on, is_overdue from due_items
+         select due_on, is_overdue from pawpages_due_items
          where pet_id = p.id order by due_on limit 1
        ) d on true
        where p.archived_at is null
@@ -90,13 +91,13 @@ PET_CARDS = """select {columns},
 # `days_until` is the view's, so "within thirty days" is a window on a number
 # Postgres worked out, not a second opinion about what due means.
 COUNTS = """select
-       (select count(*) from pets where archived_at is null)     as active_pets,
-       (select count(*) from pets where archived_at is not null) as archived_pets,
-       (select count(*) from due_items where is_overdue)         as overdue,
-       (select count(*) from due_items
+       (select count(*) from pawpages_pets where archived_at is null)     as active_pets,
+       (select count(*) from pawpages_pets where archived_at is not null) as archived_pets,
+       (select count(*) from pawpages_due_items where is_overdue)         as overdue,
+       (select count(*) from pawpages_due_items
          where not is_overdue and days_until <= 30)              as due_within_30_days"""
 
 # A calendar date, like every other date the API sends: when it was archived is
 # something a handler reads, not an instant anything is compared against.
 ARCHIVED = """select id, name, archived_reason, archived_at::date as archived_on
-       from pets where archived_at is not null order by created_at"""
+       from pawpages_pets where archived_at is not null order by created_at"""

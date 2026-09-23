@@ -223,7 +223,7 @@ async def test_after_deletion_no_row_and_no_stored_object_is_left_behind(
     assert gone.status_code == 204
     assert storage_stub.objects == {}
     async with app.state.pool.acquire() as conn:
-        for table in ("auth.users", "handlers", "pets", "entries"):
+        for table in ("auth.users", "pawpages_handlers", "pawpages_pets", "pawpages_entries"):
             assert await conn.fetchval(f"select count(*) from {table}") == 0, table
     # The cookie went with it, so the next call is a stranger's.
     assert (await with_a_photo.get("/me")).status_code == 401

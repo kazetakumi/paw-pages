@@ -15,11 +15,11 @@
 -- without a rule saying so. A photo of a rash or a vet's paperwork is not
 -- something a public page should hand out, so the default is the right one.
 --
--- Additive: one new nullable column, and `public_entries` is untouched.
+-- Additive: one new nullable column, and `pawpages_public_entries` is untouched.
 --
 -- Storage has no foreign keys, so deleting an entry has to delete the object
 -- too — see `delete_entry` and `delete_me`. There is no cleanup job; the
 -- object is removed there or it is orphaned forever.
 
-alter table entries
+alter table pawpages_entries
   add column photo_path text;

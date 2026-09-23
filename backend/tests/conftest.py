@@ -122,7 +122,7 @@ async def seed_handler(app):
     """Insert straight into auth.users, the way Supabase Auth would.
 
     The `on_auth_user_created` trigger does the rest, so a seeded handler has a
-    profile without this fixture knowing the `handlers` table exists.
+    profile without this fixture knowing the `pawpages_handlers` table exists.
     """
 
     async def _seed(name: str, email: str) -> str:

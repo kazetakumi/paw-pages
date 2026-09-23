@@ -241,8 +241,8 @@ async def test_the_first_handlers_entry_survives_the_second_handlers_attempt(
 async def test_a_due_date_that_has_passed_comes_back_overdue_from_the_database(
     signed_in, biscuit
 ):
-    """The flag is read off the due_items view — the one definition of overdue.
-    Nothing in the API or the browser works it out again."""
+    """The flag is read off the pawpages_due_items view — the one definition of
+    overdue. Nothing in the API or the browser works it out again."""
     passed = await signed_in.post(
         "/entries",
         json={

@@ -24,7 +24,7 @@ def check_configured() -> None:
 
 
 async def delete_user(client: httpx.AsyncClient, user_id: str) -> None:
-    """Delete the auth user, which cascades handlers, pets and entries."""
+    """Delete the auth user, which cascades pawpages_handlers, pawpages_pets and pawpages_entries."""
     key = settings.supabase_service_role_key
     response = await client.delete(
         f"/auth/v1/admin/users/{user_id}",

@@ -65,7 +65,7 @@ async def test_the_ledger_is_oldest_problem_first_across_every_pet(signed_in, ad
 async def test_overdue_turns_over_at_midnight_and_the_database_decides_when(
     signed_in, add_pet, log, days_out, overdue, days_until
 ):
-    """The boundary, read off due_items. Neither the API nor the browser
+    """The boundary, read off pawpages_due_items. Neither the API nor the browser
     reimplements `due_on < current_date and due_closed_at is null`."""
     biscuit = await add_pet("Biscuit")
     await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(days_out))
@@ -202,7 +202,7 @@ async def archive(app, signed_in):
     async def _archive(pet_id: str) -> None:
         async with app.state.pool.acquire() as conn:
             await conn.execute(
-                "update pets set archived_at = now(), archived_reason = 'passed_away'"
+                "update pawpages_pets set archived_at = now(), archived_reason = 'passed_away'"
                 " where id = $1::uuid",
                 pet_id,
             )
@@ -268,8 +268,8 @@ async def test_the_home_screen_gets_all_of_it_from_one_request(signed_in, add_pe
 async def test_a_second_handler_sees_none_of_the_first_handlers_due_items(
     signed_in, add_pet, log, seed_handler
 ):
-    """Proved by RLS: `due_items` is a security_invoker view and nothing in the
-    dashboard query carries an ownership filter."""
+    """Proved by RLS: `pawpages_due_items` is a security_invoker view and
+    nothing in the dashboard query carries an ownership filter."""
     biscuit = await add_pet("Biscuit")
     mine = await log(biscuit, "Rabies booster", days_from_today(-400), days_from_today(-46))
     await seed_handler("Bela", "bela@example.com")

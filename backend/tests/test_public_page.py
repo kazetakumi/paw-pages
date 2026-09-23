@@ -1,8 +1,8 @@
 """The public page: the switch on the handler's side, the document on the visitor's.
 
-Nothing here reads `pets` or `entries`. The visitor's route in is `public_pets`
-and `public_entries`, and the tests below are about what those two views will
-and will not hand over.
+Nothing here reads `pawpages_pets` or `pawpages_entries`. The visitor's route
+in is `pawpages_public_pets` and `pawpages_public_entries`, and the tests
+below are about what those two views will and will not hand over.
 """
 
 from datetime import date
@@ -138,7 +138,7 @@ async def test_private_archived_and_absent_slugs_are_the_same_404(published, sig
     await signed_in.patch(f"/pets/{published['id']}", json={"is_public": True})
     async with app.state.pool.acquire() as conn:
         await conn.execute(
-            "update pets set archived_at = now(), archived_reason = 'rehomed' where id = $1",
+            "update pawpages_pets set archived_at = now(), archived_reason = 'rehomed' where id = $1",
             published["id"],
         )
     archived = await client.get(f"/public/pets/{published['slug']}")
@@ -175,19 +175,19 @@ async def test_the_public_request_runs_as_anon_and_reads_both_views_in_one_trans
         # Both views, and the same transaction id for both: the entries can
         # never belong to a different read of the pet.
         pet = await conn.fetchrow(
-            "select slug, txid_current() as tx from public_pets where slug = $1",
+            "select slug, txid_current() as tx from pawpages_public_pets where slug = $1",
             published["slug"],
         )
         entries = await conn.fetchrow(
-            "select title, txid_current() as tx from public_entries where slug = $1",
+            "select title, txid_current() as tx from pawpages_public_entries where slug = $1",
             published["slug"],
         )
         assert pet["tx"] == entries["tx"]
 
         # And the tables underneath stay shut: anon has the same grants Supabase
         # gives it, and still no policy on either table.
-        assert await conn.fetch("select * from pets") == []
-        assert await conn.fetch("select * from entries") == []
+        assert await conn.fetch("select * from pawpages_pets") == []
+        assert await conn.fetch("select * from pawpages_entries") == []
 
 
 async def test_the_endpoint_itself_goes_through_anons_grant_on_the_views(published, client, app):
@@ -196,13 +196,13 @@ async def test_the_endpoint_itself_goes_through_anons_grant_on_the_views(publish
     A request that had quietly stayed superuser would not notice.
     """
     async with app.state.pool.acquire() as conn:
-        await conn.execute("revoke select on public_pets from anon")
+        await conn.execute("revoke select on pawpages_public_pets from anon")
     try:
         with pytest.raises(Exception, match="permission denied"):
             await client.get(f"/public/pets/{published['slug']}")
     finally:
         async with app.state.pool.acquire() as conn:
-            await conn.execute("grant select on public_pets to anon")
+            await conn.execute("grant select on pawpages_public_pets to anon")
 
     assert (await client.get(f"/public/pets/{published['slug']}")).status_code == 200
 

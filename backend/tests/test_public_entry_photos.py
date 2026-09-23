@@ -4,7 +4,7 @@ The point of these is the default. An entry photo is private until the handler
 says otherwise, and stays private when the flag is off, when the pet is private
 and when the pet is archived — each of which is a separate way in, so each gets
 its own test. A visitor reads as `anon` throughout: what they can see is
-decided by `public_entries` and the storage policies, not by the route.
+decided by `pawpages_public_entries` and the storage policies, not by the route.
 """
 
 from datetime import date

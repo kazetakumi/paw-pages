@@ -1,8 +1,8 @@
 """The handler as the account screen reads and writes it.
 
-Mirrors of the checks on `handlers`, the same way `pets` mirrors its own, so a
-value the database would refuse comes back named beside the field it was typed
-into.
+Mirrors of the checks on `pawpages_handlers`, the same way `pawpages_pets`
+mirrors its own, so a value the database would refuse comes back named beside
+the field it was typed into.
 """
 
 from datetime import date
@@ -31,8 +31,8 @@ class HandlerPatch(BaseModel):
 class HandlerOut(BaseModel):
     id: UUID
     name: str
-    # From the caller's own verified claims. `handlers` never duplicates it:
-    # the email and the password both live in auth.users.
+    # From the caller's own verified claims. `pawpages_handlers` never
+    # duplicates it: the email and the password both live in auth.users.
     email: str
     joined_on: date
     pet_count: int
