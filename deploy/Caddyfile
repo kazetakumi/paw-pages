@@ -1,3 +1,13 @@
+# The admin API defaults to 127.0.0.1:2019 for every Caddy instance and that
+# is not a per-site setting -- only global. This box runs one Caddy per app as
+# a separate service, so whichever starts second loses the race for 2019 and
+# crash-loops forever. Nothing here ever calls the admin API (every config
+# change goes through a full service restart, not `caddy reload`), so it is
+# off rather than moved to a port some other app's Caddyfile might also pick.
+{
+	admin off
+}
+
 # Cloudflare terminates TLS at its edge and cloudflared dials out from here, so
 # this listens on plain HTTP. Bound to loopback so the only way in is the
 # tunnel -- without it the app is also served unencrypted to the whole LAN.
