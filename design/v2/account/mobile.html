@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paw Pages — Your Account (Mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E;
+    --ink-2:#4E5A67;
+    --faint:#8D97A1;
+    --paper:#F2F3EF;
+    --card:#FFFFFF;
+    --rule:#DCE0E4;
+    --rule-2:#EDEFF1;
+    --stamp:#B23A24;
+    --stamp-wash:#FBF1EE;
+    --seal:#2E6B4F;
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+
+    --sidebar-bg:#EBEDE7;
+    --hover:rgba(19,32,46,.06);
+    --active:rgba(19,32,46,.09);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:#D7D4C9;font-family:var(--body);color:var(--ink);font-size:15px;line-height:1.55;
+    display:flex;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  a{text-decoration:none;color:inherit}
+  button{font-family:var(--body)}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  svg{display:block}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  }
+
+  .frame{
+    position:relative;width:100%;max-width:390px;background:var(--paper);min-height:100vh;
+    display:flex;flex-direction:column;overflow:hidden;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (min-width:460px){
+    .frame{margin:24px 0;box-shadow:0 0 0 6px #2A2924,0 16px 32px #00000040;border-radius:24px;min-height:0;height:844px}
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 8px}
+  .topbar-left{display:flex;align-items:center;gap:2px}
+  .icon-btn{
+    width:38px;height:38px;border-radius:9px;background:none;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--ink-2);flex:none;
+  }
+  .icon-btn:hover{background:var(--hover);color:var(--ink)}
+  .icon-btn svg{width:19px;height:19px}
+  .home-title{font-family:var(--display);font-size:15.5px;font-weight:600;color:var(--ink);padding:0 4px}
+
+  .btn-chat{
+    display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;
+    border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .btn-chat svg{width:14px;height:14px;flex:none;color:var(--ink-2)}
+
+  /* ---------- page ---------- */
+  .page-wrap{flex:1;min-height:0;overflow-y:auto}
+  .page{padding:6px 16px 40px}
+  .back{font-family:var(--data);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);display:inline-block;margin-bottom:18px}
+
+  .head{display:flex;align-items:center;gap:14px;padding-bottom:20px;border-bottom:1px solid var(--rule);margin-bottom:24px}
+  .av{width:52px;height:52px;border-radius:50%;flex:none;background:var(--ink);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:.03em}
+  h1{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.02em;margin:0 0 3px;line-height:1.1}
+  .since{font-family:var(--data);font-size:10px;letter-spacing:.05em;color:var(--faint);line-height:1.5}
+
+  .sect{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+  .sect h2{font-family:var(--data);font-size:10.5px;font-weight:700;letter-spacing:.13em;
+    text-transform:uppercase;margin:0;white-space:nowrap}
+  .sect .line{flex:1;height:1px;background:var(--rule)}
+  .sect .opt{font-family:var(--data);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);white-space:nowrap}
+
+  .card{background:var(--card);border:1px solid var(--rule);border-radius:3px;margin-bottom:30px}
+  .row{padding:13px 16px;border-bottom:1px solid var(--rule-2)}
+  .row:last-child{border-bottom:0}
+  .row .k{font-family:var(--data);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:5px}
+  .row-main{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .row .v{font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .row .v.mono{font-family:var(--data);font-size:12.5px}
+  .row .v.empty{color:#B9C0C7}
+  .row .v .sub{display:block;font-size:11.5px;color:var(--faint);margin-top:3px}
+  .act{font-family:var(--data);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink-2);border:1px solid var(--rule);background:#fff;padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;flex:none}
+
+  .arow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--rule-2)}
+  .arow:last-child{border-bottom:0}
+  .pav{width:34px;height:34px;border-radius:50%;flex:none;background:#E7E4DE;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:13.5px;font-weight:600;color:var(--faint)}
+  .arow .nm{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .arow .why{font-family:var(--data);font-size:9.5px;letter-spacing:.05em;color:var(--faint);margin-top:2px}
+  .arow .sp{margin-left:auto}
+
+  .blk{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:16px;margin-bottom:30px}
+  .blk h3{font-family:var(--display);font-size:16px;font-weight:600;margin:0 0 5px}
+  .blk p{font-size:13px;color:var(--ink-2);margin:0 0 14px}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;font-family:var(--body);font-size:13px;font-weight:600;
+    background:transparent;color:var(--ink);border:1px solid var(--rule);padding:9px 15px;border-radius:6px;cursor:pointer;
+    width:100%;justify-content:center;
+  }
+  .btn.warn{color:var(--stamp);border-color:#DEC3BB}
+  .blk.danger{border-color:#E9D2CB;background:var(--stamp-wash)}
+  .blk.danger h3{color:var(--stamp)}
+  .kills{list-style:none;padding:0;margin:0 0 14px;font-size:12.5px;color:var(--ink-2)}
+  .kills li{padding:3px 0 3px 16px;position:relative}
+  .kills li::before{content:"—";position:absolute;left:0;color:var(--faint)}
+
+  .out{margin-top:6px;font-size:12.5px;color:var(--faint);text-align:center}
+  .out a{color:var(--ink-2);border-bottom:1px solid var(--rule);padding-bottom:1px}
+
+  /* ---------- off-canvas sidebar drawer (same as home / dashboard) ---------- */
+  .overlay{
+    position:absolute;inset:0;background:rgba(19,32,46,.42);opacity:0;pointer-events:none;
+    transition:opacity .2s ease;z-index:20;
+  }
+  .overlay.open{opacity:1;pointer-events:auto}
+  .drawer{
+    position:absolute;top:0;bottom:0;left:0;width:82%;max-width:300px;background:var(--sidebar-bg);
+    border-right:1px solid var(--rule);transform:translateX(-100%);transition:transform .22s ease;
+    z-index:21;display:flex;flex-direction:column;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .drawer.open{transform:translateX(0)}
+  .drawer-top{flex:none;padding:14px 10px 8px;display:flex;flex-direction:column;gap:2px}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 14px}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand-mark{
+    width:24px;height:24px;border-radius:5px;background:var(--ink);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:12px;
+  }
+  .brand-word{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em}
+  .brand-word .p2{color:var(--faint)}
+  .side-row{
+    display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;font-size:13.5px;
+    color:var(--ink);background:none;border:none;cursor:pointer;text-align:left;width:100%;font-family:var(--body);
+  }
+  .side-row:hover{background:var(--hover)}
+  .side-row svg{width:17px;height:17px;flex:none;color:var(--ink-2)}
+  .drawer-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px 8px 8px}
+  .group-label{font-family:var(--data);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:14px 10px 5px}
+  .convo{
+    display:block;padding:8px 10px;border-radius:7px;font-size:13.5px;color:var(--ink);cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .convo:hover{background:var(--hover)}
+  .drawer-bottom{flex:none;border-top:1px solid var(--rule);padding:8px}
+  .settings-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:7px}
+  .settings-row.on{background:var(--active)}
+  .settings-avatar{
+    width:27px;height:27px;border-radius:50%;background:var(--ink);color:#fff;font-family:var(--display);
+    font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;letter-spacing:.02em;
+  }
+  .settings-name{font-size:13.5px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .settings-row svg{width:15px;height:15px;color:var(--ink-2);flex:none}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" id="menu-btn" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <span class="home-title">Account</span>
+    </div>
+    <a class="btn-chat" href="../home/mobile.html">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v11H9.5L5 20v-3.5H4v-11Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Chat
+    </a>
+  </div>
+
+  <div class="page-wrap">
+    <div class="page">
+
+      <a class="back" href="../dashboard/mobile.html">← Dashboard</a>
+
+      <div class="head">
+        <div class="av">AK</div>
+        <div>
+          <h1>Your account</h1>
+          <div class="since">Keeping records since 02 Jul 2025<br>3 pets · 47 entries</div>
+        </div>
+      </div>
+
+      <div class="sect"><h2>You</h2><span class="line"></span></div>
+      <div class="card">
+        <div class="row">
+          <span class="k">Name</span>
+          <div class="row-main"><span class="v">Akhil</span><button class="act" type="button">Change</button></div>
+        </div>
+        <div class="row">
+          <span class="k">Email</span>
+          <div class="row-main"><span class="v mono">akhil@example.com</span><button class="act" type="button">Change</button></div>
+          <span class="v sub">Used to sign in and to reset your password.</span>
+        </div>
+        <div class="row">
+          <span class="k">Password</span>
+          <div class="row-main"><span class="v mono">••••••••</span><button class="act" type="button">Change</button></div>
+          <span class="v sub">Last changed 02 Jul 2025.</span>
+        </div>
+      </div>
+
+      <div class="sect"><h2>About you</h2><span class="line"></span><span class="opt">Optional</span></div>
+      <div class="card">
+        <div class="row">
+          <span class="k">Date of birth</span>
+          <div class="row-main"><span class="v mono">14 Aug 1994</span><button class="act" type="button">Change</button></div>
+          <span class="v sub">You are 32. Age is worked out from this, never stored.</span>
+        </div>
+        <div class="row">
+          <span class="k">Gender</span>
+          <div class="row-main"><span class="v">Male</span><button class="act" type="button">Change</button></div>
+        </div>
+        <div class="row">
+          <span class="k">Nationality</span>
+          <div class="row-main"><span class="v empty">Not set</span><button class="act" type="button">Add</button></div>
+        </div>
+      </div>
+
+      <div class="sect"><h2>Archived pets</h2><span class="line"></span></div>
+      <div class="card">
+        <div class="arow">
+          <span class="pav">T</span>
+          <span>
+            <span class="nm">Toffee</span>
+            <span class="why">Passed away · archived 14 Feb 2026</span>
+          </span>
+          <span class="sp"></span>
+          <button class="act" type="button">Restore</button>
+        </div>
+      </div>
+
+      <div class="sect"><h2>Your data</h2><span class="line"></span></div>
+      <div class="blk">
+        <h3>Download everything</h3>
+        <p>A single file with every pet, every entry and every photo, exactly as you entered them.</p>
+        <button class="btn" type="button">Download my data</button>
+      </div>
+
+      <div class="sect"><h2>Delete account</h2><span class="line"></span></div>
+      <div class="blk danger">
+        <h3>Delete your account</h3>
+        <p>This cannot be undone. Download your data first if you want to keep it.</p>
+        <ul class="kills">
+          <li>Your name, email and everything under About you</li>
+          <li>Your 3 pets and 1 archived pet</li>
+          <li>All 47 entries and their notes</li>
+          <li>Every photo you have uploaded</li>
+          <li>Every public page — links stop working immediately</li>
+        </ul>
+        <button class="btn warn" type="button">Delete my account</button>
+      </div>
+
+      <p class="out"><a href="../signin/mobile.html">Sign out</a></p>
+
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-top">
+      <div class="brand-row">
+        <div class="brand">
+          <span class="brand-mark">P</span>
+          <span class="brand-word">Paw<span class="p2">Pages</span></span>
+        </div>
+        <button class="icon-btn" id="close-drawer" aria-label="Close menu">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <a class="side-row" href="../home/mobile.html?new=1">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        New chat
+      </a>
+      <a class="side-row" href="../home/mobile.html?view=artifacts">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/></svg>
+        Artifacts
+      </a>
+    </div>
+    <div class="drawer-scroll">
+      <div class="group-label">Today</div>
+      <a class="convo" href="../home/mobile.html">Logged Biscuit's deworming</a>
+      <a class="convo" href="../home/mobile.html">What's overdue</a>
+      <div class="group-label">Previous 7 days</div>
+      <a class="convo" href="../home/mobile.html">Added Pepper's vet visit</a>
+      <a class="convo" href="../home/mobile.html">Momo's weight this month</a>
+    </div>
+    <div class="drawer-bottom">
+      <a class="settings-row on" href="mobile.html">
+        <span class="settings-avatar">AK</span>
+        <span class="settings-name">Akhil</span>
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19.5a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4.5a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H10.5a1.65 1.65 0 0 0 1-1.51V4.5a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V10.5a1.65 1.65 0 0 0 1.51 1H19.5a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </aside>
+
+</div>
+<script>
+(function(){
+  var menuBtn = document.getElementById('menu-btn');
+  var closeBtn = document.getElementById('close-drawer');
+  var drawer = document.getElementById('drawer');
+  var overlay = document.getElementById('overlay');
+
+  function openDrawer(){ drawer.classList.add('open'); overlay.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
+  function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+  menuBtn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeDrawer(); });
+})();
+</script>
+</body>
+</html>
