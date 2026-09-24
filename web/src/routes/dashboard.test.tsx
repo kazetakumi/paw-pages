@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
 import { setViewportWidth } from "../test/setup";
@@ -92,7 +91,7 @@ const toffee: ArchivedPet = {
   archived_on: "2026-06-02",
 };
 
-const rehomed: ArchivedPet = {
+const marmalade: ArchivedPet = {
   id: "55555555-5555-5555-5555-555555555555",
   name: "Marmalade",
   archived_reason: "rehomed",
@@ -125,60 +124,70 @@ function signedInWith(board: Partial<Dashboard>) {
 const ledgerRows = () =>
   within(screen.getByRole("region", { name: "Due and overdue" })).getAllByRole("link");
 
-describe("the home screen", () => {
+// The sidebar's own static conversation list happens to mention "Biscuit" and
+// "Momo" by name too, so a pet card is found within the page's own content —
+// once it has loaded — rather than the whole screen.
+async function dash(container: HTMLElement) {
+  await waitFor(() => expect(container.querySelector(".dashboard")).toBeInTheDocument());
+  return within(container.querySelector(".dashboard") as HTMLElement);
+}
+
+describe("the dashboard", () => {
   it("lists the handler's pets as cards in the desktop layout above the breakpoint", async () => {
     signedInWith({ pets: [biscuit, momo], active_pets: 2 });
     setViewportWidth(1200);
 
-    const { container } = renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    const page = await dash(container);
 
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="desktop"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="mobile"]')).toBeNull();
+    expect(container.querySelector('.pets[data-layout="desktop"]')).toBeInTheDocument();
+    expect(container.querySelector('.pets[data-layout="mobile"]')).toBeNull();
 
-    const card = screen.getByRole("link", { name: /Biscuit/ });
+    const card = page.getByRole("link", { name: /Biscuit/ });
     expect(card).toHaveAttribute("href", `/pets/${biscuit.id}`);
     expect(within(card).getByText(/Indian Pariah/)).toHaveTextContent("male");
     expect(within(card).getByText(/Indian Pariah/)).toHaveTextContent("4 yrs 5 mo");
-    expect(screen.getByRole("link", { name: /Momo/ })).toBeInTheDocument();
+    expect(page.getByRole("link", { name: /Momo/ })).toBeInTheDocument();
     // Two ways in, as the drawing has them: the header button and the card at
     // the end of the grid. Both go to the same place.
-    const addPet = screen.getAllByRole("link", { name: /add a pet/i });
+    const addPet = page.getAllByRole("link", { name: /add a pet/i });
     expect(addPet).toHaveLength(2);
-    for (const link of addPet) expect(link).toHaveAttribute("href", "/pets/new");
+    for (const link of addPet) expect(link).toHaveAttribute("href", "/home?new=1");
   });
 
-  it("lists the same pets in the mobile layout below the breakpoint", async () => {
+  it("lists the same pets stacked below the breakpoint", async () => {
     signedInWith({ pets: [biscuit, momo], active_pets: 2 });
     setViewportWidth(390);
 
-    const { container } = renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    const page = await dash(container);
 
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="mobile"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="desktop"]')).toBeNull();
-    expect(screen.getByRole("link", { name: /Biscuit/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Momo/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /add a pet/i })).toBeInTheDocument();
+    expect(container.querySelector('.pets[data-layout="mobile"]')).toBeInTheDocument();
+    expect(container.querySelector('.pets[data-layout="desktop"]')).toBeNull();
+    expect(page.getByRole("link", { name: /Biscuit/ })).toBeInTheDocument();
+    expect(page.getByRole("link", { name: /Momo/ })).toBeInTheDocument();
+    expect(page.getAllByRole("link", { name: /add a pet/i })).toHaveLength(2);
   });
 
   it("gives a pet with no photo an initial-letter avatar", async () => {
     signedInWith({ pets: [biscuit, momo] });
 
-    renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    const page = await dash(container);
 
-    const card = await screen.findByRole("link", { name: /Biscuit/ });
+    const card = page.getByRole("link", { name: /Biscuit/ });
 
     expect(within(card).getByText("B")).toBeInTheDocument();
-    expect(within(screen.getByRole("link", { name: /Momo/ })).getByText("M")).toBeInTheDocument();
+    expect(within(page.getByRole("link", { name: /Momo/ })).getByText("M")).toBeInTheDocument();
   });
 
   it("shows only what a pet actually has", async () => {
     signedInWith({ pets: [momo] });
 
-    renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    const page = await dash(container);
 
-    const card = await screen.findByRole("link", { name: /Momo/ });
+    const card = page.getByRole("link", { name: /Momo/ });
 
     expect(within(card).getByText("Persian cat")).toBeInTheDocument();
   });
@@ -186,17 +195,18 @@ describe("the home screen", () => {
   it("invites a handler with no pets to add one", async () => {
     signedInWith({});
 
-    renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    const page = await dash(container);
 
-    expect((await screen.findAllByRole("link", { name: /add a pet/i }))[0]).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Biscuit/ })).not.toBeInTheDocument();
+    expect(page.getAllByRole("link", { name: /add a pet/i })[0]).toBeInTheDocument();
+    expect(page.queryByRole("link", { name: /Biscuit/ })).not.toBeInTheDocument();
   });
 
   it("opens with the ledger, oldest problem first, across every pet", async () => {
     signedInWith({ ledger: [rabies, deworming, dhpp], pets: [biscuit, momo] });
     setViewportWidth(1200);
 
-    renderRoute("/home");
+    renderRoute("/dashboard");
 
     await screen.findByRole("region", { name: "Due and overdue" });
     const rows = ledgerRows();
@@ -215,7 +225,7 @@ describe("the home screen", () => {
     signedInWith({ ledger: [rabies, deworming, dhpp], pets: [biscuit, momo] });
     setViewportWidth(1200);
 
-    renderRoute("/home");
+    renderRoute("/dashboard");
 
     await screen.findByRole("region", { name: "Due and overdue" });
     const rows = ledgerRows();
@@ -231,7 +241,7 @@ describe("the home screen", () => {
     signedInWith({ ledger: [rabies, deworming], pets: [biscuit, momo] });
     setViewportWidth(390);
 
-    renderRoute("/home");
+    renderRoute("/dashboard");
 
     await screen.findByRole("region", { name: "Due and overdue" });
     const rows = ledgerRows();
@@ -250,73 +260,72 @@ describe("the home screen", () => {
       due_within_30_days: 2,
     });
 
-    renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    await dash(container);
+    const tally = container.querySelector(".tally");
 
-    const tally = await screen.findByText(/active/);
-
-    expect(tally).toHaveTextContent("3 active");
-    expect(tally).toHaveTextContent("1 overdue");
-    expect(tally).toHaveTextContent("2 due within 30 days");
+    expect(tally).toHaveTextContent("3 ACTIVE");
+    expect(tally).toHaveTextContent("1 OVERDUE");
+    expect(tally).toHaveTextContent("2 DUE WITHIN 30 DAYS");
   });
 
   it("closes each pet card with its next due and its last logged date", async () => {
     signedInWith({ pets: [biscuit, momo] });
     setViewportWidth(1200);
 
-    renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    const page = await dash(container);
 
-    const card = await screen.findByRole("link", { name: /Biscuit/ });
+    const card = page.getByRole("link", { name: /Biscuit/ });
 
     expect(within(card).getByText("14 Jul 2026")).toBeInTheDocument();
     expect(within(card).getByText("12 Aug 2026")).toBeInTheDocument();
 
-    const bare = screen.getByRole("link", { name: /Momo/ });
+    const bare = page.getByRole("link", { name: /Momo/ });
 
     expect(within(bare).getByText("Nothing due")).toBeInTheDocument();
     expect(within(bare).getByText("Nothing yet")).toBeInTheDocument();
   });
 
-  it("counts the archived pets without carding them", async () => {
+  it("names one archived pet with a link to its own record", async () => {
     signedInWith({ pets: [biscuit], archived_pets: 1, archived: [toffee] });
 
-    renderRoute("/home");
+    renderRoute("/dashboard");
 
     expect(await screen.findByText("1 archived pet")).toBeInTheDocument();
-    // Present, but not in the way: no card, no next due, nothing to act on.
-    expect(screen.queryByRole("link", { name: /Toffee/ })).not.toBeInTheDocument();
-    expect(screen.queryByText(/passed away/i)).not.toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Toffee" });
+    expect(link).toHaveAttribute("href", `/pets/${toffee.id}`);
   });
 
-  it("reaches the log form from the header above the breakpoint", async () => {
-    signedInWith({ pets: [biscuit] });
-    setViewportWidth(1200);
+  it("names several archived pets, each one its own link", async () => {
+    signedInWith({ pets: [biscuit], archived_pets: 2, archived: [toffee, marmalade] });
 
-    const { container } = renderRoute("/home");
+    renderRoute("/dashboard");
 
-    const log = await screen.findByRole("link", { name: "Log an entry" });
-
-    expect(log).toHaveAttribute("href", "/log");
-    expect(container.querySelector('[data-log="desktop"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-log="mobile"]')).toBeNull();
+    expect(await screen.findByText("2 archived pets")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Toffee" })).toHaveAttribute(
+      "href",
+      `/pets/${toffee.id}`,
+    );
+    expect(screen.getByRole("link", { name: "Marmalade" })).toHaveAttribute(
+      "href",
+      `/pets/${marmalade.id}`,
+    );
   });
 
-  it("reaches the log form from the button that floats over the list below it", async () => {
+  it("says nothing about archived pets when there are none", async () => {
     signedInWith({ pets: [biscuit] });
-    setViewportWidth(390);
 
-    const { container } = renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
+    await dash(container);
 
-    const log = await screen.findByRole("link", { name: /Log an entry/ });
-
-    expect(log).toHaveAttribute("href", "/log");
-    expect(container.querySelector('[data-log="mobile"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-log="desktop"]')).toBeNull();
+    expect(screen.queryByText(/archived/)).not.toBeInTheDocument();
   });
 
   it("asks for the ledger, the cards and the counts once", async () => {
     const calls = signedInWith({ ledger: [rabies], pets: [biscuit], overdue: 1 });
 
-    renderRoute("/home");
+    renderRoute("/dashboard");
 
     await screen.findByRole("region", { name: "Due and overdue" });
 
@@ -326,9 +335,8 @@ describe("the home screen", () => {
   it("says nothing about due dates when nothing is outstanding", async () => {
     signedInWith({ pets: [momo] });
 
-    renderRoute("/home");
-
-    await screen.findByRole("link", { name: /Momo/ });
+    const { container } = renderRoute("/dashboard");
+    await dash(container);
 
     expect(screen.queryByRole("region", { name: "Due and overdue" })).not.toBeInTheDocument();
   });
@@ -338,7 +346,7 @@ describe("a pet card's portrait", () => {
   it("shows the photo from our own API, and the letter for a pet without one", async () => {
     signedInWith({ pets: [{ ...biscuit, has_photo: true }, momo], active_pets: 2 });
 
-    const { container } = renderRoute("/home");
+    const { container } = renderRoute("/dashboard");
 
     expect(await screen.findByRole("img", { name: "Biscuit" })).toHaveAttribute(
       "src",
@@ -347,70 +355,5 @@ describe("a pet card's portrait", () => {
     expect(screen.queryByRole("img", { name: "Momo" })).not.toBeInTheDocument();
     expect(screen.getByText("M")).toBeInTheDocument();
     expect(container.innerHTML).not.toMatch(/supabase/i);
-  });
-});
-
-describe("the archived pets", () => {
-  const opened = async () => {
-    await userEvent.click(await screen.findByRole("button", { name: /Toffee/ }));
-    return screen.getByRole("region", { name: "Archived" });
-  };
-
-  it("names each one with why and when it was archived", async () => {
-    signedInWith({ pets: [biscuit], archived_pets: 2, archived: [toffee, rehomed] });
-
-    renderRoute("/home");
-    const list = await opened();
-
-    expect(within(list).getByText("Toffee")).toBeInTheDocument();
-    expect(within(list).getByText(/passed away/i)).toBeInTheDocument();
-    expect(within(list).getByText("2 Jun 2026")).toBeInTheDocument();
-    expect(within(list).getByText("Marmalade")).toBeInTheDocument();
-    expect(within(list).getByText(/rehomed/i)).toBeInTheDocument();
-    expect(within(list).getByText("14 Jan 2026")).toBeInTheDocument();
-  });
-
-  it("restores one and puts it back among the pets", async () => {
-    let restored: string | null = null;
-    let board: Partial<Dashboard> = { pets: [biscuit], archived_pets: 1, archived: [toffee] };
-    server.use(
-      http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
-      http.get("http://localhost:8000/dashboard", () => HttpResponse.json({ ...empty, ...board })),
-      http.post(`http://localhost:8000/pets/${toffee.id}/restore`, () => {
-        restored = toffee.id;
-        board = { pets: [biscuit, { ...momo, id: toffee.id, name: "Toffee" }], active_pets: 2 };
-        return HttpResponse.json({});
-      }),
-    );
-
-    renderRoute("/home");
-    const list = await opened();
-    await userEvent.click(within(list).getByRole("button", { name: /restore/i }));
-
-    await waitFor(() => expect(restored).toBe(toffee.id));
-    expect(await screen.findByRole("link", { name: /Toffee/ })).toBeInTheDocument();
-    expect(screen.queryByText(/archived pet/)).not.toBeInTheDocument();
-  });
-
-  it("lists them in a desktop layout above the breakpoint", async () => {
-    signedInWith({ pets: [biscuit], archived_pets: 1, archived: [toffee] });
-    setViewportWidth(1200);
-
-    const { container } = renderRoute("/home");
-    await opened();
-
-    expect(container.querySelector('[data-archived="desktop"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-archived="mobile"]')).toBeNull();
-  });
-
-  it("lists them in a mobile layout below the breakpoint", async () => {
-    signedInWith({ pets: [biscuit], archived_pets: 1, archived: [toffee] });
-    setViewportWidth(390);
-
-    const { container } = renderRoute("/home");
-    await opened();
-
-    expect(container.querySelector('[data-archived="mobile"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-archived="desktop"]')).toBeNull();
   });
 });

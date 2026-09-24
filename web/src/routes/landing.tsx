@@ -1,140 +1,85 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { hasSession, type DueItem, type Entry, type Pet } from "../api";
-import { Stamp } from "../entries/due";
-import { PetAvatar } from "../pets/PetAvatar";
-import { formatDate, summaryOf } from "../pets/pet";
+import { hasSession } from "../api";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../landing/landing.css";
 
-/* The record on this page is the app's own. A `Pet`, `Entry` values and a
-   `DueItem` exactly as the API returns them, drawn by the components and the
-   helpers every other screen draws them with — so a visitor arriving here is
-   looking at the thing itself rather than a picture of it. It is hard-coded
-   because a visitor has no session and there is nothing to fetch. */
+/* This page has no session and nothing to fetch, so every example below —
+   the chat mock, the entry lists, the public-page preview — is the same
+   fixed copy design/v2/landing ships. The one thing that must stay real is
+   the example slug in the footer link and the public-page mock: it points
+   at a pet page that actually exists (see pet-about.test.tsx). */
 
-const BISCUIT: Pet = {
-  id: "sample",
-  name: "Biscuit",
-  species: "dog",
-  breed: "Indian Pariah",
-  sex: "male",
-  date_of_birth: "2022-03-12",
-  dob_is_approx: true,
-  colour: "Tan & white",
-  slug: "biscuit-a4f2",
-  is_public: true,
-  has_photo: false,
-  age_years: 4,
-  age_months: 0,
-};
+const EXAMPLE_SLUG = "biscuit-a4f2";
 
-const LOGGED: Entry[] = [
+type EntryItem = { date: string; title: string; note: string; tag?: string };
+
+const SECTION1_ITEMS: EntryItem[] = [
+  { date: "12 AUG 2026", title: "Deworming", note: "Half tablet, took it in cheese." },
   {
-    id: "e1",
-    pet_id: BISCUIT.id,
-    title: "Deworming",
-    happened_on: "2026-08-12",
-    due_on: null,
-    vet: null,
-    note: "Half tablet, took it in cheese.",
-    weight_value: null,
-    weight_unit: null,
-    has_photo: false,
-    photo_is_public: false,
-    is_overdue: false,
+    date: "23 SEP 2026",
+    title: "Training",
+    note: 'Learned "sit" and "stay" this week.',
+    tag: "Milestone",
   },
-  {
-    id: "e2",
-    pet_id: BISCUIT.id,
-    title: "Vet visit",
-    happened_on: "2026-06-02",
-    due_on: null,
-    vet: "Anvayaa Clinic",
-    note: "Limping on the back right leg. Nothing found.",
-    weight_value: "12.40",
-    weight_unit: "kg",
-    has_photo: false,
-    photo_is_public: false,
-    is_overdue: false,
-  },
-  {
-    id: "e3",
-    pet_id: BISCUIT.id,
-    title: "DHPP booster",
-    happened_on: "2026-04-20",
-    due_on: "2029-04-20",
-    vet: "Anvayaa Clinic",
-    note: "Batch 4471-B. Next due Apr 2029.",
-    weight_value: null,
-    weight_unit: null,
-    has_photo: false,
-    photo_is_public: false,
-    is_overdue: false,
-  },
-  {
-    id: "e4",
-    pet_id: BISCUIT.id,
-    title: "Grooming",
-    happened_on: "2026-03-18",
-    due_on: null,
-    vet: null,
-    note: "Full clip and nails.",
-    weight_value: null,
-    weight_unit: null,
-    has_photo: false,
-    photo_is_public: false,
-    is_overdue: false,
-  },
+  { date: "20 APR 2026", title: "DHPP booster", note: "Batch 4471-B. Next due Apr 2029." },
+  { date: "18 MAR 2026", title: "Grooming", note: "Full clip and nails." },
 ];
 
-const RABIES: DueItem = {
-  entry_id: "e5",
-  pet_id: BISCUIT.id,
-  pet_name: BISCUIT.name,
-  title: "Rabies booster",
-  due_on: "2026-07-14",
-  days_until: -46,
-  is_overdue: true,
-  happened_on: "2025-07-14",
-  vet: "Anvayaa Clinic",
-};
-
-/** The claim the whole product rests on, and the reason there is no reminder
- *  system to build. */
-const QUIET =
-  "Paw Pages sends no email and no notification. Due dates sit at the top of " +
-  "your home screen and overdue ones are stamped. That is the whole system — " +
-  "and it is why Paw Pages never needs your phone number.";
-
-const KEPT: ReactNode[] = [
+const SECTION1_TRUTHS: ReactNode[] = [
   <>
-    <b>A date for what happened</b>, and optionally a date for the next one.
+    <b>A date for what happened</b>, and a due date if there's a next one.
   </>,
   <>
-    <b>A note in your own words</b> — batch numbers, what the vet said, how she took it.
+    <b>Milestones and vet visits</b> live in the same timeline — tagged, not siloed.
   </>,
   <>
-    <b>A photo and the basics</b> — breed, colour, sex, when they were born.
+    <b>Attach a photo or a vet note</b> and it's filed under that pet automatically.
   </>,
   <>
-    <b>Pets who have passed on stay</b>, archived, with their history intact.
+    <b>Pets who've passed on stay</b>, archived, with their history intact.
   </>,
 ];
 
-const NEVER: ReactNode[] = [
+type StatusItem = { date: string; pet: string; kind: string; status: string };
+
+const SECTION2_ITEMS: StatusItem[] = [
+  { date: "14 JUL 2026", pet: "Biscuit", kind: "Rabies booster", status: "Overdue by 46 days" },
+  { date: "05 SEP 2026", pet: "Momo", kind: "Deworming", status: "In 7 days" },
+  { date: "21 SEP 2026", pet: "Pepper", kind: "DHPP booster", status: "In 23 days" },
+];
+
+const SECTION2_TRUTHS_DESKTOP: ReactNode[] = [
   <>
-    Every pet's due dates, <b>on one screen</b>, oldest problem first.
+    Every pet's due dates, <b>oldest problem first</b>, the moment you show up.
   </>,
   <>
-    Overdue is <b>impossible to miss</b> and stays until you deal with it.
+    Overdue stays overdue <b>until you say it's handled</b> — stamped, impossible to miss.
   </>,
   <>
-    Archived pets <b>stop counting</b>. Nothing nags you about a dog you have buried.
+    Archived pets <b>stop counting</b>. Nothing nags you about a dog you've buried.
+  </>,
+  <>
+    Prefer a list to a conversation? <b>The dashboard's still there.</b>
   </>,
 ];
 
-const HANDOVER: ReactNode[] = [
+const SECTION2_TRUTHS_MOBILE: ReactNode[] = [
+  <>
+    Every pet's due dates, <b>oldest problem first</b>, the moment you show up.
+  </>,
+  <>
+    Overdue stays overdue <b>until you say it's handled</b>.
+  </>,
+  <>
+    Archived pets <b>stop counting</b>.
+  </>,
+  <>
+    Prefer a list to a conversation? <b>The dashboard's still there.</b>
+  </>,
+];
+
+const SECTION3_TRUTHS: ReactNode[] = [
   <>
     Off by default. <b>You turn it on per pet</b>, and off again whenever.
   </>,
@@ -146,73 +91,47 @@ const HANDOVER: ReactNode[] = [
   </>,
 ];
 
-/** The pet record itself: the avatar, the summary line and the dates, all of
- *  them the app's own. The one stamp the page is allowed lives here. */
-function Record() {
+/** The brand mark and wordmark, undressed — every caller wraps it in its own
+ *  container (`.brand` in the topbar and footer, `.cm-top` in the chat mock),
+ *  same as design/v2/landing does. */
+function Brand() {
   return (
-    <section className="doc" aria-label="Pet record">
-      <div className="kicker">Pet record</div>
-      <div className="id">
-        <PetAvatar pet={BISCUIT} />
-        <div>
-          <div className="nm">{BISCUIT.name}</div>
-          <div className="sub">{summaryOf(BISCUIT)}</div>
-        </div>
-      </div>
-      <div className="rec">
-        {LOGGED.slice(0, 3).map((entry) => (
-          <div className="r" key={entry.id}>
-            <span className="date">{formatDate(entry.happened_on)}</span>
-            <span className="w">{entry.title}</span>
-          </div>
-        ))}
-        <div className="r over">
-          <span className="date">{formatDate(RABIES.due_on)}</span>
-          <span className="w">{RABIES.title}</span>
-          <Stamp item={RABIES} short />
-        </div>
-      </div>
-      <div className="foot">
-        <span>Updated {formatDate(LOGGED[0]!.happened_on)}</span>
-        <span className="mk">PawPages</span>
-      </div>
-    </section>
+    <>
+      <span className="brand-mark" aria-hidden="true">
+        P
+      </span>
+      <span className="brand-word">
+        Paw<span className="p2">Pages</span>
+      </span>
+    </>
   );
 }
 
-/** The same entries again, this time with the note the handler wrote. */
-function Entries() {
+/** The hero's visual: a miniature, non-interactive recreation of the chat
+ *  screen a signed-in handler actually sees at /home. Identical at both
+ *  breakpoints — landing.css resizes it under [data-layout="mobile"]. */
+function ChatMock() {
   return (
-    <div className="list">
-      {LOGGED.map((entry) => (
-        <div className="li" key={entry.id}>
-          <span className="date">{formatDate(entry.happened_on)}</span>
-          <span className="t">
-            <b>{entry.title}</b>
-            <span>{entry.note}</span>
+    <div className="chatmock">
+      <div className="cm-top">
+        <Brand />
+      </div>
+      <div className="cm-body">
+        <p className="cm-text">Welcome back. One thing needs attention:</p>
+        <div className="cm-card over">
+          <span className="cm-w">
+            <b>Biscuit</b> <span>/ Rabies booster</span>
           </span>
+          <span className="cm-stamp">OVERDUE</span>
         </div>
-      ))}
-    </div>
-  );
-}
-
-/** What a public page shows and what it never shows. */
-function Handover() {
-  return (
-    <div className="mini">
-      <div className="u">pawpages.app/p/{BISCUIT.slug}</div>
-      <div className="yes">
-        <span className="mk">Shows</span> Photo, name, breed, colour, age
-      </div>
-      <div className="yes">
-        <span className="mk" /> Every entry — the date and what it was
-      </div>
-      <div className="no">
-        <span className="mk">Never</span> Your name, email or phone number
-      </div>
-      <div className="no">
-        <span className="mk" /> Your notes, or which vet you use
+        <div className="cm-bubble">Biscuit had his deworming today — no issues.</div>
+        <p className="cm-text">Logged. Here's the entry:</p>
+        <div className="cm-card">
+          <span className="cm-w">
+            <b>Biscuit</b> <span>/ Deworming</span>
+          </span>
+          <span className="cm-due">Due 23 Dec</span>
+        </div>
       </div>
     </div>
   );
@@ -230,6 +149,42 @@ function Head({ no, title, sub }: { no: string; title: string; sub: string }) {
   );
 }
 
+/** Section 01's sample: a note logged in the handler's own words, whatever
+ *  the thing was. */
+function EntryList({ items }: { items: EntryItem[] }) {
+  return (
+    <div className="list">
+      {items.map((item) => (
+        <div className="li" key={item.title}>
+          <span className="d">{item.date}</span>
+          <span className="t">
+            <b>{item.title}</b>
+            <span>{item.note}</span>
+            {item.tag && <span className="tag">{item.tag}</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Section 02's sample: the same due-date rows the home screen greets a
+ *  handler with. */
+function StatusList({ items }: { items: StatusItem[] }) {
+  return (
+    <div className="list">
+      {items.map((item) => (
+        <div className="li" key={item.pet + item.kind}>
+          <span className="d">{item.date}</span>
+          <span className="t">
+            <b>{item.pet}</b> — {item.kind} <span>{item.status}</span>
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Truths({ items }: { items: ReactNode[] }) {
   return (
     <ul className="truths">
@@ -240,21 +195,36 @@ function Truths({ items }: { items: ReactNode[] }) {
   );
 }
 
-function Wordmark() {
+/** Section 03's sample: what a public pet page shows, and what it never does. */
+function Mini() {
   return (
-    <span className="wordmark">
-      Paw<span className="p2">Pages</span>
-    </span>
+    <div className="mini">
+      <div className="u">pawpages.app/p/{EXAMPLE_SLUG}</div>
+      <div className="yes">
+        <span className="mk">Shows</span> Photo, name, breed, colour, age
+      </div>
+      <div className="yes">
+        <span className="mk" /> Every entry — the date and what it was
+      </div>
+      <div className="no">
+        <span className="mk">Never</span> Your name, email or phone number
+      </div>
+      <div className="no">
+        <span className="mk" /> Your notes, or which vet you use
+      </div>
+    </div>
   );
 }
 
-/** Above the breakpoint: the pitch and the record side by side, and each
+/** Above the breakpoint: the pitch and the chat mock side by side, and each
  *  section a sample beside the plain truths about it. */
 function LandingDesktop() {
   return (
     <div className="landing" data-layout="desktop">
       <header className="topbar">
-        <Wordmark />
+        <span className="brand">
+          <Brand />
+        </span>
         <Link className="tlink" to="/signin">
           Sign in
         </Link>
@@ -265,43 +235,50 @@ function LandingDesktop() {
 
       <div className="hero">
         <div>
-          <div className="eyebrow">Pet records</div>
+          <div className="eyebrow">Pet records, conversationally</div>
           <h1>
-            One page per pet.<span className="b">Every date on it.</span>
+            Tell it what happened.<span className="b">It keeps the record.</span>
           </h1>
           <p className="lede">
-            Shots, vet visits, deworming, grooming — each logged with the day it happened
-            and the day the next one is due. Open Paw Pages and you can see what is overdue
-            in one look.
+            Vaccinations, vet visits, a new trick learned on a Tuesday — just say it. Paw
+            Pages works out the date, tags what matters, and tells you the moment
+            something's overdue.
           </p>
           <div className="cta">
             <Link className="btn lg" to="/signup">
               Create an account
             </Link>
-            <Link className="btn lg ghost" to="/signin">
-              Sign in
+            <Link className="btn lg ghost" to="/home">
+              See an example
             </Link>
           </div>
           <div className="fine">Works in your browser · Nothing to install</div>
         </div>
-        <Record />
+        <ChatMock />
       </div>
 
       <section className="s">
         <Head
           no="01"
-          title="Not just the shots"
-          sub="A page holds anything worth remembering about a pet. Type whatever the thing was — the app does not make you pick from a list."
+          title="Not a form to fill in"
+          sub="Say what happened in your own words. The agent works out the title, the date, and files a photo or vet note if you send one — no dropdowns, no required fields."
         />
         <div className="two">
-          <Entries />
-          <Truths items={KEPT} />
+          <EntryList items={SECTION1_ITEMS} />
+          <Truths items={SECTION1_TRUTHS} />
         </div>
       </section>
 
       <section className="s">
-        <Head no="02" title="It will not chase you" sub={QUIET} />
-        <Truths items={NEVER} />
+        <Head
+          no="02"
+          title="It tells you before you ask"
+          sub="No emails. No notifications. No red dot on your phone at 7am. Open a new chat and if anything's overdue, that's the first thing you hear."
+        />
+        <div className="two">
+          <StatusList items={SECTION2_ITEMS} />
+          <Truths items={SECTION2_TRUTHS_DESKTOP} />
+        </div>
       </section>
 
       <section className="s">
@@ -311,105 +288,112 @@ function LandingDesktop() {
           sub="Switch a pet's page on and you get a URL you can send to a kennel, a sitter, or your sister. It shows the pet and the record — nothing about you."
         />
         <div className="two">
-          <Handover />
-          <Truths items={HANDOVER} />
+          <Mini />
+          <Truths items={SECTION3_TRUTHS} />
         </div>
       </section>
 
       <div className="close">
         <h2>Start with one pet.</h2>
-        <p>
-          Add them, log the last shot you remember, and you are already ahead of the paper
-          card.
-        </p>
+        <p>Tell it their last shot, and you're already ahead of the paper card.</p>
         <Link className="btn lg" to="/signup">
           Create an account
         </Link>
       </div>
 
       <footer>
-        <Wordmark />
+        <span className="brand">
+          <Brand />
+        </span>
         <Link to="/signin">Sign in</Link>
         <Link to="/signup">Create an account</Link>
+        <Link to={`/p/${EXAMPLE_SLUG}`}>Example pet page</Link>
       </footer>
     </div>
   );
 }
 
-/** Below it: one column the whole way down. The record follows the pitch
- *  rather than sitting beside it, and the buttons are full width. */
+/** Below it: one column the whole way down, the chat mock following the
+ *  pitch rather than sitting beside it, and the buttons full width. */
 function LandingMobile() {
   return (
     <div className="landing" data-layout="mobile">
       <header className="topbar">
-        <Wordmark />
+        <span className="brand">
+          <Brand />
+        </span>
         <Link className="tlink" to="/signin">
           Sign in
         </Link>
       </header>
 
       <div className="hero">
-        <div className="eyebrow">Pet records</div>
+        <div className="eyebrow">Pet records, conversationally</div>
         <h1>
-          One page per pet.<span className="b">Every date on it.</span>
+          Tell it what happened.<span className="b">It keeps the record.</span>
         </h1>
         <p className="lede">
-          Shots, vet visits, deworming, grooming — each logged with the day it happened and
-          the day the next one is due.
+          Vaccinations, vet visits, a new trick learned on a Tuesday — just say it. Paw
+          Pages works out the date, tags what matters, and tells you the moment
+          something's overdue.
         </p>
         <div className="cta">
           <Link className="btn" to="/signup">
             Create an account
           </Link>
-          <Link className="btn ghost" to="/signin">
-            Sign in
+          <Link className="btn ghost" to="/home">
+            See an example
           </Link>
         </div>
         <div className="fine">Works in your browser · Nothing to install</div>
+        <ChatMock />
       </div>
-
-      <Record />
 
       <section className="s">
         <Head
           no="01"
-          title="Not just the shots"
-          sub="A page holds anything worth remembering. Type whatever the thing was — no picking from a list."
+          title="Not a form to fill in"
+          sub="Say what happened in your own words. The agent works out the title, the date, and files a photo or vet note if you send one."
         />
-        <Entries />
-        <Truths items={KEPT} />
+        <EntryList items={SECTION1_ITEMS.slice(0, 3)} />
+        <Truths items={SECTION1_TRUTHS} />
       </section>
 
       <section className="s">
-        <Head no="02" title="It will not chase you" sub={QUIET} />
-        <Truths items={NEVER} />
+        <Head
+          no="02"
+          title="It tells you before you ask"
+          sub="No emails. No notifications. Open a new chat and if anything's overdue, that's the first thing you hear."
+        />
+        <StatusList items={SECTION2_ITEMS.slice(0, 2)} />
+        <Truths items={SECTION2_TRUTHS_MOBILE} />
       </section>
 
       <section className="s">
         <Head
           no="03"
           title="Hand someone the link"
-          sub="Switch a pet's page on and you get a URL for a kennel, a sitter, or your sister. It shows the pet — nothing about you."
+          sub="Switch a pet's page on and you get a URL you can send to a kennel, a sitter, or your sister. It shows the pet and the record — nothing about you."
         />
-        <Handover />
-        <Truths items={HANDOVER} />
+        <Mini />
+        <Truths items={SECTION3_TRUTHS} />
       </section>
 
       <div className="close">
         <h2>Start with one pet.</h2>
-        <p>
-          Add them, log the last shot you remember, and you are already ahead of the paper
-          card.
-        </p>
+        <p>Tell it their last shot, and you're already ahead of the paper card.</p>
         <Link className="btn" to="/signup">
           Create an account
         </Link>
       </div>
 
       <footer>
-        <Wordmark />
+        <span className="brand">
+          <Brand />
+        </span>
         <Link to="/signin">Sign in</Link>
         <Link to="/signup">Create an account</Link>
+        <Link to={`/p/${EXAMPLE_SLUG}`}>Example pet page</Link>
       </footer>
     </div>
   );

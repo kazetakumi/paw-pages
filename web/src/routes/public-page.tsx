@@ -50,39 +50,67 @@ function Cell({ k, v }: { k: string; v: string | null }) {
   );
 }
 
-/** One line of the record. A due date prints in the same neutral grey whatever
- *  its date: the public page never stamps an accusation on the handler, so it
- *  does not ask the API whether anything is overdue and is not told. */
+/** Today, as a calendar string like the ones the API sends — no Date object
+ *  compared across a day boundary, so no timezone can pick the wrong side. */
+function today(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+/** One line of the record. A due date's pill is always this quiet: green while
+ *  it is still ahead, grey once the date has slipped by — never the app's red
+ *  stamp. This is a cosmetic downgrade only, not the app's `is_overdue`: the
+ *  public page is never told that, and never says the word "overdue". */
 function Record({ entries, slug }: { entries: PublicEntry[]; slug: string }) {
+  const now = today();
   return (
     <div className="rec">
-      {entries.map((entry) => (
-        <div className="r" key={`${entry.happened_on}-${entry.title}`}>
-          <span className="d">{formatDate(entry.happened_on)}</span>
-          <span className="w">{entry.title}</span>
-          {entry.due_on ? <span className="nx">Next {formatDate(entry.due_on)}</span> : <span />}
-          {/* The proof, when the handler published one. Read as `anon` out
-              of the same private bucket — a link, never a Supabase URL. */}
-          {entry.photo_id && (
-            <img
-              className="pf"
-              src={publicEntryPhotoUrl(slug, entry.photo_id)}
-              alt={`${entry.title}, ${formatDate(entry.happened_on)}`}
-              loading="lazy"
-            />
-          )}
-        </div>
-      ))}
+      {entries.map((entry) => {
+        const past = entry.due_on !== null && entry.due_on < now;
+        return (
+          <div className="r" key={`${entry.happened_on}-${entry.title}`}>
+            <span className="d">{formatDate(entry.happened_on)}</span>
+            <span className="w">{entry.title}</span>
+            {entry.due_on ? (
+              <span className={past ? "nx past" : "nx"}>Next {formatDate(entry.due_on)}</span>
+            ) : (
+              <span />
+            )}
+            {/* The proof, when the handler published one. Read as `anon` out
+                of the same private bucket — a link, never a Supabase URL. */}
+            {entry.photo_id && (
+              <img
+                className="pf"
+                src={publicEntryPhotoUrl(slug, entry.photo_id)}
+                alt={`${entry.title}, ${formatDate(entry.happened_on)}`}
+                loading="lazy"
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function Footer({ pet }: { pet: PublicPet }) {
+/** The one nod to the app: a grayscale mark, never the app's ink-black brand,
+ *  and not a link out. `label` differs by layout the way the design's two
+ *  mockups do — "Last updated" where there's room, "Updated" where there
+ *  isn't. */
+function Footer({ pet, label }: { pet: PublicPet; label: string }) {
   return (
     <div className="foot">
-      <span className="up">Last updated {formatDate(pet.updated_on)}</span>
+      <span className="up">
+        {label} {formatDate(pet.updated_on)}
+      </span>
       <span className="mk">
-        Paw<span className="p2">Pages</span>
+        <span className="brand-mark" aria-hidden="true">
+          P
+        </span>
+        <span className="brand-word">
+          Paw<span className="p2">Pages</span>
+        </span>
       </span>
     </div>
   );
@@ -130,7 +158,7 @@ function PageDesktop({ pet }: { pet: PublicPet }) {
           <Record entries={pet.entries} slug={pet.slug} />
         </div>
 
-        <Footer pet={pet} />
+        <Footer pet={pet} label="Last updated" />
       </div>
       <Under pet={pet} />
     </div>
@@ -168,7 +196,7 @@ function PageMobile({ pet }: { pet: PublicPet }) {
           <Record entries={pet.entries} slug={pet.slug} />
         </div>
 
-        <Footer pet={pet} />
+        <Footer pet={pet} label="Updated" />
       </div>
       <Under pet={pet} />
     </div>

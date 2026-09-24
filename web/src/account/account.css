@@ -71,38 +71,86 @@
   color: var(--ink);
 }
 
-/* ---- changing one thing ---- */
+/* ---- archived pets ---- */
+.account .arow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--rule-2);
+}
+.account .arow:last-child {
+  border-bottom: 0;
+}
+.account .pav {
+  border-radius: 50%;
+  flex: none;
+  background: #e7e4de;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 600;
+  color: var(--faint);
+}
+.account .arow .why {
+  display: block;
+  font-family: var(--data);
+  color: var(--faint);
+  margin-top: 2px;
+}
+.account .arow .sp {
+  margin-left: auto;
+}
+
+/* ---- changing one thing: the auth sheets' own underline field, so typing
+   into a row and typing into a sign-in sheet look like the same control ---- */
 .account .edit {
+  /* The row it replaces may be a 3-column grid (desktop) or a flex row
+     (mobile); on the grid this keeps the form spanning the whole row
+     instead of shrinking into the first 150px column. Ignored elsewhere. */
+  grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-end;
+  gap: 14px;
   width: 100%;
 }
+.account .edit .f {
+  flex: 1;
+  min-width: 160px;
+}
 .account .edit label {
+  display: block;
   font-family: var(--data);
   font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--faint);
+  margin-bottom: 4px;
 }
-.account .edit input {
-  flex: 1;
-  min-width: 160px;
+.account .edit .field {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 2px;
+  transition: border-color 0.15s;
+}
+.account .edit .field:focus-within {
+  border-bottom-color: var(--ink);
+  box-shadow: 0 1px 0 0 var(--ink);
+}
+.account .edit .field input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 6px 0;
   font-family: var(--body);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--ink);
-  background: #fff;
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 9px 11px;
 }
-.account .edit input:focus {
-  border-color: var(--ink);
+.account .edit .field input:focus {
   outline: none;
 }
-.account .edit input[aria-invalid="true"] {
-  border-color: var(--stamp);
+.account .edit .field input[aria-invalid="true"] {
+  border-bottom: 1px solid var(--stamp);
+  margin-bottom: -1px;
 }
 .account .acts {
   display: flex;
@@ -198,6 +246,22 @@
   align-items: center;
   padding: 16px 22px;
 }
+.shell-desktop .account .arow {
+  gap: 14px;
+  padding: 15px 22px;
+}
+.shell-desktop .account .pav {
+  width: 38px;
+  height: 38px;
+  font-size: 15px;
+}
+.shell-desktop .account .arow .nm {
+  font-size: 16.5px;
+}
+.shell-desktop .account .arow .why {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
 
 /* ============ mobile ============ */
 .shell-mobile .account .head {
@@ -232,6 +296,22 @@
 }
 .shell-mobile .account .row .sub {
   font-size: 11.5px;
+}
+.shell-mobile .account .arow {
+  gap: 12px;
+  padding: 14px 16px;
+}
+.shell-mobile .account .pav {
+  width: 34px;
+  height: 34px;
+  font-size: 13.5px;
+}
+.shell-mobile .account .arow .nm {
+  font-size: 15px;
+}
+.shell-mobile .account .arow .why {
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
 }
 .shell-mobile .account .blk {
   padding: 18px 16px;

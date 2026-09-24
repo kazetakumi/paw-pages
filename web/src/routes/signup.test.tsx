@@ -79,7 +79,9 @@ describe("signing up", () => {
     await fillTheForm();
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+    ).toBeInTheDocument();
   });
 
   it("puts an already-registered email beside the email field and points at sign in", async () => {

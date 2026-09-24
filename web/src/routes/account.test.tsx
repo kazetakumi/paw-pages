@@ -5,7 +5,7 @@ import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
 import { setViewportWidth } from "../test/setup";
 import { renderRoute } from "../test/render";
-import type { Handler } from "../api";
+import type { ArchivedPet, Dashboard, Handler } from "../api";
 
 const akhil: Handler = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -20,8 +20,32 @@ const akhil: Handler = {
   age: null,
 };
 
-function signedInAs(handler: Handler) {
-  server.use(http.get("http://localhost:8000/me", () => HttpResponse.json(handler)));
+const toffee: ArchivedPet = {
+  id: "44444444-4444-4444-4444-444444444444",
+  name: "Toffee",
+  archived_reason: "passed_away",
+  archived_on: "2026-02-14",
+};
+
+const emptyBoard: Dashboard = {
+  ledger: [],
+  pets: [],
+  active_pets: 0,
+  overdue: 0,
+  due_within_30_days: 0,
+  archived_pets: 0,
+  archived: [],
+};
+
+/** The account screen asks /me for the handler and /dashboard for the
+ *  archived-pets card, so every test that renders it stubs both. */
+function signedInAs(handler: Handler, archived: ArchivedPet[] = []) {
+  server.use(
+    http.get("http://localhost:8000/me", () => HttpResponse.json(handler)),
+    http.get("http://localhost:8000/dashboard", () =>
+      HttpResponse.json({ ...emptyBoard, archived, archived_pets: archived.length }),
+    ),
+  );
 }
 
 describe("the account screen", () => {
@@ -210,6 +234,47 @@ describe("the three optional personal fields", () => {
 
     expect(await screen.findByText("Indian")).toBeInTheDocument();
     expect(sent).toEqual({ nationality: "Indian" });
+  });
+});
+
+describe("archived pets", () => {
+  it("says nothing when the handler has none archived", async () => {
+    signedInAs(akhil);
+
+    renderRoute("/account");
+
+    expect(await screen.findByRole("heading", { name: "Your account" })).toBeInTheDocument();
+    expect(screen.queryByText("Archived pets")).not.toBeInTheDocument();
+  });
+
+  it("names each one with why and when it was archived, and offers to restore it", async () => {
+    signedInAs(akhil, [toffee]);
+
+    renderRoute("/account");
+
+    expect(await screen.findByText("Archived pets")).toBeInTheDocument();
+    expect(screen.getByText("Toffee")).toBeInTheDocument();
+    expect(screen.getByText("Passed away · archived 14 Feb 2026")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Restore" })).toBeInTheDocument();
+  });
+
+  it("restores one through the real endpoint and drops it off the list", async () => {
+    signedInAs(akhil, [toffee]);
+    let restored: string | null = null;
+    server.use(
+      http.post("http://localhost:8000/pets/44444444-4444-4444-4444-444444444444/restore", () => {
+        restored = toffee.id;
+        signedInAs(akhil, []);
+        return HttpResponse.json({});
+      }),
+    );
+
+    renderRoute("/account");
+    await userEvent.click(await screen.findByRole("button", { name: "Restore" }));
+
+    await waitFor(() => expect(restored).toBe(toffee.id));
+    await waitFor(() => expect(screen.queryByText("Toffee")).not.toBeInTheDocument());
+    expect(screen.queryByText("Archived pets")).not.toBeInTheDocument();
   });
 });
 

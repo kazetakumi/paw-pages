@@ -104,77 +104,92 @@ function signedInWith(
 }
 
 describe("a pet's feed", () => {
+  it("shows the header, tabs and a way to chat about this pet", async () => {
+    signedInWith([{ entries: [], next_cursor: null }]);
+
+    renderRoute(feed);
+
+    expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
+    expect(screen.getByText(/Indian Pariah/)).toHaveTextContent("male");
+    expect(screen.getByRole("link", { name: "Chat about Biscuit" })).toHaveAttribute(
+      "href",
+      "/home?new=1",
+    );
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(
+      "href",
+      `/pets/${biscuit.id}/about`,
+    );
+    expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute("href", "/dashboard");
+  });
+
   it("shows the record newest first in the desktop layout above the breakpoint", async () => {
     signedInWith([{ entries: [deworming, vetVisit, rabies], next_cursor: null }]);
     setViewportWidth(1200);
 
     const { container } = renderRoute(feed);
 
-    expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="desktop"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="mobile"]')).toBeNull();
-
-    const titles = screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent);
+    await screen.findByRole("heading", { name: "Biscuit" });
+    // Desktop stacks the year under the day, in its own element.
+    expect(container.querySelector(".ent .yr")).toBeInTheDocument();
+    expect(container.querySelectorAll(".ent .ttl").length).toBe(3);
+    const titles = [...container.querySelectorAll(".ent .ttl")].map((el) => el.textContent);
     expect(titles).toEqual(["Deworming", "Vet visit", "Rabies booster"]);
   });
 
-  it("shows the same record in the mobile layout below the breakpoint", async () => {
+  it("shows the same record in the mobile layout below the breakpoint, on one date line", async () => {
     signedInWith([{ entries: [deworming, vetVisit, rabies], next_cursor: null }]);
     setViewportWidth(390);
 
     const { container } = renderRoute(feed);
 
-    expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="mobile"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="desktop"]')).toBeNull();
-    expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
-      "Deworming",
-      "Vet visit",
-      "Rabies booster",
-    ]);
+    await screen.findByRole("heading", { name: "Biscuit" });
+    expect(container.querySelector(".ent .yr")).toBeNull();
+    expect(screen.getByText("12 Aug 2026")).toBeInTheDocument();
+    const titles = [...container.querySelectorAll(".ent .ttl")].map((el) => el.textContent);
+    expect(titles).toEqual(["Deworming", "Vet visit", "Rabies booster"]);
   });
 
   it("shows each entry's date, title, note, vet and next due", async () => {
     signedInWith([{ entries: [deworming, vetVisit, rabies], next_cursor: null }]);
 
-    renderRoute(feed);
+    const { container } = renderRoute(feed);
 
-    const first = (await screen.findByRole("heading", { name: "Deworming" })).closest("article")!;
-    // The date is drawn on two lines — day and month, year beneath.
+    await screen.findByText("Deworming");
+    const rows = [...container.querySelectorAll<HTMLElement>(".ent")];
+    const first = rows[0]!;
     expect(within(first).getByText(/12 Aug/)).toHaveTextContent("2026");
     expect(within(first).getByText("Half tablet, took it in cheese.")).toBeInTheDocument();
     expect(within(first).getByText(/Next due 12 Nov 2026/)).toBeInTheDocument();
 
-    const second = screen.getByRole("heading", { name: "Vet visit" }).closest("article")!;
+    const second = rows[1]!;
     expect(within(second).getByText("Dr. Menon")).toBeInTheDocument();
     expect(within(second).queryByText(/Next due/)).toBeNull();
   });
 
-  it("marks an entry overdue only when the API said it was", async () => {
+  it("tags a future due date green and a passed one red, overdue", async () => {
     signedInWith([{ entries: [deworming, rabies], next_cursor: null }]);
 
-    renderRoute(feed);
+    const { container } = renderRoute(feed);
 
-    const stale = (await screen.findByRole("heading", { name: "Rabies booster" })).closest("article")!;
-    expect(within(stale).getByText(/overdue/i)).toBeInTheDocument();
+    await screen.findByText("Deworming");
+    const rows = [...container.querySelectorAll<HTMLElement>(".ent")];
+    const fine = within(rows[0]!).getByText(/Next due 12 Nov 2026/);
+    expect(fine).toHaveClass("tag", "next");
 
-    const fine = screen.getByRole("heading", { name: "Deworming" }).closest("article")!;
-    expect(within(fine).queryByText(/overdue/i)).toBeNull();
+    const late = within(rows[1]!).getByText(/Next due 14 Jul 2026 — overdue/);
+    expect(late).toHaveClass("tag", "late");
+    expect(rows[1]).toHaveClass("ent", "over");
   });
 
-  it("offers the About tab and a way to log an entry against this pet", async () => {
-    signedInWith([{ entries: [deworming], next_cursor: null }]);
+  it("shows no due tag when an entry sets no next date, and no milestone tag ever", async () => {
+    signedInWith([{ entries: [vetVisit], next_cursor: null }]);
 
-    renderRoute(feed);
+    const { container } = renderRoute(feed);
 
-    expect(await screen.findByRole("link", { name: "About" })).toHaveAttribute(
-      "href",
-      `/pets/${biscuit.id}/about`,
-    );
-    expect(screen.getByRole("link", { name: /log an entry/i })).toHaveAttribute(
-      "href",
-      `/log?pet=${biscuit.id}`,
-    );
+    await screen.findByText("Vet visit");
+    expect(container.querySelector(".tag.next")).toBeNull();
+    expect(container.querySelector(".tag.late")).toBeNull();
+    expect(container.querySelector(".tag.milestone")).toBeNull();
   });
 
   it("keeps older entries behind a control and pages them in by cursor", async () => {
@@ -183,19 +198,16 @@ describe("a pet's feed", () => {
       { entries: [vetVisit, rabies], next_cursor: null },
     ]);
 
-    renderRoute(feed);
+    const { container } = renderRoute(feed);
 
-    expect(await screen.findByRole("heading", { name: "Deworming" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Vet visit" })).toBeNull();
+    await screen.findByText("Deworming");
+    expect(screen.queryByText("Vet visit")).toBeNull();
 
     await userEvent.click(screen.getByRole("button", { name: /older/i }));
 
-    expect(await screen.findByRole("heading", { name: "Vet visit" })).toBeInTheDocument();
-    expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
-      "Deworming",
-      "Vet visit",
-      "Rabies booster",
-    ]);
+    await screen.findByText("Vet visit");
+    const titles = [...container.querySelectorAll(".ent .ttl")].map((el) => el.textContent);
+    expect(titles).toEqual(["Deworming", "Vet visit", "Rabies booster"]);
     expect(asked).toEqual([null, "b3BhcXVl"]);
     expect(screen.queryByRole("button", { name: /older/i })).toBeNull();
   });
@@ -205,57 +217,8 @@ describe("a pet's feed", () => {
 
     renderRoute(feed);
 
-    expect(await screen.findByRole("heading", { name: "Deworming" })).toBeInTheDocument();
+    await screen.findByText("Deworming");
     expect(screen.queryByRole("button", { name: /older/i })).toBeNull();
-  });
-
-  it("edits an entry in place, behind the same Save button as a new one", async () => {
-    signedInWith([{ entries: [deworming, vetVisit], next_cursor: null }]);
-    let sent: Record<string, unknown> | null = null;
-    server.use(
-      http.get("http://localhost:8000/pets", () => HttpResponse.json([biscuit])),
-      http.get("http://localhost:8000/entry-titles/recent", () => HttpResponse.json([])),
-      http.patch(`http://localhost:8000/entries/${deworming.id}`, async ({ request }) => {
-        sent = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...deworming, ...sent });
-      }),
-    );
-
-    renderRoute(feed);
-
-    const card = (await screen.findByRole("heading", { name: "Deworming" })).closest("article")!;
-    await userEvent.click(within(card).getByRole("button", { name: "Edit" }));
-
-    expect(screen.getByLabelText("What happened")).toHaveValue("Deworming");
-    expect(screen.getByLabelText("Date")).toHaveValue("2026-08-12");
-    const note = screen.getByLabelText(/Notes/);
-    await userEvent.clear(note);
-    await userEvent.type(note, "Whole tablet this time.");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    expect(await screen.findByText("Whole tablet this time.")).toBeInTheDocument();
-    expect(sent).toMatchObject({ title: "Deworming", note: "Whole tablet this time." });
-    expect(screen.queryByLabelText("What happened")).toBeNull();
-  });
-
-  it("deletes an entry and drops it out of the record", async () => {
-    signedInWith([{ entries: [deworming, vetVisit], next_cursor: null }]);
-    let deleted: string | null = null;
-    server.use(
-      http.delete(`http://localhost:8000/entries/${vetVisit.id}`, () => {
-        deleted = vetVisit.id;
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
-
-    renderRoute(feed);
-
-    const card = (await screen.findByRole("heading", { name: "Vet visit" })).closest("article")!;
-    await userEvent.click(within(card).getByRole("button", { name: "Delete" }));
-
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "Vet visit" })).toBeNull());
-    expect(deleted).toBe(vetVisit.id);
-    expect(screen.getByRole("heading", { name: "Deworming" })).toBeInTheDocument();
   });
 
   it("opens with what this pet needs, above its history", async () => {
@@ -270,6 +233,7 @@ describe("a pet's feed", () => {
     expect(within(panel).getByText("Rabies booster")).toBeInTheDocument();
     expect(panel).toHaveTextContent("Last given 14 Jul 2025 at Anvayaa Clinic.");
     expect(panel).toHaveTextContent("Overdue 46 days");
+    expect(screen.getByText("Needs attention")).toBeInTheDocument();
   });
 
   it("draws the same panel in the mobile layout below the breakpoint", async () => {
@@ -289,12 +253,12 @@ describe("a pet's feed", () => {
 
     renderRoute(feed);
 
-    await screen.findByRole("heading", { name: "Deworming" });
+    await screen.findByText("Deworming");
 
     expect(screen.queryByText(/needs attention/i)).toBeNull();
   });
 
-  it("marks an item done, dropping it while the entry stays in the history", async () => {
+  it("marks an item done, dropping it from Needs attention while the entry stays in the history", async () => {
     signedInWith([{ entries: [deworming, rabies], next_cursor: null }], [outstanding]);
     let marked: string | null = null;
     server.use(
@@ -304,73 +268,38 @@ describe("a pet's feed", () => {
       }),
     );
 
-    renderRoute(feed);
+    const { container } = renderRoute(feed);
 
     await userEvent.click(await screen.findByRole("button", { name: "Mark done" }));
 
     await waitFor(() => expect(screen.queryByText("Due 14 Jul 2026")).toBeNull());
     expect(marked).toBe(rabies.id);
 
-    const kept = screen.getByRole("heading", { name: "Rabies booster" }).closest("article")!;
-    expect(within(kept).getByText(/Next due 14 Jul 2026/)).toBeInTheDocument();
-    expect(within(kept).queryByText(/overdue/i)).toBeNull();
+    const rows = [...container.querySelectorAll<HTMLElement>(".ent")];
+    const kept = rows.find((row) => row.textContent?.includes("Rabies booster"))!;
+    expect(within(kept as HTMLElement).getByText(/Next due 14 Jul 2026/)).toBeInTheDocument();
+    expect(within(kept as HTMLElement).queryByText(/overdue/i)).toBeNull();
   });
 
-  it("opens the log form pre-filled from the outstanding item", async () => {
+  it("offers only Mark done on an outstanding item — logging next now happens in chat", async () => {
     signedInWith([{ entries: [rabies], next_cursor: null }], [outstanding]);
 
     renderRoute(feed);
 
-    await userEvent.click(await screen.findByRole("button", { name: "Log the next one" }));
-
-    expect(screen.getByLabelText("What happened")).toHaveValue("Rabies booster");
-    expect(screen.getByLabelText(/Vet or clinic/)).toHaveValue("Anvayaa Clinic");
-    // A new entry, not a correction: today, with nothing yet due after it.
-    expect(screen.getByLabelText("Date")).not.toHaveValue("2025-07-14");
-    expect(screen.getByLabelText(/Next one due/)).toHaveValue("");
+    await screen.findByText("Due 14 Jul 2026");
+    expect(screen.getByRole("button", { name: "Mark done" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /log the next one/i })).toBeNull();
   });
 
-  it("logs the next one and closes the old due date in the one request", async () => {
-    let sent: Record<string, unknown> | null = null;
-    const next: Entry = {
-      ...rabies,
-      id: "a4",
-      happened_on: "2026-08-29",
-      due_on: "2027-08-29",
-      is_overdue: false,
-    };
-    signedInWith([{ entries: [rabies], next_cursor: null }], [outstanding]);
-    server.use(
-      http.post("http://localhost:8000/entries", async ({ request }) => {
-        sent = (await request.json()) as Record<string, unknown>;
-        // Closing it is the API's job, so the reload sees the item gone.
-        server.use(
-          http.get(`http://localhost:8000/pets/${biscuit.id}`, () =>
-            HttpResponse.json({ ...biscuit, due_items: [] }),
-          ),
-          http.get(`http://localhost:8000/pets/${biscuit.id}/entries`, () =>
-            HttpResponse.json({ entries: [next, rabies], next_cursor: null }),
-          ),
-        );
-        return HttpResponse.json(next, { status: 201 });
-      }),
+  it("points the bottom archive link at the About tab, where archiving lives", async () => {
+    signedInWith([{ entries: [deworming], next_cursor: null }]);
+
+    renderRoute(feed);
+
+    expect(await screen.findByRole("link", { name: "Archive Biscuit" })).toHaveAttribute(
+      "href",
+      `/pets/${biscuit.id}/about`,
     );
-
-    renderRoute(feed);
-
-    await userEvent.click(await screen.findByRole("button", { name: "Log the next one" }));
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    await waitFor(() => expect(screen.queryByText("Due 14 Jul 2026")).toBeNull());
-    expect(sent).toMatchObject({
-      pet_id: biscuit.id,
-      title: "Rabies booster",
-      closes_entry_id: rabies.id,
-    });
-    expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual([
-      "Rabies booster",
-      "Rabies booster",
-    ]);
   });
 });
 
@@ -389,57 +318,5 @@ describe("a pet's photo on the feed", () => {
       "src",
       `http://localhost:8000/pets/${biscuit.id}/photo`,
     );
-  });
-  it("shows a weight on the entry it was recorded with", async () => {
-    const weighed = entry({
-      id: "a4",
-      title: "Weighed",
-      happened_on: "2026-08-20",
-      weight_value: "12.40",
-      weight_unit: "kg",
-    });
-    signedInWith([{ entries: [weighed], next_cursor: null }]);
-    setViewportWidth(1200);
-
-    renderRoute(feed);
-
-    expect(await screen.findByText("12.40 kg")).toBeInTheDocument();
-  });
-
-  it("shows no weight tag on an entry that has none", async () => {
-    signedInWith([{ entries: [vetVisit], next_cursor: null }]);
-    setViewportWidth(1200);
-
-    const { container } = renderRoute(feed);
-
-    await screen.findByRole("heading", { name: "Vet visit" });
-    expect(container.querySelector(".tag.weight")).toBeNull();
-  });
-  it("shows an entry's own photo in the feed", async () => {
-    const withShot = entry({
-      id: "a5",
-      title: "Vet visit",
-      happened_on: "2026-08-20",
-      has_photo: true,
-    });
-    signedInWith([{ entries: [withShot], next_cursor: null }]);
-    setViewportWidth(1200);
-
-    const { container } = renderRoute(feed);
-
-    await screen.findByRole("heading", { name: "Vet visit" });
-    const shot = container.querySelector("img.shot") as HTMLImageElement;
-    // Our own route, never a Supabase domain: the bucket stays private.
-    expect(shot.getAttribute("src")).toBe("http://localhost:8000/entries/a5/photo");
-  });
-
-  it("shows no photo on an entry without one", async () => {
-    signedInWith([{ entries: [vetVisit], next_cursor: null }]);
-    setViewportWidth(1200);
-
-    const { container } = renderRoute(feed);
-
-    await screen.findByRole("heading", { name: "Vet visit" });
-    expect(container.querySelector("img.shot")).toBeNull();
   });
 });

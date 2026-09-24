@@ -1,15 +1,52 @@
-/* The landing page, from design/landing-web.html and design/landing-mobile.html.
-   Only one layout is ever mounted, so the same class names carry the two
-   shapes and [data-layout] only says what differs. Every date is in Space
-   Mono, and the one stamp on the page is the one in the record card. */
+/* The landing page, from design/v2/landing/web.html and mobile.html. Only
+   one layout is ever mounted, so the same class names carry the two shapes
+   and [data-layout] only says what differs — the design's own @media rules
+   become [data-layout="mobile"] overrides here, sourced from mobile.html's
+   own (un-media-queried) values rather than web.html's narrow breakpoint,
+   since the two are separate mounted trees, not one reflowed by width. */
 
 .landing {
   max-width: 1060px;
   margin: 0 auto;
 }
-.landing .date {
-  font-family: var(--data);
-  white-space: nowrap;
+
+/* ---- brand ---- */
+.landing .brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: auto;
+}
+.landing .brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: #fff;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 12px;
+}
+.landing .brand-word {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.02em;
+}
+.landing .brand-word .p2 {
+  color: var(--faint);
+}
+.landing[data-layout="mobile"] .brand-mark {
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+}
+.landing[data-layout="mobile"] .brand-word {
+  font-size: 13.5px;
 }
 
 /* ---- top ---- */
@@ -21,16 +58,10 @@
   padding: 0 28px;
   border-bottom: 1px solid var(--rule);
 }
-.landing .wordmark {
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  margin-right: auto;
-}
-.landing .wordmark .p2 {
-  color: var(--faint);
+.landing[data-layout="mobile"] .topbar {
+  height: auto;
+  gap: 10px;
+  padding: 14px 16px;
 }
 .landing .tlink {
   font-size: 14px;
@@ -44,14 +75,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   font-size: 14px;
   font-weight: 600;
   background: var(--ink);
   color: #fff;
   border: 1px solid var(--ink);
   padding: 11px 19px;
-  border-radius: 2px;
+  border-radius: 8px;
+  cursor: pointer;
   white-space: nowrap;
+}
+.landing .btn:hover {
+  background: #000;
 }
 .landing .btn.ghost {
   background: transparent;
@@ -66,6 +102,11 @@
   font-size: 15.5px;
   padding: 14px 24px;
 }
+.landing[data-layout="mobile"] .btn {
+  width: 100%;
+  padding: 13px 18px;
+  font-size: 14.5px;
+}
 
 /* ---- hero ---- */
 .landing .hero {
@@ -78,7 +119,7 @@
   align-items: center;
 }
 .landing[data-layout="mobile"] .hero {
-  padding: 32px 18px 34px;
+  padding: 24px 18px 30px;
 }
 .landing .eyebrow {
   font-family: var(--data);
@@ -88,19 +129,24 @@
   color: var(--faint);
   margin-bottom: 20px;
 }
+.landing[data-layout="mobile"] .eyebrow {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  margin-bottom: 12px;
+}
 .landing h1 {
   font-family: var(--display);
-  font-size: 60px;
-  line-height: 1.02;
+  font-size: 56px;
+  line-height: 1.04;
   letter-spacing: -0.035em;
   font-weight: 600;
   margin: 0 0 22px;
 }
 .landing[data-layout="mobile"] h1 {
-  font-size: 34px;
-  line-height: 1.05;
+  font-size: 30px;
+  line-height: 1.08;
   letter-spacing: -0.03em;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .landing h1 .b {
   display: block;
@@ -114,22 +160,18 @@
   margin: 0 0 32px;
 }
 .landing[data-layout="mobile"] .lede {
-  font-size: 16px;
-  margin-bottom: 22px;
+  font-size: 15px;
+  margin-bottom: 20px;
 }
 .landing .cta {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 .landing[data-layout="mobile"] .cta {
   flex-direction: column;
   gap: 9px;
-}
-.landing[data-layout="mobile"] .cta .btn {
-  width: 100%;
-  padding: 14px 18px;
-  font-size: 15px;
 }
 .landing .fine {
   font-family: var(--data);
@@ -141,116 +183,140 @@
 }
 .landing[data-layout="mobile"] .fine {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
-/* ---- the record card: the hero image is the product ---- */
-.landing .doc {
+/* ---- chat mock: the hero visual is the actual chat screen, miniaturised ---- */
+.landing .chatmock {
   background: var(--card);
   border: 1px solid #cfd3d7;
-  border-radius: 3px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 18px 50px rgba(19, 32, 46, 0.12);
 }
-.landing[data-layout="mobile"] .doc {
-  margin: 0 18px 40px;
-  box-shadow: 0 12px 32px rgba(19, 32, 46, 0.11);
+.landing[data-layout="mobile"] .chatmock {
+  margin-top: 24px;
+  box-shadow: 0 10px 28px rgba(19, 32, 46, 0.1);
 }
-.landing .doc .kicker {
-  font-family: var(--data);
-  font-size: 9px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--faint);
-  padding: 16px 20px 0;
-}
-.landing .doc .id {
+.landing .chatmock .cm-top {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 12px 20px 16px;
-}
-.landing .doc .av {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  flex: none;
-  background: #dee5ea;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--display);
-  font-size: 20px;
-  font-weight: 600;
-  object-fit: cover;
-}
-.landing .doc .nm {
-  font-family: var(--display);
-  font-size: 21px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  line-height: 1.15;
-}
-.landing .doc .sub {
-  font-size: 12.5px;
-  color: var(--faint);
-}
-.landing .doc .rec {
-  border-top: 1px solid var(--rule-2);
-}
-.landing .doc .r {
-  display: grid;
-  grid-template-columns: 88px 1fr;
-  gap: 12px;
-  align-items: baseline;
-  padding: 11px 20px;
+  gap: 8px;
+  padding: 13px 18px;
   border-bottom: 1px solid var(--rule-2);
-  position: relative;
 }
-.landing .doc .r:last-child {
-  border-bottom: 0;
+.landing[data-layout="mobile"] .chatmock .cm-top {
+  padding: 12px 14px;
 }
-.landing .doc .r .date {
-  font-size: 10.5px;
-  color: var(--faint);
-}
-.landing .doc .r .w {
-  font-size: 14.5px;
-  font-weight: 500;
-}
-.landing .doc .r.over {
-  background: var(--stamp-wash);
-}
-.landing .doc .r.over .date {
-  color: var(--stamp);
-  font-weight: 700;
-}
-.landing .doc .stamp {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%) rotate(-6deg);
-  font-size: 10.5px;
-  padding: 4px 9px 3px;
-}
-.landing .doc .stamp .days {
-  margin-left: 5px;
-}
-.landing .doc .foot {
-  padding: 12px 20px 14px;
-  border-top: 1px solid var(--rule-2);
-  font-family: var(--data);
+.landing .chatmock .cm-top .brand-mark {
+  width: 19px;
+  height: 19px;
   font-size: 9px;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--faint);
-  display: flex;
+  border-radius: 4px;
 }
-.landing .doc .foot .mk {
-  margin-left: auto;
+.landing[data-layout="mobile"] .chatmock .cm-top .brand-mark {
+  width: 17px;
+  height: 17px;
+  font-size: 8px;
+}
+.landing .chatmock .cm-top .brand-word {
+  font-size: 12.5px;
+}
+.landing[data-layout="mobile"] .chatmock .cm-top .brand-word {
+  font-size: 11.5px;
+}
+.landing .chatmock .cm-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.landing[data-layout="mobile"] .chatmock .cm-body {
+  padding: 14px;
+  gap: 10px;
+}
+.landing .cm-text {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+}
+.landing[data-layout="mobile"] .cm-text {
+  font-size: 12px;
+}
+.landing .cm-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 9px 12px;
+}
+.landing[data-layout="mobile"] .cm-card {
+  gap: 8px;
+  padding: 8px 10px;
+}
+.landing .cm-card .cm-w {
+  font-size: 12.5px;
+}
+.landing[data-layout="mobile"] .cm-card .cm-w {
+  font-size: 11.5px;
+}
+.landing .cm-card .cm-w b {
   font-family: var(--display);
+  font-weight: 600;
+}
+.landing .cm-card .cm-w span {
+  color: var(--faint);
+}
+.landing .cm-card.over {
+  background: var(--stamp-wash);
+  border-color: #edd5ce;
+}
+.landing .cm-stamp {
+  font-family: var(--data);
   font-weight: 700;
-  letter-spacing: 0.15em;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--stamp);
+  border: 1.5px solid var(--stamp);
+  border-radius: 3px;
+  padding: 3px 7px 2px;
+  line-height: 1;
+  opacity: 0.86;
+  white-space: nowrap;
+}
+.landing[data-layout="mobile"] .cm-stamp {
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  padding: 3px 6px 2px;
+}
+.landing .cm-bubble {
+  align-self: flex-end;
+  max-width: 82%;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+}
+.landing[data-layout="mobile"] .cm-bubble {
+  max-width: 84%;
+  border-radius: 12px;
+  padding: 7px 11px;
+  font-size: 11.5px;
+}
+.landing .cm-due {
+  font-family: var(--data);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--seal);
+  white-space: nowrap;
+}
+.landing[data-layout="mobile"] .cm-due {
+  font-size: 9px;
+  letter-spacing: 0.04em;
 }
 
 /* ---- sections ---- */
@@ -259,7 +325,7 @@
   border-top: 1px solid var(--rule);
 }
 .landing[data-layout="mobile"] .s {
-  padding: 38px 18px;
+  padding: 44px 18px;
 }
 .landing .shead {
   display: flex;
@@ -267,11 +333,19 @@
   gap: 16px;
   margin-bottom: 14px;
 }
+.landing[data-layout="mobile"] .shead {
+  gap: 12px;
+  margin-bottom: 10px;
+}
 .landing .shead .no {
   font-family: var(--data);
   font-size: 10.5px;
   letter-spacing: 0.14em;
   color: var(--faint);
+}
+.landing[data-layout="mobile"] .shead .no {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
 }
 .landing h2 {
   font-family: var(--display);
@@ -281,7 +355,7 @@
   margin: 0;
 }
 .landing[data-layout="mobile"] h2 {
-  font-size: 25px;
+  font-size: 23px;
   letter-spacing: -0.02em;
 }
 .landing .sub {
@@ -291,7 +365,7 @@
   margin: 0 0 34px;
 }
 .landing[data-layout="mobile"] .sub {
-  font-size: 15.5px;
+  font-size: 14.5px;
   margin-bottom: 22px;
 }
 .landing .two {
@@ -301,15 +375,15 @@
   align-items: start;
 }
 
-/* the entry list */
+/* the entry / status list */
 .landing .list {
   background: var(--card);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: 5px;
   overflow: hidden;
 }
 .landing[data-layout="mobile"] .list {
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 .landing .li {
   display: grid;
@@ -321,33 +395,59 @@
 }
 .landing[data-layout="mobile"] .li {
   display: block;
-  padding: 13px 18px;
+  padding: 12px 14px;
 }
 .landing .li:last-child {
   border-bottom: 0;
 }
-.landing .li .date {
+.landing .li .d {
+  font-family: var(--data);
   font-size: 11.5px;
   color: var(--ink-2);
+  white-space: nowrap;
 }
-.landing[data-layout="mobile"] .li .date {
+.landing[data-layout="mobile"] .li .d {
   display: block;
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  color: var(--faint);
+  font-size: 10.5px;
   margin-bottom: 3px;
 }
 .landing .li .t {
   font-size: 15.5px;
 }
+.landing[data-layout="mobile"] .li .t {
+  font-size: 14px;
+}
 .landing .li .t b {
   font-family: var(--display);
   font-weight: 600;
 }
-.landing .li .t span {
+.landing .li .t span:not(.tag) {
   color: var(--faint);
   font-size: 13.5px;
   display: block;
+}
+.landing[data-layout="mobile"] .li .t span:not(.tag) {
+  font-size: 12.5px;
+  margin-top: 1px;
+}
+.landing .li .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--data);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 2px 6px;
+  margin-top: 6px;
+}
+.landing[data-layout="mobile"] .li .tag {
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  margin-top: 5px;
 }
 
 /* the plain truths */
@@ -364,8 +464,8 @@
   color: var(--ink-2);
 }
 .landing[data-layout="mobile"] .truths li {
-  padding: 13px 0 13px 28px;
-  font-size: 15px;
+  padding: 13px 0 13px 26px;
+  font-size: 14.5px;
 }
 .landing .truths li:last-child {
   border-bottom: 0;
@@ -383,30 +483,38 @@
   height: 1px;
   background: var(--faint);
 }
+.landing[data-layout="mobile"] .truths li::before {
+  top: 22px;
+  width: 14px;
+}
 
 /* the public page, in miniature */
 .landing .mini {
   background: var(--card);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: 5px;
   padding: 20px;
 }
 .landing[data-layout="mobile"] .mini {
   padding: 16px;
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 .landing .mini .u {
   font-family: var(--data);
   font-size: 11.5px;
   color: var(--ink-2);
   border: 1px solid var(--rule);
-  background: var(--card);
-  border-radius: 2px;
+  background: #fafbf9;
+  border-radius: 4px;
   padding: 9px 11px;
   margin-bottom: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.landing[data-layout="mobile"] .mini .u {
+  padding: 8px 10px;
+  margin-bottom: 13px;
 }
 .landing .mini .yes,
 .landing .mini .no {
@@ -414,6 +522,14 @@
   gap: 9px;
   padding: 7px 0;
   font-size: 14.5px;
+}
+.landing[data-layout="mobile"] .mini .yes,
+.landing[data-layout="mobile"] .mini .no {
+  padding: 6px 0;
+  font-size: 13.5px;
+}
+.landing .mini .yes {
+  color: var(--ink);
 }
 .landing .mini .no {
   color: var(--faint);
@@ -424,8 +540,12 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   flex: none;
-  width: 34px;
-  padding-top: 3px;
+  width: 30px;
+}
+.landing[data-layout="mobile"] .mini .mk {
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  width: 28px;
 }
 .landing .mini .yes .mk {
   color: var(--seal);
@@ -438,14 +558,14 @@
   border-top: 1px solid var(--rule);
 }
 .landing[data-layout="mobile"] .close {
-  padding: 44px 18px 40px;
+  padding: 48px 18px 56px;
 }
 .landing .close h2 {
   font-size: 40px;
   margin-bottom: 14px;
 }
 .landing[data-layout="mobile"] .close h2 {
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 10px;
 }
 .landing .close p {
@@ -454,30 +574,21 @@
   margin: 0 0 30px;
 }
 .landing[data-layout="mobile"] .close p {
-  font-size: 16px;
-  margin-bottom: 22px;
+  font-size: 14.5px;
+  margin-bottom: 20px;
 }
 
 .landing footer {
   border-top: 1px solid var(--rule);
-  background: #e9eae5;
+  background: var(--paper-2);
   padding: 26px 28px;
   display: flex;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
 }
-.landing[data-layout="mobile"] footer {
-  padding: 20px 18px;
-  gap: 16px;
-}
-.landing footer .wordmark {
+.landing[data-layout="desktop"] footer .brand-word {
   font-size: 12px;
-}
-.landing[data-layout="mobile"] footer .wordmark {
-  font-size: 11px;
-  width: 100%;
-  margin-bottom: 4px;
 }
 .landing footer a {
   font-size: 13.5px;
@@ -485,4 +596,16 @@
 }
 .landing footer a:hover {
   color: var(--ink);
+}
+.landing[data-layout="mobile"] footer {
+  padding: 20px 18px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.landing[data-layout="mobile"] footer .brand {
+  margin-bottom: 4px;
+}
+.landing[data-layout="mobile"] footer a {
+  font-size: 13px;
 }

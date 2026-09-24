@@ -1,13 +1,18 @@
-/* The public page, from design/public-page-*.html. A document, not an app
-   screen: it shares the app's type and colour and none of its furniture.
-   Only one layout is ever mounted, so the same class names carry both. */
+/* The public page, from design/v2/public-page/{web,mobile}.html. A document,
+   not an app screen: it shares the app's type and colour and none of its
+   furniture. Only one layout is ever mounted, so the same class names carry
+   both — the design's own dark red --stamp never appears here.
+
+   Mobile has no fake phone bezel: design/v2/public-page/mobile.html wraps the
+   same .doc in a .device prop for its own "phone screenshot" presentation;
+   here the mobile layout is just .pubpage's own padding around .doc. */
 
 .pubpage {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background: #e9eae5;
+  background: var(--paper-2);
 }
 
 .pubpage .doc {
@@ -15,14 +20,12 @@
   max-width: 620px;
   background: var(--card);
   border: 1px solid #cfd3d7;
-  border-radius: 3px;
+  border-radius: 5px;
   overflow: hidden;
-  box-shadow: 0 14px 44px rgba(19, 32, 46, 0.1);
 }
 
 .pubpage .kicker {
   font-family: var(--data);
-  font-size: 9.5px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--faint);
@@ -46,8 +49,7 @@
 .pubpage h1 {
   font-family: var(--display);
   font-weight: 600;
-  letter-spacing: -0.025em;
-  margin: 0 0 4px;
+  margin: 0;
   line-height: 1.05;
 }
 .pubpage .meta {
@@ -55,7 +57,6 @@
 }
 .pubpage .meta .dot {
   color: var(--rule);
-  margin: 0 8px;
 }
 
 /* ---- the facts strip ---- */
@@ -65,20 +66,14 @@
   border-bottom: 1px solid var(--rule-2);
 }
 .pubpage .cell {
-  padding: 15px 18px;
   border-right: 1px solid var(--rule-2);
 }
 .pubpage .cell .k {
   font-family: var(--data);
-  font-size: 9px;
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--faint);
   display: block;
-  margin-bottom: 4px;
-}
-.pubpage .cell .v {
-  font-size: 14.5px;
 }
 
 /* ---- the record ---- */
@@ -90,7 +85,6 @@
 }
 .pubpage .sect h2 {
   font-family: var(--data);
-  font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
@@ -104,19 +98,15 @@
 }
 .pubpage .sect .n {
   font-family: var(--data);
-  font-size: 10px;
   color: var(--faint);
 }
 
 .pubpage .rec {
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: 3px;
   overflow: hidden;
 }
 .pubpage .r {
-  display: grid;
-  align-items: baseline;
-  padding: 14px 18px;
   border-bottom: 1px solid var(--rule-2);
 }
 .pubpage .r:last-child {
@@ -124,29 +114,29 @@
 }
 .pubpage .r .d {
   font-family: var(--data);
-  font-size: 12px;
-  color: var(--ink-2);
   white-space: nowrap;
   text-transform: uppercase;
 }
 .pubpage .r .w {
   font-family: var(--display);
-  font-size: 16px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
-/* Neutral grey, always. Stamp red never appears on this page: whether a due
-   date has passed is between the handler and their pet. */
+/* Neutral colour, never the app's red stamp: green while a due date is still
+   ahead, grey once it has passed. Whether a date has slipped by is between
+   the handler and their pet, so the worst this ever gets is quiet grey. */
 .pubpage .r .nx {
   font-family: var(--data);
-  font-size: 10px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--ink-2);
-  border: 1px solid var(--rule);
+  color: var(--seal);
+  border: 1px solid #c9dbd1;
   border-radius: 2px;
-  padding: 3px 8px;
   white-space: nowrap;
+}
+.pubpage .r .nx.past {
+  color: var(--ink-2);
+  border-color: var(--rule);
 }
 
 /* ---- the footer mark, the only nod to the app ---- */
@@ -154,32 +144,42 @@
   border-top: 1px solid var(--rule-2);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 .pubpage .foot .up {
   font-family: var(--data);
-  font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--faint);
 }
 .pubpage .foot .mk {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+.pubpage .foot .mk .brand-mark {
+  border-radius: 4px;
+  background: var(--faint);
+  color: #fff;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--display);
-  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+}
+.pubpage .foot .mk .brand-word {
+  font-family: var(--display);
+  font-weight: 700;
   text-transform: uppercase;
   color: var(--faint);
 }
-.pubpage .foot .mk .p2 {
+.pubpage .foot .mk .brand-word .p2 {
   color: #c3c8cd;
 }
 
 .pubpage .under {
-  max-width: 620px;
-  margin-top: 18px;
   font-size: 12.5px;
   color: var(--faint);
   text-align: center;
@@ -188,14 +188,20 @@
 
 .pubpage.gone {
   justify-content: center;
+  text-align: center;
   color: var(--ink-2);
+  padding: 24px;
 }
 
-/* ============ desktop ============ */
+/* ============ desktop — design/v2/public-page/web.html ============ */
 .pubpage[data-layout="desktop"] {
   padding: 52px 22px 70px;
 }
+.pubpage[data-layout="desktop"] .doc {
+  box-shadow: 0 14px 44px rgba(19, 32, 46, 0.1);
+}
 .pubpage[data-layout="desktop"] .kicker {
+  font-size: 9.5px;
   padding: 22px 30px 0;
 }
 .pubpage[data-layout="desktop"] .idblock {
@@ -209,51 +215,118 @@
 }
 .pubpage[data-layout="desktop"] h1 {
   font-size: 36px;
+  letter-spacing: -0.025em;
+  margin-bottom: 4px;
 }
 .pubpage[data-layout="desktop"] .meta {
   font-size: 14.5px;
 }
+.pubpage[data-layout="desktop"] .meta .dot {
+  margin: 0 8px;
+}
 .pubpage[data-layout="desktop"] .strip {
   grid-template-columns: repeat(4, 1fr);
+}
+.pubpage[data-layout="desktop"] .cell {
+  padding: 15px 18px;
 }
 .pubpage[data-layout="desktop"] .cell:last-child {
   border-right: 0;
 }
+.pubpage[data-layout="desktop"] .cell .k {
+  font-size: 9px;
+  margin-bottom: 4px;
+}
+.pubpage[data-layout="desktop"] .cell .v {
+  font-size: 14.5px;
+}
 .pubpage[data-layout="desktop"] .recwrap {
   padding: 26px 30px 30px;
 }
+.pubpage[data-layout="desktop"] .sect h2 {
+  font-size: 10.5px;
+}
+.pubpage[data-layout="desktop"] .sect .n {
+  font-size: 10px;
+}
 .pubpage[data-layout="desktop"] .r {
+  display: grid;
   grid-template-columns: 112px 1fr auto;
   gap: 18px;
+  align-items: baseline;
+  padding: 14px 18px;
+}
+.pubpage[data-layout="desktop"] .r .d {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.pubpage[data-layout="desktop"] .r .w {
+  font-size: 16px;
+}
+.pubpage[data-layout="desktop"] .r .nx {
+  font-size: 10px;
+  padding: 3px 8px;
 }
 .pubpage[data-layout="desktop"] .foot {
   padding: 18px 30px 24px;
 }
+.pubpage[data-layout="desktop"] .foot .up {
+  font-size: 10px;
+}
+.pubpage[data-layout="desktop"] .foot .mk {
+  gap: 7px;
+}
+.pubpage[data-layout="desktop"] .foot .mk .brand-mark {
+  width: 18px;
+  height: 18px;
+  font-size: 9px;
+}
+.pubpage[data-layout="desktop"] .foot .mk .brand-word {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.pubpage[data-layout="desktop"] .under {
+  max-width: 620px;
+  margin-top: 18px;
+}
 
-/* ============ mobile ============ */
+/* ============ mobile — design/v2/public-page/mobile.html ============ */
 .pubpage[data-layout="mobile"] {
-  padding: 26px 16px 50px;
+  padding: 22px 16px 34px;
+}
+.pubpage[data-layout="mobile"] .doc {
+  box-shadow: 0 10px 30px rgba(19, 32, 46, 0.09);
 }
 .pubpage[data-layout="mobile"] .kicker {
-  padding: 18px 20px 0;
+  font-size: 9px;
+  padding: 16px 18px 0;
 }
 .pubpage[data-layout="mobile"] .idblock {
-  padding: 14px 20px 20px;
-  gap: 15px;
+  padding: 14px 18px 18px;
+  gap: 14px;
 }
 .pubpage[data-layout="mobile"] .av {
-  width: 76px;
-  height: 76px;
-  font-size: 29px;
+  width: 72px;
+  height: 72px;
+  font-size: 27px;
 }
 .pubpage[data-layout="mobile"] h1 {
-  font-size: 28px;
+  font-size: 27px;
+  letter-spacing: -0.02em;
+  margin-bottom: 3px;
+  line-height: 1.08;
 }
 .pubpage[data-layout="mobile"] .meta {
-  font-size: 13.5px;
+  font-size: 13px;
+}
+.pubpage[data-layout="mobile"] .meta .dot {
+  margin: 0 6px;
 }
 .pubpage[data-layout="mobile"] .strip {
   grid-template-columns: 1fr 1fr;
+}
+.pubpage[data-layout="mobile"] .cell {
+  padding: 12px 16px;
 }
 .pubpage[data-layout="mobile"] .cell:nth-child(2n) {
   border-right: 0;
@@ -261,22 +334,72 @@
 .pubpage[data-layout="mobile"] .cell:nth-child(-n + 2) {
   border-bottom: 1px solid var(--rule-2);
 }
+.pubpage[data-layout="mobile"] .cell .k {
+  font-size: 8.5px;
+  margin-bottom: 3px;
+}
+.pubpage[data-layout="mobile"] .cell .v {
+  font-size: 14px;
+}
 .pubpage[data-layout="mobile"] .recwrap {
-  padding: 22px 20px 24px;
+  padding: 20px 16px 22px;
+}
+.pubpage[data-layout="mobile"] .sect {
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.pubpage[data-layout="mobile"] .sect h2 {
+  font-size: 10px;
+}
+.pubpage[data-layout="mobile"] .sect .n {
+  font-size: 9.5px;
 }
 .pubpage[data-layout="mobile"] .r {
-  grid-template-columns: 1fr;
-  gap: 5px;
+  padding: 13px 15px;
+}
+.pubpage[data-layout="mobile"] .r .d {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+  display: block;
+  margin-bottom: 4px;
+}
+.pubpage[data-layout="mobile"] .r .w {
+  font-size: 16px;
+  display: block;
 }
 .pubpage[data-layout="mobile"] .r .nx {
-  justify-self: start;
+  font-size: 9.5px;
+  padding: 3px 7px;
+  display: inline-block;
+  margin-top: 8px;
 }
 .pubpage[data-layout="mobile"] .foot {
-  padding: 16px 20px 20px;
+  padding: 15px 16px 18px;
+}
+.pubpage[data-layout="mobile"] .foot .up {
+  font-size: 9.5px;
+}
+.pubpage[data-layout="mobile"] .foot .mk {
+  gap: 6px;
+}
+.pubpage[data-layout="mobile"] .foot .mk .brand-mark {
+  width: 16px;
+  height: 16px;
+  font-size: 8px;
+}
+.pubpage[data-layout="mobile"] .foot .mk .brand-word {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.pubpage[data-layout="mobile"] .under {
+  margin: 16px 4px 0;
+  font-size: 12px;
 }
 
-/* A published photo: the proof under the line it belongs to. Desktop's record
-   is a three-column grid, so it spans all three and sits under the title
+/* A published entry photo: no mock for this, since the design's static data
+   has none — it sits under the line it belongs to, off the app's own photo
+   treatment. Desktop's record is a three-column grid, so it spans all three
    rather than squeezing into the middle one. */
 .pubpage .r .pf {
   display: block;

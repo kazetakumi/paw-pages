@@ -56,9 +56,9 @@ export function ArchivePanel({ pet }: { pet: Pet }) {
       type="button"
       disabled={reason === null}
       onClick={() => {
-        // The pet leaves the home screen the moment this returns, so that is
+        // The pet leaves the dashboard the moment this returns, so that is
         // where the handler is put — beside the count it has become.
-        archivePet(pet.id, reason!).then(() => navigate("/home"));
+        archivePet(pet.id, reason!).then(() => navigate("/dashboard"));
       }}
     >
       Archive

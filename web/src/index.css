@@ -3,12 +3,17 @@
   --ink-2: #4e5a67;
   --faint: #8d97a1;
   --paper: #f2f3ef;
+  --paper-2: #e9eae5;
   --card: #ffffff;
   --rule: #dce0e4;
   --rule-2: #edeff1;
   --stamp: #b23a24;
   --stamp-wash: #fbf1ee;
   --seal: #2e6b4f;
+
+  --sidebar-bg: #ebede7;
+  --hover: rgba(19, 32, 46, 0.06);
+  --active: rgba(19, 32, 46, 0.09);
 
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;

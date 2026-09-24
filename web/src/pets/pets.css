@@ -1,6 +1,6 @@
-/* The pet cards and the About tab, from design/dashboard-*.html and
-   design/pet-about-*.html. Only one layout is ever mounted, so the same class
-   names carry the two shapes. */
+/* The pet cards, the dashboard around them and the About tab, from
+   design/v2/dashboard/*.html and design/v2/pet-profile/about-*.html. Only one
+   layout is ever mounted, so the same class names carry the two shapes. */
 
 .av {
   border-radius: 50%;
@@ -37,7 +37,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
   gap: 16px;
-  margin-top: 22px;
+  margin-top: 16px;
 }
 .shell-desktop .pet {
   background: var(--card);
@@ -55,6 +55,7 @@
   display: flex;
   align-items: center;
   gap: 13px;
+  margin-bottom: 16px;
 }
 .shell-desktop .av {
   width: 46px;
@@ -88,68 +89,54 @@
   font-size: 13.5px;
 }
 
-/* ============ mobile: rows ============ */
+/* ============ mobile: the same cards, stacked instead of gridded ============ */
 .shell-mobile .pets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.shell-mobile .pet {
   background: var(--card);
   border: 1px solid var(--rule);
   border-radius: 2px;
-  overflow: hidden;
-  margin-top: 20px;
+  padding: 16px;
 }
-.shell-mobile .pet {
+.shell-mobile .pet .top {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 14px 15px;
-  border-bottom: 1px solid var(--rule-2);
-}
-.shell-mobile .pet:last-child {
-  border-bottom: 0;
+  gap: 12px;
+  margin-bottom: 14px;
 }
 .shell-mobile .av {
   width: 42px;
   height: 42px;
   font-size: 16px;
 }
-.shell-mobile .mid {
-  flex: 1;
-  min-width: 0;
-}
 .shell-mobile .nm {
   font-size: 17px;
 }
 .shell-mobile .sub {
   font-size: 12px;
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-top: 2px;
 }
-.addpet {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 14px 15px;
-  border: 1px dashed var(--rule);
-  border-radius: 2px;
-  margin-top: 12px;
-  color: var(--ink-2);
-}
-.addpet .pl {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px dashed var(--rule);
+.shell-mobile .pet.add {
+  border-style: dashed;
+  border-color: var(--rule);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  color: var(--ink-2);
+  padding: 18px;
+}
+.shell-mobile .pet.add .pl {
   font-family: var(--display);
   font-size: 19px;
   font-weight: 500;
-  flex: none;
 }
-.addpet .tx {
-  font-size: 14.5px;
+.shell-mobile .pet.add .tx {
+  font-size: 13px;
 }
 
 /* ============ the About tab ============ */
@@ -455,20 +442,7 @@
   margin: 0 0 22px;
   max-width: 52ch;
 }
-.shell-desktop .about .greeting {
-  margin-top: 22px;
-}
 
-/* ============ the summary line and the card footers ============ */
-.greeting-sub .hot {
-  color: var(--stamp);
-  font-weight: 700;
-}
-.greeting-sub i {
-  color: var(--faint);
-  font-style: normal;
-  margin: 0 8px;
-}
 .head {
   margin-bottom: 34px;
 }
@@ -478,36 +452,234 @@
   justify-content: space-between;
   gap: 24px;
 }
-.shell-desktop .head .acts {
-  display: flex;
-  gap: 10px;
-  flex: none;
-}
-/* Below the breakpoint the same control floats over the list instead, so a
-   handler never has to scroll back up to log something. */
-.fab {
-  position: sticky;
-  bottom: 20px;
-  margin-top: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  background: var(--ink);
-  color: #fff;
-  border-radius: 2px;
-  font-family: var(--body);
-  font-size: 15px;
-  font-weight: 600;
-  padding: 15px 18px;
-  box-shadow: 0 8px 24px rgba(19, 32, 46, 0.22);
-}
-.fab .plus {
+
+/* ============ the dashboard's own head, tally and ledger ============
+   Scoped under .dashboard so the shared .head/.sect this screen reuses from
+   the About tab and the account screen are left exactly as those own it. */
+.dashboard .head h1 {
   font-family: var(--display);
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 1;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 9px;
 }
+.shell-desktop .dashboard .head h1 {
+  font-size: 28px;
+}
+.shell-mobile .dashboard .head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.shell-mobile .dashboard .head h1 {
+  font-size: 23px;
+  margin-bottom: 8px;
+}
+.dashboard .tally {
+  font-family: var(--data);
+  color: var(--ink-2);
+}
+.dashboard .tally .hot {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.dashboard .tally i {
+  color: var(--faint);
+  font-style: normal;
+  margin: 0 8px;
+}
+.shell-desktop .dashboard .tally {
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+.shell-mobile .dashboard .tally {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+.shell-mobile .dashboard .tally i {
+  margin: 0 6px;
+}
+/* Tighter than the About tab's own .sect, as drawn. */
+.dashboard .sect {
+  margin: 0 0 3px;
+}
+.shell-mobile .dashboard .sect {
+  gap: 12px;
+}
+
+/* The ledger: date, pet and what it's for, then a countdown or the stamp.
+   Built locally for this screen — entries/due.tsx owns the same shapes for
+   the pet-profile pages. */
+.dashboard .ledger {
+  border-radius: 2px;
+  overflow: hidden;
+}
+.dashboard .lrow {
+  position: relative;
+}
+.dashboard .lrow .date {
+  font-family: var(--data);
+  white-space: nowrap;
+}
+.dashboard .lrow .what {
+  min-width: 0;
+}
+.dashboard .lrow .what b {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dashboard .lrow .what .slash {
+  color: var(--rule);
+  margin: 0 9px;
+}
+.dashboard .lrow .what .kind {
+  color: var(--ink-2);
+}
+.dashboard .lrow .when {
+  font-family: var(--data);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.dashboard .lrow.over {
+  background: var(--stamp-wash);
+}
+.dashboard .lrow.over .date {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.dashboard .stamp {
+  font-family: var(--data);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--stamp);
+  border: 2px solid var(--stamp);
+  border-radius: 3px;
+  line-height: 1;
+  opacity: 0.86;
+  display: flex;
+  align-items: baseline;
+  pointer-events: none;
+}
+.dashboard .stamp .days {
+  font-weight: 400;
+  opacity: 0.85;
+}
+.shell-desktop .dashboard .ledger {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  margin: 16px 0 46px;
+}
+.shell-desktop .dashboard .lrow {
+  display: grid;
+  grid-template-columns: 126px 1fr auto;
+  align-items: center;
+  gap: 20px;
+  padding: 17px 22px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.shell-desktop .dashboard .lrow:last-child {
+  border-bottom: 0;
+}
+.shell-desktop .dashboard .lrow:hover {
+  background: #fcfcfb;
+}
+.shell-desktop .dashboard .lrow.over:hover {
+  background: #f9eae6;
+}
+.shell-desktop .dashboard .lrow .date {
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  padding-right: 20px;
+  border-right: 1px solid var(--rule-2);
+}
+.shell-desktop .dashboard .lrow.over .date {
+  color: var(--stamp);
+  font-weight: 700;
+  border-right-color: #edd5ce;
+}
+.shell-desktop .dashboard .lrow .what {
+  font-size: 16px;
+}
+.shell-desktop .dashboard .lrow .when {
+  font-size: 12px;
+}
+.shell-desktop .dashboard .lrow .stamp {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-5deg);
+  font-size: 12px;
+  padding: 5px 11px 4px;
+  gap: 9px;
+}
+.shell-desktop .dashboard .lrow .stamp .days {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+.shell-mobile .dashboard .ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 14px 0 34px;
+}
+.shell-mobile .dashboard .lrow {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 14px 15px;
+}
+.shell-mobile .dashboard .lrow.over {
+  background: var(--stamp-wash);
+  border-color: #e9d2cb;
+}
+.shell-mobile .dashboard .lrow.over .date {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.shell-mobile .dashboard .lrow .date {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  display: block;
+  margin-bottom: 6px;
+}
+.shell-mobile .dashboard .lrow .what {
+  font-size: 16.5px;
+  line-height: 1.3;
+  padding-right: 8px;
+  display: block;
+}
+.shell-mobile .dashboard .lrow .when {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--rule-2);
+}
+.shell-mobile .dashboard .lrow .stamp {
+  position: absolute;
+  right: 13px;
+  bottom: 12px;
+  transform: rotate(-5deg);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  padding: 4px 9px 3px;
+  gap: 7px;
+}
+.shell-mobile .dashboard .lrow .stamp .days {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+}
+
 .fline {
   display: flex;
   justify-content: space-between;
@@ -538,26 +710,16 @@
   padding-top: 14px;
   border-top: 1px solid var(--rule-2);
 }
-.shell-mobile .nextdue {
-  flex: none;
-  text-align: right;
-  font-family: var(--data);
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.shell-mobile .pet .foot {
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-2);
 }
-.shell-mobile .nextdue .k {
-  display: block;
-  color: var(--faint);
+.shell-mobile .fline {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
 }
-.shell-mobile .nextdue .v {
-  display: block;
-  color: var(--ink-2);
-  margin-top: 2px;
-}
-.shell-mobile .nextdue .v.over {
-  color: var(--stamp);
-  font-weight: 700;
+.shell-mobile .fline + .fline {
+  margin-top: 6px;
 }
 .archived {
   margin-top: 26px;
@@ -848,17 +1010,11 @@ img.av {
   font-style: normal;
   margin: 0 6px;
 }
-.archived .see {
-  font-family: inherit;
-  font-size: inherit;
-  color: var(--ink-2);
-  background: none;
-  border: 0;
+.archived a {
   border-bottom: 1px solid var(--rule);
-  padding: 0 0 1px;
-  cursor: pointer;
+  padding-bottom: 1px;
 }
-.archived .see:hover {
+.archived a:hover {
   color: var(--ink);
   border-color: var(--ink);
 }

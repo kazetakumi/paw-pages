@@ -6,15 +6,20 @@ import {
   Unauthorized,
   deleteAccount,
   exportUrl,
+  getDashboard,
   getMe,
+  restorePet,
   signOut,
   updateEmail,
   updateMe,
   updatePassword,
+  type ArchivedPet,
   type Handler,
 } from "../api";
-import { formatDate } from "../pets/pet";
+import { formatDate, initial } from "../pets/pet";
+import { REASONS } from "../pets/archiveReasons";
 import { Shell } from "../shell/Shell";
+import { initials } from "../shell/initials";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
 import "../account/account.css";
@@ -67,6 +72,8 @@ function credentials(account: Handler): Detail[] {
       input: "",
       mono: true,
       type: "password",
+      // There is no stored "last changed" date to show here — the API never
+      // tracks one — so this stays the one hint that is actually true.
       hint: "At least six characters. Changing it does not sign you out here.",
       save: (password) => updatePassword(password),
     },
@@ -109,7 +116,9 @@ function aboutYou(account: Handler): Detail[] {
 }
 
 /** Change one thing. The same form under both layouts, so what the API accepts
- *  and what it refuses read the same on a phone as on a desktop. */
+ *  and what it refuses read the same on a phone as on a desktop. The field
+ *  itself is the auth sheets' underline look, not a boxed input — one style
+ *  for every place a handler types something in. */
 function DetailForm({
   detail,
   onSaved,
@@ -137,17 +146,21 @@ function DetailForm({
 
   return (
     <form className="edit" onSubmit={onSubmit}>
-      <label htmlFor={detail.field}>{detail.label}</label>
-      <input
-        id={detail.field}
-        name="value"
-        type={detail.type ?? "text"}
-        defaultValue={detail.input}
-        autoFocus
-        {...(rejected
-          ? { "aria-invalid": true as const, "aria-describedby": `${detail.field}-problem` }
-          : {})}
-      />
+      <div className="f">
+        <label htmlFor={detail.field}>{detail.label}</label>
+        <div className="field">
+          <input
+            id={detail.field}
+            name="value"
+            type={detail.type ?? "text"}
+            defaultValue={detail.input}
+            autoFocus
+            {...(rejected
+              ? { "aria-invalid": true as const, "aria-describedby": `${detail.field}-problem` }
+              : {})}
+          />
+        </div>
+      </div>
       <span className="acts">
         <button className="btn" type="submit">
           Save
@@ -182,6 +195,7 @@ type LayoutProps = {
   account: Handler;
   you: Row[];
   about: Row[];
+  archived: ReactNode;
   data: ReactNode;
   danger: ReactNode;
   signout: ReactNode;
@@ -198,7 +212,7 @@ function Section({ title, note }: { title: string; note?: string }) {
 }
 
 /** Above the breakpoint: a label column, the value and its note beside it. */
-function AccountDesktop({ account, you, about, data, danger, signout }: LayoutProps) {
+function AccountDesktop({ account, you, about, archived, data, danger, signout }: LayoutProps) {
   const rows = (list: Row[]) => (
     <div className="card">
       {list.map(({ detail, form, onEdit }) => (
@@ -222,8 +236,8 @@ function AccountDesktop({ account, you, about, data, danger, signout }: LayoutPr
 
   return (
     <div className="account" data-account="desktop">
-      <Link className="back" to="/home">
-        &larr; Home
+      <Link className="back" to="/dashboard">
+        &larr; Dashboard
       </Link>
       <div className="head">
         <div className="av">{initials(account.name)}</div>
@@ -237,6 +251,7 @@ function AccountDesktop({ account, you, about, data, danger, signout }: LayoutPr
       {rows(you)}
       <Section title="About you" note="All optional" />
       {rows(about)}
+      {archived}
       <Section title="Your data" />
       {data}
       <Section title="Delete account" />
@@ -247,7 +262,7 @@ function AccountDesktop({ account, you, about, data, danger, signout }: LayoutPr
 }
 
 /** Below it: the label above the value, the whole row a single column. */
-function AccountMobile({ account, you, about, data, danger, signout }: LayoutProps) {
+function AccountMobile({ account, you, about, archived, data, danger, signout }: LayoutProps) {
   const rows = (list: Row[]) => (
     <div className="card">
       {list.map(({ detail, form, onEdit }) => (
@@ -273,14 +288,18 @@ function AccountMobile({ account, you, about, data, danger, signout }: LayoutPro
 
   return (
     <div className="account" data-account="mobile">
-      <Link className="back" to="/home">
-        &larr; Home
+      <Link className="back" to="/dashboard">
+        &larr; Dashboard
       </Link>
       <div className="head">
         <div className="av">{initials(account.name)}</div>
         <div>
           <h1>Your account</h1>
-          <div className="since">{since(account)}</div>
+          <div className="since">
+            {sinceLine(account)}
+            <br />
+            {countsLine(account)}
+          </div>
         </div>
       </div>
 
@@ -288,6 +307,7 @@ function AccountMobile({ account, you, about, data, danger, signout }: LayoutPro
       {rows(you)}
       <Section title="About you" note="Optional" />
       {rows(about)}
+      {archived}
       <Section title="Your data" />
       {data}
       <Section title="Delete account" />
@@ -297,22 +317,14 @@ function AccountMobile({ account, you, about, data, danger, signout }: LayoutPro
   );
 }
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((word) => word[0]!.toUpperCase())
-    .join("");
-}
-
-const since = (account: Handler) =>
-  `Keeping records since ${formatDate(account.joined_on)} · ` +
-  `${plural(account.pet_count, "pet", "pets")} · ` +
-  `${plural(account.entry_count, "entry", "entries")}`;
+const sinceLine = (account: Handler) => `Keeping records since ${formatDate(account.joined_on)}`;
+const countsLine = (account: Handler) =>
+  `${plural(account.pet_count, "pet", "pets")} · ${plural(account.entry_count, "entry", "entries")}`;
+const since = (account: Handler) => `${sinceLine(account)} · ${countsLine(account)}`;
 
 export default function Account() {
   const [account, setAccount] = useState<Handler | null>(null);
+  const [archived, setArchived] = useState<ArchivedPet[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const navigate = useNavigate();
@@ -322,6 +334,11 @@ export default function Account() {
     // A 401 is the app's business, not this screen's: see App.tsx.
     getMe()
       .then(setAccount)
+      .catch((error) => {
+        if (!(error instanceof Unauthorized)) throw error;
+      });
+    getDashboard()
+      .then((board) => setArchived(board.archived))
       .catch((error) => {
         if (!(error instanceof Unauthorized)) throw error;
       });
@@ -345,6 +362,33 @@ export default function Account() {
           />
         ) : null,
     }));
+
+  const restore = (pet: ArchivedPet) =>
+    restorePet(pet.id).then(() => getDashboard().then((board) => setArchived(board.archived)));
+
+  // Not in the design's mock, but real: none archived means nothing to show.
+  const archivedSection = archived.length === 0 ? null : (
+    <>
+      <Section title="Archived pets" />
+      <div className="card">
+        {archived.map((pet) => (
+          <div className="arow" key={pet.id}>
+            <span className="pav">{initial(pet.name)}</span>
+            <span>
+              <span className="nm">{pet.name}</span>
+              <span className="why">
+                {REASONS[pet.archived_reason]} · archived {formatDate(pet.archived_on)}
+              </span>
+            </span>
+            <span className="sp" />
+            <button className="act" type="button" onClick={() => restore(pet)}>
+              Restore
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
 
   const data = (
     <div className="blk">
@@ -410,11 +454,12 @@ export default function Account() {
   );
 
   return (
-    <Shell name={account.name} width="account">
+    <Shell name={account.name} title="Account" active="account" width="account">
       <Layout
         account={account}
         you={rowsFor(credentials(account))}
         about={rowsFor(aboutYou(account))}
+        archived={archivedSection}
         data={data}
         danger={danger}
         signout={signout}

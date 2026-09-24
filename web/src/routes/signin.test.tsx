@@ -72,7 +72,9 @@ describe("signing in", () => {
     await userEvent.type(screen.getByLabelText("Password"), "correct horse");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+    ).toBeInTheDocument();
     expect(window.localStorage.length).toBe(0);
     expect(document.cookie).toBe("");
   });
