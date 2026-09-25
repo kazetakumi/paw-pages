@@ -2,6 +2,7 @@ node_modules/
 .env
 .env.local
 .supabase/
+test-account.txt
 
 *.stackdump
 dist/
@@ -11,3 +12,4 @@ __pycache__/
 *.tsbuildinfo
 deploy/logs/
 deploy/running.pids
+backend/agent/logs/

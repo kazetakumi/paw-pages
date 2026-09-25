@@ -25,7 +25,7 @@ Source of truth, in order:
 
 - `web/` — Vite + React + TypeScript. React Router. Plain `fetch` in one API
   module. Vitest + React Testing Library + MSW.
-- `backend/` — FastAPI + asyncpg + Pydantic v2, managed by `uv`. httpx for
+- `backend/api/` — FastAPI + asyncpg + Pydantic v2, managed by `uv`. httpx for
   Supabase Auth calls. pytest + pytest-asyncio + httpx ASGI transport.
 - Supabase is infrastructure, not a third component.
 
@@ -109,9 +109,12 @@ Use these words in code, tests and UI. Do not invent synonyms.
 
 ```
 backend/
-  app/            FastAPI application
-  tests/          API tests against a real Postgres
-  pyproject.toml
+  api/            FastAPI application
+    auth/         session cookie, Supabase Auth (GoTrue) client, routes
+    core/         config, crypto, logging
+    tests/        API tests against a real Postgres
+    main.py
+    pyproject.toml
 web/
   src/            React app
   src/routes/     one module per route
@@ -185,7 +188,7 @@ No Docker on this machine. Tests run against a local PostgreSQL 17 at
 `localhost:5432` (superuser `postgres`, password `postgres`).
 
 Because plain Postgres is not Supabase, the test fixture applies
-`backend/tests/supabase_shim.sql` before the migrations. The shim creates
+`backend/api/tests/supabase_shim.sql` before the migrations. The shim creates
 the minimum Supabase surface the migrations reference and nothing more:
 
 - roles `anon`, `authenticated`, `service_role`
@@ -200,24 +203,28 @@ sensible default.
 
 ## Environment
 
-`backend/.env` (gitignored; `.env.example` is committed):
+`backend/api/.env` (gitignored; `.env.example` is committed):
 
 ```
-SUPABASE_URL=https://ywfmrpmvfcaokzavcuzx.supabase.co
+SUPABASE_URL=https://hhbrylznsguxemafzgjn.supabase.co
 SUPABASE_ANON_KEY=<anon key>
 SUPABASE_SERVICE_ROLE_KEY=<only ticket 09 needs this>
-DATABASE_URL=<pooler connection string for the paw-pages project>
+DATABASE_URL=<connection string for the kaze-master project>
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
 COOKIE_SECURE=false   # true in production
 ```
 
-The Supabase project is `paw-pages` (`ywfmrpmvfcaokzavcuzx`, ap-south-1), and
-`0001`–`0004` are already applied there. **It is also the live production
-database** — v1 serves real traffic from it, so v1.1 shares it deliberately
-rather than paying for a dev branch. Apply `0005` onward only under rule 9's
-additive-only limit, and never while a v1 request could be mid-flight in a way
-that matters. Iterate with `execute_sql` and write the migration once the shape
-settles, so the applied history stays clean.
+The standalone `paw-pages` Supabase project (`ywfmrpmvfcaokzavcuzx`) that
+`0001`–`0004` were originally applied against is retired/inactive. The live
+`pawpages_*` schema now lives inside the shared `kaze-master` project
+(`hhbrylznsguxemafzgjn`), alongside other apps' tables — exactly the
+multi-app-per-database shape rule 9's `pawpages_` prefix was designed for.
+**It is also the live production database** — v1 serves real traffic from it,
+so v1.1 shares it deliberately rather than paying for a dev branch. Apply
+`0005` onward only under rule 9's additive-only limit, and never while a v1
+request could be mid-flight in a way that matters. Iterate with `execute_sql`
+and write the migration once the shape settles, so the applied history stays
+clean.
 
 v1.1 is developed in a separate git worktree at `D:\kaze\POCs\paw-pages-v1.1.0`
 (branch `v1.1.0`). Build there, never in `D:\kaze\POCs\paw-pages` — the
