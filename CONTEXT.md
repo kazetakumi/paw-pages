@@ -1,7 +1,7 @@
 # Paw Pages — build context
 
 Read this before writing any code. It is the shared contract between agents so
-ten tickets built separately still add up to one app.
+work built across sessions still adds up to one app.
 
 ## What this is
 
@@ -13,13 +13,12 @@ Source of truth, in order:
 
 | Document | What it settles |
 |---|---|
-| `docs/v1-prd.html` | Stack, endpoints, behaviour the backend owns, testing decisions |
-| `docs/database.html` | Schema reference |
-| `docs/v1-scope.html` | Scope, exclusions |
-| `board/board.html` | The ten tickets and their dependency chain |
-| `board/NN-*.html` | One ticket: what to build, acceptance criteria, done means |
-| `design/*.html` | The eight screens, desktop and mobile, as drawn |
-| `supabase/migrations/*.sql` | The live schema. `0001`–`0004` are frozen — never edit an applied migration. v1.1 adds `0005` onward, additive only; see rule 9. |
+| `dbschema/*.html` | Schema reference, table by table, with the reasoning behind each choice |
+| `design/v2/*.html` | The screens, desktop and mobile, as drawn |
+| `supabase/migrations/*.sql` | The live schema. `0001`–`0004` are frozen — never edit an applied migration. `0005` onward is additive only; see rule 9. |
+
+v1's PRD, scope doc, and ticket board are gone — v2 is a chat-first rebuild, not
+a continuation of that ticket list, and nothing here should point back at it.
 
 ## Stack, fixed
 
@@ -75,7 +74,7 @@ Do not add a state library, a component library, an ORM or a migration tool.
    Not additive, and not to be done against the live project: editing an
    existing RLS or storage policy, altering or renaming a v1 column, adding a
    `not null` column. v1 serves live traffic from this same database and a
-   policy edit applies on commit. If a ticket needs one of these, stop and say
+   policy edit applies on commit. If the work needs one of these, stop and say
    so — it needs a Supabase dev branch, not a migration.
 
 ## Domain language
@@ -112,48 +111,35 @@ backend/
   api/            FastAPI application
     auth/         session cookie, Supabase Auth (GoTrue) client, routes
     core/         config, crypto, logging
-    tests/        API tests against a real Postgres
     main.py
     pyproject.toml
+  agent/          the chat/AI loop -- imported by backend/api, not its own service
 web/
   src/            React app
   src/routes/     one module per route
   src/test/       MSW handlers, fixtures, setup
   package.json
-supabase/migrations/   0001–0004 frozen; v1.1 adds 0005 onward
+supabase/migrations/   0001–0004 frozen; 0005 onward additive only
 ```
 
-## Routes
+## Routes and endpoints — unsettled for v2
 
-`/` landing · `/signup` · `/signin` · `/forgot-password` · `/reset-password` ·
-`/home` dashboard · `/pets/new` · `/pets/:id` feed · `/pets/:id/about` ·
-`/pets/:id/edit` · `/log` (optionally `?pet=`) · `/account` · `/p/:slug` public.
+The lists that used to live here (`/pets/new`, `/log`, the `/pets`/`/entries`
+CRUD endpoints, …) described v1's form-based UI and REST API. v2 is a
+chat-first rebuild, not a port of that surface, and its route/endpoint
+contract hasn't been fully settled yet — check `design/v2/*.html` for the
+screens that exist and `backend/api/*/router.py` for the endpoints actually
+built so far (`auth`, `me`, `conversations` as of this writing) rather than
+trusting a list here to be current. Update this section once the v2 surface
+stabilizes instead of letting it drift again.
 
-Each screen resolves to a **desktop or a mobile layout component** at a
+Each screen still resolves to a **desktop or a mobile layout component** at a
 breakpoint — genuinely different markup, as drawn, not one tree reflowed with
 CSS. Data fetching, forms and validation are shared; only the layout branches.
-Both layouts are built in the same ticket. A ticket is not done with one.
-
-## Endpoints
-
-```
-Auth       POST /auth/signup · POST /auth/signin · POST /auth/signout
-           POST /auth/password-reset · POST /auth/password-reset/confirm
-Handler    GET /me · PATCH /me · PATCH /me/email · PATCH /me/password
-           GET /me/export · DELETE /me
-Dashboard  GET /dashboard
-Pets       GET /pets · POST /pets · GET /pets/{id} · PATCH /pets/{id}
-           POST /pets/{id}/archive · POST /pets/{id}/restore
-           GET /pets/{id}/entries
-Photo      PUT /pets/{id}/photo · DELETE /pets/{id}/photo · GET /pets/{id}/photo
-Entries    POST /entries · PATCH /entries/{id} · DELETE /entries/{id}
-           POST /entries/{id}/mark-done · GET /entry-titles/recent
-Public     GET /public/pets/{slug} · GET /public/pets/{slug}/photo
-```
+Both layouts are built together, not one now and one later.
 
 Everything under `/public/` is unauthenticated. Everything else requires the
-session cookie and returns 401 without it. Build only the endpoints your ticket
-names.
+session cookie and returns 401 without it.
 
 ## Design tokens
 
@@ -161,7 +147,7 @@ Ink `#13202E`, ink-2 `#4E5A67`, faint `#8D97A1`, paper `#F2F3EF`, card
 `#FFFFFF`, rule `#DCE0E4`, stamp `#B23A24`, current/seal `#2E6B4F`.
 Archivo for display, Public Sans for body, **Space Mono for every date**.
 Stamp red appears only on something overdue, at most once per screen.
-The design files in `design/` are the specification — match them.
+The design files in `design/v2/` are the specification — match them.
 
 ## The two test seams
 
@@ -184,12 +170,16 @@ the test.
 
 ## Local test database
 
-No Docker on this machine. Tests run against a local PostgreSQL 17 at
-`localhost:5432` (superuser `postgres`, password `postgres`).
+No backend test suite exists yet for `backend/api` (v1's was not carried into
+the v2 rebuild) -- this section describes the intended fixture for when one
+is built, not something running today. No Docker on this machine either way:
+tests are meant to run against a local PostgreSQL 17 at `localhost:5432`
+(superuser `postgres`, password `postgres`).
 
-Because plain Postgres is not Supabase, the test fixture applies
-`backend/api/tests/supabase_shim.sql` before the migrations. The shim creates
-the minimum Supabase surface the migrations reference and nothing more:
+Because plain Postgres is not Supabase, the test fixture is meant to apply a
+shim before the migrations -- v1's lived at `backend/tests/supabase_shim.sql`
+and set up the minimum Supabase surface the migrations reference and nothing
+more:
 
 - roles `anon`, `authenticated`, `service_role`
 - schema `auth`, table `auth.users` (id, email, raw_user_meta_data, …)
@@ -208,7 +198,7 @@ sensible default.
 ```
 SUPABASE_URL=https://hhbrylznsguxemafzgjn.supabase.co
 SUPABASE_ANON_KEY=<anon key>
-SUPABASE_SERVICE_ROLE_KEY=<only ticket 09 needs this>
+SUPABASE_SERVICE_ROLE_KEY=<only account deletion (DELETE /me) needs this>
 DATABASE_URL=<connection string for the kaze-master project>
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
 COOKIE_SECURE=false   # true in production
@@ -238,9 +228,6 @@ there replaces the live site the moment it finishes. Prod holds ports 8001 and
   no abstraction used once.
 - Work test-first, one vertical slice at a time — one test, one implementation,
   repeat. Never write all the tests first.
-- Build only what your ticket's acceptance criteria name. If a later ticket
-  needs it, leave it.
+- Build only what's actually needed now. If something later needs it, leave
+  it for then.
 - Commit with a conventional prefix, one short line, no body, no co-author line.
-- When a ticket is done, set its badge in `board/NN-*.html` and its row in
-  `board/board.html` to `done`, and update the counts and the progress bar at
-  the top of `board.html`.
