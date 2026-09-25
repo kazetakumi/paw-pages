@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paw Pages — Database v2</title>
+<style>
+  :root{
+    --ink:#1c1b19;
+    --ink-soft:#55514b;
+    --ink-faint:#8b857d;
+    --rule:#e4e0d9;
+    --rule-soft:#efece6;
+    --paper:#fbfaf7;
+    --paper-2:#f4f2ed;
+    --accent:#8a5a2b;
+    --accent-soft:#f0e6da;
+    --green:#4a6b46;
+    --amber:#8a6a1f;
+    --red:#a3402f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  main{max-width:760px;margin:0 auto;padding:56px 28px 120px}
+
+  .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-size:40px;line-height:1.1;letter-spacing:-.02em;margin:0 0 16px;font-weight:600}
+  .standfirst{font-size:19px;line-height:1.55;color:var(--ink-soft);max-width:64ch;margin:0 0 26px}
+  .meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:11px 0;display:flex;gap:26px;flex-wrap:wrap;margin-bottom:46px}
+  .meta b{font-weight:600;color:var(--ink-soft)}
+
+  h2{font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:56px 0 6px;
+    padding-top:22px;border-top:1px solid var(--rule)}
+  h2:first-of-type{margin-top:0}
+  .sectnote{color:var(--ink-faint);font-size:15px;margin:0 0 22px;max-width:62ch;font-style:italic}
+  p{max-width:64ch}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0 6px}
+  th{text-align:left;font-family:var(--sans);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);font-weight:600;
+    padding:0 14px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  td a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  td a:hover{border-bottom-color:var(--accent)}
+
+  .status{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.08em;border-radius:2px;padding:2px 7px;white-space:nowrap}
+  .status.open{color:var(--amber);border:1px solid #e5d6ac;background:#fbf5e6}
+  .status.pending{color:var(--ink-faint);border:1px solid var(--rule);background:var(--paper-2)}
+  .status.settled{color:var(--green);border:1px solid #cddcc9;background:#f0f5ee}
+
+  code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+    padding:1px 5px;border-radius:2px;color:var(--accent)}
+
+  .callout{border-left:3px solid var(--accent);background:var(--paper-2);
+    padding:17px 22px;margin:24px 0;border-radius:0 2px 2px 0}
+  .callout p{margin:0;color:var(--ink-soft)}
+  .callout p+p{margin-top:9px}
+  .callout .ct{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.11em;font-weight:600;color:var(--accent);margin-bottom:6px}
+
+  footer{margin-top:80px;padding-top:20px;border-top:1px solid var(--rule);
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">Reference · v2 schema · in progress</div>
+  <h1>Database</h1>
+  <p class="standfirst">Paw Pages is moving to a chat-first frontend. This is where the v2
+  schema gets designed before any of it is migrated — one table at a time, settled here first.
+  Nothing on this page is live.</p>
+
+  <div class="meta">
+    <span><b>Branch</b> &nbsp;v2.0.0</span>
+    <span><b>Project</b> &nbsp;kaze-master (<code>hhbrylznsguxemafzgjn</code>)</span>
+    <span><b>Live schema</b> &nbsp;verified directly against <code>kaze-master</code>, table by table, below</span>
+    <span><b>New migrations</b> &nbsp;none written yet</span>
+  </div>
+
+  <h2 id="ground-rules">Carried over from v1</h2>
+  <p class="sectnote">Not up for re-litigation unless the chat-first rework actually forces it.
+  Kept as-is, verified against the live tables rather than the (stale) v1 doc.</p>
+  <p>Handler owns pets, pet owns entries, one universal entry shape, dates are calendar dates
+  never timestamps, due/overdue computed in a view, public page exposes a narrow column set
+  through <code>security definer</code> views, RLS is the only access boundary — see
+  <code>CONTEXT.md</code> for the full rule list. What v2 adds on top: the conversation itself
+  is a table (<a href="conversations.html"><code>pawpages_conversations</code></a>), and a
+  chat-attached photo has a staging table of its own
+  (<a href="uploads.html"><code>pawpages_uploads</code></a>) before it ever becomes a pet's or
+  an entry's photo. How a free-text chat turn like <em>"Biscuit had his deworming today, next
+  dose in 3 months"</em> gets parsed into an actual <code>pawpages_entries</code> row is app
+  logic, not a schema question — nothing here needs to change to support it.</p>
+
+  <h2 id="tables">Tables</h2>
+  <p class="sectnote">Filled in as we agree on each one. A row with no link hasn't been
+  discussed yet.</p>
+  <table>
+    <thead><tr><th>Table</th><th>Status</th><th>What it's for</th></tr></thead>
+    <tbody>
+      <tr><td><a href="handlers.html"><code>pawpages_handlers</code></a></td>
+        <td><span class="status settled">settled</span></td>
+        <td>One row per signed-up person. Kept from v1, unchanged.</td></tr>
+      <tr><td><a href="pets.html"><code>pawpages_pets</code></a></td>
+        <td><span class="status settled">settled</span></td>
+        <td>One row per animal. Kept from v1; gains an optional <code>conversation_id</code>
+        in v2.</td></tr>
+      <tr><td><a href="entries.html"><code>pawpages_entries</code></a></td>
+        <td><span class="status settled">settled</span></td>
+        <td>One row per logged event. Kept from v1; widened by v1.1 with weight and an entry
+        photo; gains an optional <code>conversation_id</code> in v2.</td></tr>
+      <tr><td><a href="conversations.html"><code>pawpages_conversations</code></a></td>
+        <td><span class="status settled">settled</span></td>
+        <td>New for v2. One row per chat thread — title, which pets came up, and the raw
+        transcript.</td></tr>
+      <tr><td><a href="uploads.html"><code>pawpages_uploads</code></a></td>
+        <td><span class="status settled">settled</span></td>
+        <td>New for v2. Tracks a photo from the moment it's uploaded — in chat or from a pet's
+        edit screen — until it's claimed as a pet's or an entry's photo.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p class="ct">Working method</p>
+    <p>We pick a table, argue about its columns and constraints until they hold up, then it
+    gets its own page here and a row above turns from <span class="status pending">not
+    started</span> to <span class="status settled">settled</span>. No SQL gets written until a
+    table is settled.</p>
+  </div>
+
+  <footer>Paw Pages · v2 database design log · draft, not yet applied</footer>
+</main>
+</body>
+</html>

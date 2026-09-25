@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawpages_entries — Paw Pages Database v2</title>
+<style>
+  :root{
+    --ink:#1c1b19;
+    --ink-soft:#55514b;
+    --ink-faint:#8b857d;
+    --rule:#e4e0d9;
+    --rule-soft:#efece6;
+    --paper:#fbfaf7;
+    --paper-2:#f4f2ed;
+    --accent:#8a5a2b;
+    --accent-soft:#f0e6da;
+    --green:#4a6b46;
+    --amber:#8a6a1f;
+    --red:#a3402f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  main{max-width:760px;margin:0 auto;padding:56px 28px 120px}
+
+  .crumb{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);margin-bottom:22px}
+  .crumb a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  .crumb a:hover{border-bottom-color:var(--accent)}
+
+  .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-family:var(--mono);font-size:34px;line-height:1.15;letter-spacing:-.01em;
+    margin:0 0 16px;font-weight:600;color:var(--ink)}
+  .standfirst{font-size:19px;line-height:1.55;color:var(--ink-soft);max-width:64ch;margin:0 0 26px}
+  .meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:11px 0;display:flex;gap:26px;flex-wrap:wrap;margin-bottom:46px}
+  .meta b{font-weight:600;color:var(--ink-soft)}
+
+  h2{font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:52px 0 6px;
+    padding-top:22px;border-top:1px solid var(--rule)}
+  h2:first-of-type{margin-top:0}
+  .sectnote{color:var(--ink-faint);font-size:15px;margin:0 0 22px;max-width:62ch;font-style:italic}
+  h3{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:-.01em;
+    margin:34px 0 4px;color:var(--accent)}
+  h3 .plain{font-family:var(--serif);color:var(--ink-faint);font-weight:400;
+    font-size:14px;margin-left:8px;letter-spacing:0}
+  p{max-width:64ch}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0 6px}
+  th{text-align:left;font-family:var(--sans);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);font-weight:600;
+    padding:0 14px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  .ty{font-family:var(--mono);font-size:12px;color:var(--ink-faint);white-space:nowrap}
+  .nn{font-family:var(--sans);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-faint);border:1px solid var(--rule);border-radius:2px;padding:1px 5px}
+  .nn.req{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+  .nn.new{color:var(--green);border-color:#cddcc9;background:#f0f5ee}
+
+  code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+    padding:1px 5px;border-radius:2px;color:var(--accent)}
+  pre{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:16px 18px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--ink);font-size:12.5px;line-height:1.6}
+
+  .callout{border-left:3px solid var(--accent);background:var(--paper-2);
+    padding:17px 22px;margin:24px 0;border-radius:0 2px 2px 0}
+  .callout p{margin:0;color:var(--ink-soft)}
+  .callout p+p{margin-top:9px}
+  .callout .ct{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.11em;font-weight:600;color:var(--accent);margin-bottom:6px}
+  .callout.warn{border-left-color:var(--red);background:#fdf7f5}
+  .callout.warn .ct{color:var(--red)}
+
+  .why{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:14px 18px;margin:14px 0 0;font-size:15px;color:var(--ink-soft)}
+  .why b{font-family:var(--sans);font-size:10px;text-transform:uppercase;letter-spacing:.11em;
+    color:var(--ink-faint);display:block;margin-bottom:5px;font-weight:600}
+
+  .pager{display:flex;justify-content:space-between;font-family:var(--sans);
+    font-size:13px;margin-top:60px;padding-top:18px;border-top:1px solid var(--rule)}
+  .pager a{color:var(--accent);text-decoration:none}
+  .pager a:hover{text-decoration:underline}
+  .pager .next{margin-left:auto;text-align:right}
+
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--rule);
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<main>
+  <div class="crumb"><a href="index.html">← Database</a></div>
+  <div class="eyebrow">Table · Live on kaze-master</div>
+  <h1>pawpages_entries</h1>
+  <p class="standfirst">One row per logged event. One universal shape for a rabies booster, a
+  vet visit and a nail trim — no per-type columns.</p>
+
+  <div class="meta">
+    <span><b>Rows live</b> &nbsp;3</span>
+    <span><b>RLS</b> &nbsp;enabled</span>
+    <span><b>Primary key</b> &nbsp;<code>id</code></span>
+    <span><b>Added in</b> &nbsp;<code>0001_init.sql</code>, widened in <code>0005</code>–<code>0007</code>, gains <code>conversation_id</code> in v2</span>
+  </div>
+
+  <div class="callout warn">
+    <p class="ct">v1.1 widened this table</p>
+    <p>The four columns below marked <span class="nn new">v1.1</span> came in through
+    <code>0005</code>–<code>0007</code>, after the original <code>0001</code> shape. This page
+    was written straight from the live <code>kaze-master</code> columns, so it reflects what's
+    actually running.</p>
+  </div>
+
+  <h2 id="columns">Columns</h2>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td class="ty">uuid</td><td><code>default gen_random_uuid()</code></td></tr>
+      <tr><td><code>pet_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+        <td>→ <a href="pets.html"><code>pawpages_pets.id</code></a>, <code>on delete cascade</code>.</td></tr>
+      <tr><td><code>title</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>Free text, 1–120 chars. "What happened." Free text means the database can never tell
+        two entries belong to the same series, which is the whole reason a due date has to be
+        closed by hand.</td></tr>
+      <tr><td><code>happened_on</code></td><td class="ty">date <span class="nn req">required</span></td>
+        <td>Not in the future.</td></tr>
+      <tr><td><code>due_on</code></td><td class="ty">date</td>
+        <td>Optional. Typed by hand — the app knows no vaccine schedules.</td></tr>
+      <tr><td><code>due_closed_at</code></td><td class="ty">timestamptz</td>
+        <td>Optional. Set by <em>Mark done</em>. Null means the due date still stands.</td></tr>
+      <tr><td><code>vet</code></td><td class="ty">text</td>
+        <td>Optional, ≤ 120 chars. Per entry, not on the pet — pets change vets and old entries
+        should keep theirs.</td></tr>
+      <tr><td><code>note</code></td><td class="ty">text</td><td>Optional, ≤ 2000 chars. Never public.</td></tr>
+      <tr><td><code>weight_value</code></td><td class="ty">numeric(5,2) <span class="nn new">v1.1</span></td>
+        <td>Optional, <code>&gt; 0</code>. Stored as typed, never normalised to a base unit.</td></tr>
+      <tr><td><code>weight_unit</code></td><td class="ty">text <span class="nn new">v1.1</span></td>
+        <td>Optional. <code>kg</code> or <code>lb</code>. Travels with <code>weight_value</code>
+        or not at all.</td></tr>
+      <tr><td><code>photo_path</code></td><td class="ty">text <span class="nn new">v1.1</span></td>
+        <td>Optional. Path into the same private <code>pet-photos</code> bucket, same
+        <code>{pet_id}/{filename}</code> shape as a pet's own photo.</td></tr>
+      <tr><td><code>photo_is_public</code></td><td class="ty">boolean <span class="nn new">v1.1</span></td>
+        <td><code>default false</code>. Publishes this one entry's photo on the pet's public
+        page — off by default, since the same column already holds photos that were never meant
+        for an audience.</td></tr>
+      <tr><td><code>conversation_id</code></td><td class="ty">uuid <span class="nn new">v2</span></td>
+        <td>Optional. → <a href="conversations.html"><code>pawpages_conversations.id</code></a>,
+        <code>on delete set null</code>. Set when this entry was logged from a chat turn; null
+        for an entry added the ordinary way, through the form.</td></tr>
+      <tr><td><code>created_at</code> / <code>updated_at</code></td><td class="ty">timestamptz</td>
+        <td><code>default now()</code>; <code>updated_at</code> kept current by
+        <code>pawpages_entries_touch</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p class="ct">Why due_closed_at exists</p>
+    <p>Entry titles are free text, so the database cannot tell that "Rabies booster" and
+    "rabies" are the same series. Nothing can close a due date automatically — somebody has to
+    say so. That is what this column records, and it is the entire reason the pet page has a
+    <em>Mark done</em> button.</p>
+    <p>Overdue is therefore always:
+    <code>due_on &lt; current_date and due_closed_at is null</code>.</p>
+  </div>
+
+  <div class="why"><b>Why weight lives here, not in its own table</b>
+    A weight is a thing that happened on a day — which is what an entry already is. Most
+    readings are taken at a vet visit, so they belong to that row rather than a table joined
+    back in. It earns real columns (not <code>note</code>) because it's the one field here a
+    machine reads: comparing readings over time needs a number, not prose.</div>
+
+  <h3>Constraints worth knowing</h3>
+  <table>
+    <thead><tr><th>Name</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_due_after_it_happened</code></td>
+        <td>A next-due date cannot precede the date the thing happened.</td></tr>
+      <tr><td><code>pawpages_cannot_close_a_due_date_that_does_not_exist</code></td>
+        <td><code>due_closed_at</code> requires a <code>due_on</code>.</td></tr>
+      <tr><td><code>pawpages_weight_is_complete</code> <span class="nn new">v1.1</span></td>
+        <td>Both <code>weight_value</code> and <code>weight_unit</code>, or neither. A number
+        with no unit is not a weight.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="indexes">Indexes</h2>
+  <table>
+    <thead><tr><th>Index</th><th>Serves</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_entries_pet_feed_idx</code></td>
+        <td>A pet's feed, newest first. <code>(pet_id, happened_on desc, id desc)</code> — the
+        id breaks ties so pagination is stable.</td></tr>
+      <tr><td><code>pawpages_entries_open_due_idx</code></td>
+        <td>The dashboard ledger. <code>(pet_id, due_on) where due_on is not null and
+        due_closed_at is null</code> — only entries that still owe something.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="rls">Row level security</h2>
+  <table>
+    <thead><tr><th>Policy</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_handler_owns_entries</code></td>
+        <td><code>all</code> where the parent pet's <code>handler_id</code> equals
+        <code>(select auth.uid())</code>, same on <code>using</code> and <code>with check</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="derived">What's derived from this table</h2>
+
+  <h3>pawpages_due_items <span class="plain">— one definition of "overdue"</span></h3>
+  <p>A <code>security_invoker</code> view, so a handler reading it sees only their own pets
+  automatically. Written once here rather than in every screen that needs it:</p>
+  <pre><code>select e.id as entry_id, p.id as pet_id, p.handler_id, p.name as pet_name,
+       e.title, e.due_on,
+       e.due_on - current_date as days_until,
+       e.due_on &lt; current_date as is_overdue
+from pawpages_entries e join pawpages_pets p on p.id = e.pet_id
+where e.due_on is not null
+  and e.due_closed_at is null
+  and p.archived_at is null;</code></pre>
+
+  <h3>pawpages_public_entries <span class="plain">— the gate for visitors</span></h3>
+  <p>A visitor never has any policy on this table at all. They read this
+  <code>security definer</code> view instead, which exposes <code>title</code>,
+  <code>happened_on</code> and <code>due_on</code> — <code>note</code>, <code>vet</code>,
+  <code>due_closed_at</code> and every row id are absent from the query, not filtered out. Two
+  columns, added in <code>0007</code>, are the one exception: <code>photo_id</code> and
+  <code>photo_path</code> appear <em>only</em> when the handler set <code>photo_is_public</code>
+  on that row — otherwise both are null, so an entry's id stays withheld unless its photo is
+  already world-readable.</p>
+
+  <h2 id="referenced-by">References</h2>
+  <table>
+    <thead><tr><th>Table</th><th>Column</th><th>On delete</th></tr></thead>
+    <tbody>
+      <tr><td>← <a href="pets.html"><code>pawpages_pets</code></a></td>
+        <td><code>pet_id</code></td><td><code>cascade</code></td></tr>
+      <tr><td>← <a href="conversations.html"><code>pawpages_conversations</code></a></td>
+        <td><code>conversation_id</code> (optional)</td><td><code>set null</code></td></tr>
+    </tbody>
+  </table>
+  <p>Storage has no foreign keys, so <code>photo_path</code> is not enforced by the database —
+  deleting an entry (or the pet, or the handler) removes this row but not the object in
+  <code>pet-photos</code>. The app is responsible for that cleanup.</p>
+
+  <div class="pager">
+    <a href="pets.html">← pawpages_pets</a>
+    <span class="next"><a href="conversations.html">pawpages_conversations →</a></span>
+  </div>
+
+  <footer>Paw Pages · v2 database design log · <code>pawpages_entries</code> unchanged from v1
+  in shape, widened in v1.1, gains <code>conversation_id</code> in v2</footer>
+</main>
+</body>
+</html>
