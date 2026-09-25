@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { getMe, Unauthorized, type Handler } from "../api";
+import {
+  getConversation,
+  getMe,
+  sendChatMessage,
+  Unauthorized,
+  type ConversationTurn,
+  type Handler,
+} from "../api";
 import {
   DashboardBtnIcon,
   DashboardLinkHeader,
@@ -24,63 +31,23 @@ type CardData = {
 type Block = { kind: "p"; text: string } | { kind: "card"; card: CardData };
 type Turn = { id: string; role: "user"; text: string } | { id: string; role: "assistant"; blocks: Block[] };
 
-const REPLIES = [
-  "Got it — logged and closed out the open due date.",
-  "Noted. Want me to set a reminder date for the next one?",
-  "Done. Anything else from today?",
-];
-
-/** The same canned conversation the design ships, opened on every visit and
- *  restored by "New chat" — there is no real chat backend yet, see the plan. */
+/** Chrome, not a turn -- purely local, never sent as part of the
+ *  conversation. The real thread starts from the first message the handler
+ *  actually sends. Restored by "New chat" alongside a null conversation id. */
 function initialTurns(name: string): Turn[] {
   return [
     {
       id: "greeting",
       role: "assistant",
-      blocks: [
-        { kind: "p", text: `Welcome back, ${name}. One thing needs attention before anything else:` },
-        {
-          kind: "card",
-          card: {
-            date: "14 JUL 2026",
-            pet: "Biscuit",
-            kind: "Rabies booster",
-            when: "Overdue",
-            overdueDays: "46 DAYS",
-          },
-        },
-        { kind: "p", text: "2 more are due within the next 30 days. What would you like to log or ask about?" },
-      ],
-    },
-    {
-      id: "u1",
-      role: "user",
-      text: "Biscuit had his deworming today — no issues. Vet says next dose in 3 months.",
-    },
-    {
-      id: "a2",
-      role: "assistant",
-      blocks: [
-        { kind: "p", text: "Logged. Here's the entry:" },
-        { kind: "card", card: { date: "23 SEP 2026", pet: "Biscuit", kind: "Deworming", when: "Due 23 Dec 2026" } },
-        { kind: "p", text: "Anything else from today?" },
-      ],
-    },
-    {
-      id: "u2",
-      role: "user",
-      text: 'Also — he finally learned "sit" and "stay" this week, three short sessions and he\'s got it.',
-    },
-    {
-      id: "a3",
-      role: "assistant",
-      blocks: [
-        { kind: "p", text: "Nice! Logged that too:" },
-        { kind: "card", card: { date: "23 SEP 2026", pet: "Biscuit", kind: "Training", milestone: true } },
-        { kind: "p", text: "Great progress." },
-      ],
+      blocks: [{ kind: "p", text: `Welcome back, ${name}. What would you like to log or ask about?` }],
     },
   ];
+}
+
+function turnFromHistory(turn: ConversationTurn, i: number): Turn {
+  return turn.role === "user"
+    ? { id: `h${i}`, role: "user", text: turn.content }
+    : { id: `h${i}`, role: "assistant", blocks: [{ kind: "p", text: turn.content }] };
 }
 
 const ARTIFACTS = [
@@ -260,12 +227,14 @@ export default function Home() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
-  const replyIndexRef = useRef(0);
 
   const view: "chat" | "artifacts" = searchParams.get("view") === "artifacts" ? "artifacts" : "chat";
   const isNew = searchParams.get("new") === "1";
+  const conversationParam = searchParams.get("conversation");
 
   useEffect(() => {
     getMe()
@@ -275,12 +244,30 @@ export default function Home() {
       });
   }, []);
 
-  // Loads the greeting once the handler's name is known, and again whenever
-  // "New chat" (?new=1) is followed.
+  // Three ways to land here: "New chat" (?new=1, greeting + no conversation),
+  // a sidebar entry (?conversation=<id>, hydrates its history), or neither
+  // (first load -- same as new). Runs again whenever the handler's name
+  // becomes known or either param changes.
   useEffect(() => {
-    if (handler) setTurns(initialTurns(handler.name));
+    if (!handler) return;
+    if (!conversationParam) {
+      setTurns(initialTurns(handler.name));
+      setConversationId(null);
+      return;
+    }
+    getConversation(conversationParam)
+      .then((conversation) => {
+        setTurns(conversation.history.map(turnFromHistory));
+        setConversationId(conversation.id);
+      })
+      .catch((error) => {
+        if (error instanceof Unauthorized) throw error;
+        // Stale or foreign id -- fall back to a fresh chat rather than a dead screen.
+        setTurns(initialTurns(handler.name));
+        setConversationId(null);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [handler, isNew]);
+  }, [handler, isNew, conversationParam]);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -296,20 +283,44 @@ export default function Home() {
 
   if (!handler) return null;
 
-  function addAssistantReply(text: string, delay: number) {
-    const id = crypto.randomUUID();
-    setTimeout(() => {
-      setTurns((t) => [...t, { id, role: "assistant", blocks: [{ kind: "p", text }] }]);
-    }, delay);
+  function appendAssistantDelta(id: string, delta: string) {
+    setTurns((t) =>
+      t.map((turn) => {
+        if (turn.id !== id || turn.role !== "assistant") return turn;
+        const block = turn.blocks[0];
+        const prevText = block && block.kind === "p" ? block.text : "";
+        return { ...turn, blocks: [{ kind: "p", text: prevText + delta }] };
+      }),
+    );
   }
 
-  function send() {
+  function setAssistantText(id: string, text: string) {
+    setTurns((t) =>
+      t.map((turn) => (turn.id === id && turn.role === "assistant" ? { ...turn, blocks: [{ kind: "p", text }] } : turn)),
+    );
+  }
+
+  async function send() {
     const text = draft.trim();
-    if (!text) return;
-    setTurns((t) => [...t, { id: crypto.randomUUID(), role: "user", text }]);
+    if (!text || isSending) return;
     setDraft("");
-    addAssistantReply(REPLIES[replyIndexRef.current % REPLIES.length], 500);
-    replyIndexRef.current++;
+    setTurns((t) => [...t, { id: crypto.randomUUID(), role: "user", text }]);
+
+    const assistantId = crypto.randomUUID();
+    setTurns((t) => [...t, { id: assistantId, role: "assistant", blocks: [{ kind: "p", text: "" }] }]);
+
+    setIsSending(true);
+    try {
+      await sendChatMessage(conversationId, text, (event) => {
+        if (event.type === "conversation") setConversationId(event.id);
+        else if (event.type === "text.delta") appendAssistantDelta(assistantId, event.text);
+      });
+    } catch (error) {
+      if (error instanceof Unauthorized) throw error;
+      setAssistantText(assistantId, "Something went wrong. Try again.");
+    } finally {
+      setIsSending(false);
+    }
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -317,18 +328,6 @@ export default function Home() {
       e.preventDefault();
       send();
     }
-  }
-
-  function logDemo() {
-    setTurns((t) => [
-      ...t,
-      {
-        id: crypto.randomUUID(),
-        role: "user",
-        text: "Pepper is due for her DHPP booster next week — just confirming with the vet tomorrow.",
-      },
-    ]);
-    addAssistantReply("Noted — I'll flag it as due once you confirm the date with the vet.", 700);
   }
 
   const title = view === "artifacts" ? "Artifacts" : "Paw Pages";
@@ -363,7 +362,10 @@ export default function Home() {
               <button
                 className="icon-btn"
                 aria-label="New chat"
-                onClick={() => setTurns(initialTurns(handler.name))}
+                onClick={() => {
+                  setTurns(initialTurns(handler.name));
+                  setConversationId(null);
+                }}
               >
                 <PlusIcon />
               </button>
@@ -385,7 +387,9 @@ export default function Home() {
             <div className="composer-area">
               <div className="composer-inner">
                 <div className="composer">
-                  <button className="composer-plus" aria-label="Attach a photo" onClick={logDemo}>
+                  {/* Wiring this up is a separate ticket -- attaching a photo needs the
+                      pawpages_uploads flow, not the plain chat endpoint this screen now uses. */}
+                  <button className="composer-plus" aria-label="Attach a photo">
                     <AttachIcon />
                   </button>
                   <textarea
@@ -403,6 +407,7 @@ export default function Home() {
                     <button
                       className={draft.trim() ? "send-btn ready" : "send-btn"}
                       aria-label="Send message"
+                      disabled={isSending}
                       onClick={send}
                     >
                       <SendIcon />

@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { listConversations, Unauthorized, type ConversationSummary } from "../api";
 import { initials } from "./initials";
 import { useIsDesktop } from "./useIsDesktop";
 import "./shell.css";
@@ -8,16 +9,32 @@ import "./shell.css";
  *  max-width. Anything wider than its drawing reads as a broken page. */
 export type PageWidth = "wide" | "pet" | "account";
 
-/** Same six rows everywhere: two nav shortcuts into chat, then a fixed set of
- *  recent-conversation labels. There is no conversation backend yet, so this
- *  is the same static list the design ships rather than real history. */
-const CONVERSATIONS = [
-  { group: "Today", items: ["Logged Biscuit's deworming", "What's overdue"] },
-  {
-    group: "Previous 7 days",
-    items: ["Added Pepper's vet visit", "Momo's weight this month"],
-  },
-];
+/** Buckets by `updated_at`, most recent group first -- the same two labels
+ *  the design ships, plus "Older" so nothing falls off the list. */
+function groupByRecency(
+  conversations: ConversationSummary[],
+): { group: string; items: ConversationSummary[] }[] {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const sevenDaysAgo = new Date(startOfToday);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const today: ConversationSummary[] = [];
+  const previous7Days: ConversationSummary[] = [];
+  const older: ConversationSummary[] = [];
+  for (const c of conversations) {
+    const updatedAt = new Date(c.updated_at);
+    if (updatedAt >= startOfToday) today.push(c);
+    else if (updatedAt >= sevenDaysAgo) previous7Days.push(c);
+    else older.push(c);
+  }
+
+  return [
+    { group: "Today", items: today },
+    { group: "Previous 7 days", items: previous7Days },
+    { group: "Older", items: older },
+  ].filter((g) => g.items.length > 0);
+}
 
 export function PlusIcon() {
   return (
@@ -147,14 +164,29 @@ function NavRows({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function ConvoList({ onNavigate }: { onNavigate?: () => void }) {
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+
+  useEffect(() => {
+    listConversations()
+      .then(setConversations)
+      .catch((error) => {
+        if (!(error instanceof Unauthorized)) throw error;
+      });
+  }, []);
+
   return (
     <>
-      {CONVERSATIONS.map((group) => (
+      {groupByRecency(conversations).map((group) => (
         <div key={group.group}>
           <div className="group-label">{group.group}</div>
-          {group.items.map((label) => (
-            <Link key={label} className="convo" to="/home" onClick={onNavigate}>
-              {label}
+          {group.items.map((c) => (
+            <Link
+              key={c.id}
+              className="convo"
+              to={`/home?conversation=${c.id}`}
+              onClick={onNavigate}
+            >
+              {c.title ?? "New conversation"}
             </Link>
           ))}
         </div>

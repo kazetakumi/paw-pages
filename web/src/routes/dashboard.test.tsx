@@ -117,6 +117,8 @@ function signedInWith(board: Partial<Dashboard>) {
       calls.push("/dashboard");
       return HttpResponse.json({ ...empty, ...board });
     }),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
   return calls;
 }
@@ -124,9 +126,8 @@ function signedInWith(board: Partial<Dashboard>) {
 const ledgerRows = () =>
   within(screen.getByRole("region", { name: "Due and overdue" })).getAllByRole("link");
 
-// The sidebar's own static conversation list happens to mention "Biscuit" and
-// "Momo" by name too, so a pet card is found within the page's own content —
-// once it has loaded — rather than the whole screen.
+// Scoped to the page's own content, once it has loaded, rather than the
+// whole screen -- the sidebar has its own links and shouldn't be in scope.
 async function dash(container: HTMLElement) {
   await waitFor(() => expect(container.querySelector(".dashboard")).toBeInTheDocument());
   return within(container.querySelector(".dashboard") as HTMLElement);

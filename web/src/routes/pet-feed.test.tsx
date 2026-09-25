@@ -99,6 +99,8 @@ function signedInWith(
       );
       return page ? HttpResponse.json(page) : new HttpResponse(null, { status: 400 });
     }),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
   return asked;
 }

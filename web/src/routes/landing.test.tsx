@@ -20,6 +20,8 @@ function signedIn() {
     http.get("http://localhost:8000/me", () =>
       HttpResponse.json({ id: "h1", name: "Akhil", email: "akhil@example.com" }),
     ),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
 }
 

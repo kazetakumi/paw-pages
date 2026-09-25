@@ -73,6 +73,8 @@ describe("signing up", () => {
           archived: [],
         }),
       ),
+      // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+      http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
     );
 
     renderRoute("/signup");
@@ -138,6 +140,8 @@ describe("signing up", () => {
     server.use(http.get("http://localhost:8000/dashboard", () =>
       HttpResponse.json({ ledger: [], pets: [], active_pets: 0, overdue: 0,
         due_within_30_days: 0, archived_pets: 0, archived: [] })));
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    server.use(http.get("http://localhost:8000/conversations", () => HttpResponse.json([])));
     renderRoute("/signup");
     await fillTheForm();
 

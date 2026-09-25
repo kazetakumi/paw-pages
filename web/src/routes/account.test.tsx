@@ -45,6 +45,8 @@ function signedInAs(handler: Handler, archived: ArchivedPet[] = []) {
     http.get("http://localhost:8000/dashboard", () =>
       HttpResponse.json({ ...emptyBoard, archived, archived_pets: archived.length }),
     ),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
 }
 

@@ -31,6 +31,8 @@ function signedInWith(pet: Pet) {
   server.use(
     http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
     http.get(`http://localhost:8000/pets/${pet.id}`, () => HttpResponse.json(pet)),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
 }
 
