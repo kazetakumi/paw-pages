@@ -93,6 +93,12 @@
   background: var(--active);
 }
 
+.credits-line {
+  font-size: 12px;
+  color: var(--ink-2);
+  padding: 4px 8px 6px;
+}
+
 .settings-row {
   display: flex;
   align-items: center;

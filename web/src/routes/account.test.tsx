@@ -14,6 +14,7 @@ const akhil: Handler = {
   joined_on: "2025-07-02",
   pet_count: 3,
   entry_count: 47,
+  credits: 63,
   date_of_birth: null,
   gender: null,
   nationality: null,
@@ -62,6 +63,7 @@ describe("the account screen", () => {
     expect(since).toHaveTextContent("2 Jul 2025");
     expect(since).toHaveTextContent("3 pets");
     expect(since).toHaveTextContent("47 entries");
+    expect(since).toHaveTextContent("63 credits");
     expect(container.querySelector('[data-account="desktop"]')).toBeInTheDocument();
     expect(container.querySelector('[data-account="mobile"]')).toBeNull();
   });

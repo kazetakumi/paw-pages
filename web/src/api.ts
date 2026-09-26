@@ -2,6 +2,9 @@ const BASE = import.meta.env.VITE_API_URL ?? "/api";
 
 export class Unauthorized extends Error {}
 
+/** The chat endpoint's 402: the day's credits are used up. */
+export class OutOfCredits extends Error {}
+
 export class ApiError extends Error {
   constructor(public readonly detail: string) {
     super(detail);
@@ -92,6 +95,9 @@ export type Handler = {
   joined_on: string;
   pet_count: number;
   entry_count: number;
+  /** Today's balance, refilled to 100 each midnight IST by the API. Can sit
+   *  a few below 0: a chat turn is charged after it runs. */
+  credits: number;
   /** The three optional ones. Null until the handler fills them in, and
    *  nothing in the app branches on any of them. */
   date_of_birth: string | null;
@@ -355,12 +361,12 @@ export const removeEntryPhoto = (entryId: string) =>
 /** One frame of a streamed reply. "conversation" arrives first and only when
  *  `conversationId` was null -- the id it hands back is the one to send with
  *  the next message in the thread. "text.delta" arrives token by token;
- *  "done" carries the same text the deltas already built, so it needs no
- *  separate handling beyond knowing the reply is complete. */
+ *  "done" carries the same text the deltas already built, and the balance
+ *  once this turn has been charged. */
 export type ChatEvent =
   | { type: "conversation"; id: string }
   | { type: "text.delta"; text: string }
-  | { type: "done"; text: string };
+  | { type: "done"; text: string; credits: number };
 
 /** Sends one chat message and streams the reply, calling `onEvent` once per
  *  frame as it arrives. Resolves once the stream ends. Bypasses call()/
@@ -381,6 +387,7 @@ export async function sendChatMessage(
     sessionLost?.();
     throw new Unauthorized();
   }
+  if (res.status === 402) throw new OutOfCredits();
   if (!res.ok || !res.body) {
     const detail = (await res.json().catch(() => null))?.detail;
     throw new ApiError(typeof detail === "string" ? detail : "Something went wrong.");

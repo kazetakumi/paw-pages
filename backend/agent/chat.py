@@ -19,7 +19,7 @@ def stream_turn(llm: LLM, history: list[dict], tools: list[dict]):
     item from a tool round-trip earlier in the conversation. Yields
     LLM.stream()'s events unchanged: {"type": "text.delta", "text": ...} as
     tokens arrive, then one {"type": "done", "text_response": ...,
-    "tool_calls": ...} -- tool_calls is a list of the model's requested
-    calls, empty when it just replied."""
+    "tool_calls": ..., "usage": ...} -- tool_calls is a list of the model's
+    requested calls, empty when it just replied."""
     messages = [{"role": "developer", "content": SYSTEM_PROMPT}, *history]
     yield from llm.stream(messages, tools=tools)

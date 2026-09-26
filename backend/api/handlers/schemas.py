@@ -19,6 +19,9 @@ class MeOut(BaseModel):
     joined_on: date
     pet_count: int
     entry_count: int
+    # The balance after today's refill. Can dip a few below 0: a chat turn
+    # is charged once it has run, whatever it cost.
+    credits: int
     date_of_birth: date | None
     gender: str | None
     nationality: str | None

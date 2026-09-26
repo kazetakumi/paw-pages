@@ -62,9 +62,10 @@ class LLM:
 
     def stream(self, messages: list, tools: list, step: str | None = None):
         """Same call as run(), but as a stream: yields {"type": "text.delta", "text": ...}
-        as tokens arrive, then exactly one final {"type": "done", "text_response": ..., "tool_calls": ...}
-        carrying what run() used to return in one shot. The final event is how a generator
-        hands back a "return value" — there's no other channel once you're yielding."""
+        as tokens arrive, then exactly one final {"type": "done", "text_response": ..., "tool_calls": ...,
+        "usage": ...} carrying what run() used to return in one shot, plus the call's token
+        usage for the caller to charge. The final event is how a generator hands back a
+        "return value" — there's no other channel once you're yielding."""
         s = time.time()
         with self.client.responses.stream(model=self.model, input=messages, tools=tools) as stream:
             for event in stream:
@@ -82,4 +83,4 @@ class LLM:
         )
 
         text_response = response.output_text
-        yield {"type": "done", "text_response": text_response, "tool_calls": tool_calls}
+        yield {"type": "done", "text_response": text_response, "tool_calls": tool_calls, "usage": response.usage}

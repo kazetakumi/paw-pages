@@ -64,7 +64,7 @@ export default function PetAbout() {
 
   if (!record) {
     return (
-      <Shell name="" title="" width="pet">
+      <Shell name="" credits={null} title="" width="pet">
         <PetHeadSkeleton tab="About" />
         <div className="sect">
           <h2>Identity</h2>
@@ -85,7 +85,7 @@ export default function PetAbout() {
   const onChanged = (saved: Pet) => setRecord({ handler, pet: saved });
 
   return (
-    <Shell name={handler.name} title={pet.name} width="pet">
+    <Shell name={handler.name} credits={handler.credits} title={pet.name} width="pet">
       <Link className="back" to="/dashboard">
         &larr; Dashboard
       </Link>

@@ -214,7 +214,7 @@ export default function Dashboard() {
 
   if (!record) {
     return (
-      <Shell name="" title="Dashboard">
+      <Shell name="" credits={null} title="Dashboard">
         <DashboardSkeleton isDesktop={isDesktop} />
       </Shell>
     );
@@ -222,7 +222,7 @@ export default function Dashboard() {
   const { board } = record;
 
   return (
-    <Shell name={record.handler.name} title="Dashboard">
+    <Shell name={record.handler.name} credits={record.handler.credits} title="Dashboard">
       <div className="dashboard">
         <div className="head">
           <div>

@@ -16,12 +16,14 @@ one long one if concurrent chats ever make that a real cost.
 
 import json
 import logging
+import math
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from auth.dependencies import AuthenticatedHandler, get_current_handler
+from core.config import get_settings
 from core.llm import get_llm
 from db.rls import rls_connection, rls_read_connection
 from uploads import storage
@@ -49,8 +51,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 
+CREDIT_USD = 0.0001
+
+
 def _sse(event: dict) -> str:
     return f"data: {json.dumps(event)}\n\n"
+
+
+def _credits_for(cost_usd: float) -> int:
+    # Rounded before ceil so float noise (3.0000000000000004) doesn't add a credit.
+    return math.ceil(round(cost_usd / CREDIT_USD * get_settings().credit_markup, 6))
 
 
 @router.get("", response_model=list[ConversationSummary])
@@ -88,6 +98,11 @@ async def send_message(
     handler: AuthenticatedHandler = Depends(get_current_handler),
     conn: asyncpg.Connection = Depends(rls_connection),
 ) -> StreamingResponse:
+    # Checked before the model runs, charged after: a turn's cost is only
+    # known once it's done, so the last turn of the day can overdraw a little.
+    if await conn.fetchval("select pawpages_refill_credits()") <= 0:
+        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, "out of credits")
+
     upload_ids = [str(i) for i in body.upload_ids]
     try:
         conversation_id, history = await load_or_start(conn, handler.id, body.conversation_id)
@@ -120,14 +135,24 @@ async def send_message(
     async def events():
         yield _sse({"type": "conversation", "id": conversation_id})
 
-        reply_text, items = "", []
+        reply_text, items, usage = "", [], {}
         async for event in run_turn(get_llm(), history, conn, fetch_file):
             if event["type"] == "text.delta":
                 yield _sse({"type": "text.delta", "text": event["text"]})
             else:
-                reply_text, items = event["text_response"], event["items"]
+                reply_text, items, usage = event["text_response"], event["items"], event["usage"]
 
-        yield _sse({"type": "done", "text": reply_text})
+        # Same transaction as save_turn: a turn that fails to save isn't charged.
+        credits = await conn.fetchval(
+            "select pawpages_charge_turn($1, $2, $3, $4, $5, $6)",
+            conversation_id,
+            _credits_for(usage["cost_usd"]),
+            usage["cost_usd"],
+            usage["input_tokens"],
+            usage["cached_tokens"],
+            usage["output_tokens"],
+        )
+        yield _sse({"type": "done", "text": reply_text, "credits": credits})
         await save_turn(conn, handler.id, conversation_id, [saved_user, *items])
 
     return StreamingResponse(events(), media_type="text/event-stream")
