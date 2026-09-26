@@ -28,6 +28,11 @@
 	}
 
 	handle {
+		# Vite puts a content hash in every file name under /assets, so a
+		# new build is a new URL: browsers and Cloudflare's edge can keep
+		# these for good instead of rechecking through the tunnel.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
 		root * web/dist
 		try_files {path} /index.html
 		file_server
