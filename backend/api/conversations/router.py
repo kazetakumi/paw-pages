@@ -28,10 +28,15 @@ from db.rls import rls_connection
 from agent.chat import stream_turn  # noqa: E402  (core.llm puts backend/ on sys.path)
 
 from .schemas import ConversationDetail, ConversationSummary, SendMessageRequest
+from .tools import TOOLS, execute_tool
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/conversations", tags=["conversations"])
+
+# Guards against a model stuck calling tools back-to-back; five round-trips
+# is already more than answering "which of my pets are archived?" needs.
+MAX_TOOL_ROUNDS = 5
 
 
 def _sse(event: dict) -> str:
@@ -111,17 +116,35 @@ async def send_message(
         logger.info("Started conversation %s for %s", conversation_id, handler.email)
 
     history.append({"role": "user", "content": body.message})
-    sync_events = stream_turn(get_llm(), history)
 
     async def events():
         yield _sse({"type": "conversation", "id": conversation_id})
+
+        # function_call / function_call_output items from tool round-trips
+        # within this turn -- not persisted, just replayed to the model
+        # alongside history until it stops asking for tools.
+        turn_items: list[dict] = []
         reply_text = ""
-        async for event in iterate_in_threadpool(sync_events):
-            if event["type"] == "text.delta":
-                yield _sse({"type": "text.delta", "text": event["text"]})
-            else:
-                reply_text = event["text_response"]
-                yield _sse({"type": "done", "text": reply_text})
+        for _ in range(MAX_TOOL_ROUNDS):
+            tool_calls = []
+            async for event in iterate_in_threadpool(stream_turn(get_llm(), history + turn_items, TOOLS)):
+                if event["type"] == "text.delta":
+                    yield _sse({"type": "text.delta", "text": event["text"]})
+                else:
+                    reply_text = event["text_response"]
+                    tool_calls = event["tool_calls"]
+
+            if not tool_calls:
+                break
+
+            for call in tool_calls:
+                output = await execute_tool(conn, call.name, call.arguments)
+                turn_items.append(
+                    {"type": "function_call", "call_id": call.call_id, "name": call.name, "arguments": call.arguments}
+                )
+                turn_items.append({"type": "function_call_output", "call_id": call.call_id, "output": output})
+
+        yield _sse({"type": "done", "text": reply_text})
 
         new_lines = "".join(
             json.dumps(turn) + "\n"
