@@ -11,4 +11,8 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "httpx>=0.28.1",
     "openai>=3.19.2",
+    "ocr-engine",
 ]
+
+[tool.uv.sources]
+ocr-engine = { path = "../ocr_engine", editable = true }

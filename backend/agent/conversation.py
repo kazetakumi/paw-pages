@@ -12,10 +12,12 @@ it, so loading history is just reading content back in id order. content is
 jsonb, and asyncpg has no jsonb codec registered here, so it goes in as a
 json.dumps string and comes back as one to json.loads.
 
-Photos: a user message with uploads is saved as plain text naming each
-upload's id, so the model can later pass that id to a tool. The image
-itself goes to the model only on the turn it was sent (with_images) --
-never saved, never replayed, since every later turn would pay for it again.
+Uploads: a user message with uploads is saved as plain text naming each
+upload's id, so the model can later pass that id to a tool. The upload's
+content -- a photo, or a PDF's extracted text -- goes to the model only on
+the turn it was sent (with_attachments): never saved, never replayed,
+since every later turn would pay for it again. read_document re-reads a
+PDF on a later turn if the model needs it.
 """
 
 import base64
@@ -129,29 +131,36 @@ async def attach_uploads(conn: asyncpg.Connection, conversation_id: str, upload_
     return [by_id[i] for i in upload_ids]
 
 
-def user_message(text: str, upload_ids: list[str]) -> dict:
-    """The user turn as saved: the handler's text, plus one line per photo
-    naming the id a tool needs to file it."""
+def user_message(text: str, uploads: list[asyncpg.Record]) -> dict:
+    """The user turn as saved: the handler's text, plus one line per upload
+    naming the id a tool needs to file it -- or, for a PDF, to read it."""
     lines = [text] if text else []
-    lines += [f"[photo attached, upload_id: {i}]" for i in upload_ids]
+    for u in uploads:
+        kind = "document" if u["content_type"] == "application/pdf" else "photo"
+        lines.append(f"[{kind} attached, upload_id: {u['id']}]")
     return {"role": "user", "content": "\n".join(lines)}
 
 
-def with_images(message: dict, images: list[tuple[str, bytes]]) -> dict:
+def image_part(content_type: str, data: bytes) -> dict:
+    return {"type": "input_image", "image_url": f"data:{content_type};base64,{base64.b64encode(data).decode()}"}
+
+
+def with_attachments(message: dict, parts: list[dict]) -> dict:
     """The same user turn as the model sees it on the turn it's sent: its
-    text plus each (content_type, bytes) photo inline as a data URL."""
-    if not images:
+    text plus each upload's content -- a photo inline, a PDF's extracted
+    contents (tools.registry.document_parts)."""
+    if not parts:
         return message
-    return {
-        "role": "user",
-        "content": [
-            {"type": "input_text", "text": message["content"]},
-            *(
-                {"type": "input_image", "image_url": f"data:{ct};base64,{base64.b64encode(data).decode()}"}
-                for ct, data in images
-            ),
-        ],
-    }
+    return {"role": "user", "content": [{"type": "input_text", "text": message["content"]}, *parts]}
+
+
+def _without_document(item: dict) -> dict:
+    """read_document's output -- the only tool output that's a list of
+    parts -- is a document's full contents. Like a photo, it's for the turn
+    it was read on, not for replaying on every turn after."""
+    if not isinstance(item.get("output"), list):
+        return item
+    return {**item, "output": "[document contents shown on the turn it was read]"}
 
 
 async def save_turn(conn: asyncpg.Connection, handler_id: str, conversation_id: str, items: list[dict]) -> None:
@@ -159,7 +168,7 @@ async def save_turn(conn: asyncpg.Connection, handler_id: str, conversation_id: 
     order. executemany inserts in list order, so ids keep it."""
     await conn.executemany(
         "insert into pawpages_messages (conversation_id, handler_id, type, content) values ($1, $2, $3, $4)",
-        [(conversation_id, handler_id, _item_type(item), json.dumps(item)) for item in items],
+        [(conversation_id, handler_id, _item_type(item), json.dumps(_without_document(item))) for item in items],
     )
     # Nothing updates the conversation row itself any more, so its touch
     # trigger would never fire -- bump updated_at here to keep the sidebar's

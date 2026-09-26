@@ -1,4 +1,4 @@
-"""POST /uploads stores a photo the moment it's attached -- before the
+"""POST /uploads stores a photo or PDF the moment it's attached -- before the
 message it belongs to is sent, and before any conversation may exist -- and
 returns its id. The frontend sends that id back in upload_ids with the
 message; conversations/router.py attaches it there. DELETE /uploads/{id} is
@@ -18,9 +18,9 @@ from .schemas import UploadOut
 
 router = APIRouter(prefix="/uploads", tags=["uploads"])
 
-# The bucket's own allow-list (0003) also takes image/heic, but the model
-# can't read HEIC, so a chat upload is limited to what it can.
-_EXTENSIONS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+# The bucket's own allow-list (0003, 0012) also takes image/heic, but the
+# model can't read HEIC, so a chat upload is limited to what it can.
+_EXTENSIONS = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/pdf": "pdf"}
 _MAX_BYTES = 5 * 1024 * 1024  # the bucket's file_size_limit (0003)
 
 
@@ -32,10 +32,10 @@ async def create_upload(
 ) -> UploadOut:
     ext = _EXTENSIONS.get(file.content_type or "")
     if ext is None:
-        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "photo must be JPEG, PNG or WebP")
+        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "file must be JPEG, PNG, WebP or PDF")
     data = await file.read()
     if len(data) > _MAX_BYTES:
-        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "photo must be 5 MB or smaller")
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "file must be 5 MB or smaller")
 
     path = f"{handler.id}/uploads/{uuid.uuid4()}.{ext}"
     await storage.put(handler.access_token, path, data, file.content_type)

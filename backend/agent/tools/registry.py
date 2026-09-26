@@ -6,12 +6,20 @@ handler_id) means a tool never has to check ownership itself; Postgres
 refuses to touch a row RLS says isn't the caller's.
 """
 
+import base64
 import json
 import re
 import secrets
+from collections.abc import Awaitable, Callable
 from datetime import date
 
 import asyncpg
+import pymupdf
+from ocr_engine.extract import extract_text_from_bytes, render_page_image_from_bytes
+
+# Reads an upload's bytes out of storage as the handler -- the API layer
+# supplies it, since this module has no storage access of its own.
+FetchFile = Callable[[str], Awaitable[bytes]]
 
 
 def _photo_upload_id(what: str) -> dict:
@@ -207,6 +215,22 @@ TOOLS = [
             "type": "object",
             "properties": {"entry_id": {"type": "string", "description": "The entry's id, from list_entries."}},
             "required": ["entry_id"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
+        "type": "function",
+        "name": "read_document",
+        "description": (
+            "Read a PDF the handler attached earlier -- a '[document attached, upload_id: ...]' line. "
+            "You get a document's contents automatically on the turn it's sent; call this only to look "
+            "at it again on a later turn. A scanned PDF comes back as page images rather than text."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {"upload_id": {"type": "string", "description": "The document's upload_id."}},
+            "required": ["upload_id"],
             "additionalProperties": False,
         },
         "strict": True,
@@ -414,6 +438,57 @@ async def _delete_entry(conn: asyncpg.Connection, args: dict) -> dict:
     return {"deleted": result == "DELETE 1"}
 
 
+_MAX_DOCUMENT_CHARS = 20_000
+_MAX_SCANNED_PAGES = 5
+
+
+def document_parts(upload_id: str, data: bytes) -> list[dict]:
+    """A PDF's contents as content parts for the model. Text straight from
+    its text layer when it has one -- cheap, no vision. A scanned PDF has
+    none, so its first few pages go as images for the model to read itself.
+    Used both when a PDF is sent (conversations router) and by
+    read_document."""
+    try:
+        result = extract_text_from_bytes(data)
+    except pymupdf.FileDataError:
+        return [{"type": "input_text", "text": f"[document {upload_id} couldn't be opened]"}]
+
+    if not result.needs_vision_fallback:
+        text = result.full_text
+        cut = " (cut short)" if len(text) > _MAX_DOCUMENT_CHARS else ""
+        return [{
+            "type": "input_text",
+            "text": f"[contents of document {upload_id}, {result.page_count} page(s){cut}]\n{text[:_MAX_DOCUMENT_CHARS]}",
+        }]
+
+    shown = min(result.page_count, _MAX_SCANNED_PAGES)
+    return [
+        {
+            "type": "input_text",
+            "text": f"[document {upload_id} is a scanned PDF, {result.page_count} page(s); images of the first {shown} follow]",
+        },
+        *(
+            {
+                "type": "input_image",
+                "image_url": "data:image/png;base64,"
+                + base64.b64encode(render_page_image_from_bytes(data, n, dpi=150)).decode(),
+            }
+            for n in range(1, shown + 1)
+        ),
+    ]
+
+
+async def _read_document(conn: asyncpg.Connection, args: dict, fetch_file: FetchFile) -> list[dict]:
+    row = await conn.fetchrow(
+        "select storage_path, content_type from pawpages_uploads where id = $1", args["upload_id"]
+    )
+    if row is None:
+        raise _ToolError("no upload with that id")
+    if row["content_type"] != "application/pdf":
+        raise _ToolError("that upload is a photo, not a PDF -- you saw it on the turn it was sent")
+    return document_parts(args["upload_id"], await fetch_file(row["storage_path"]))
+
+
 _HANDLERS = {
     "list_active_pets": _list_active_pets,
     "list_archived_pets": _list_archived_pets,
@@ -429,15 +504,19 @@ _HANDLERS = {
 }
 
 
-async def execute_tool(conn: asyncpg.Connection, name: str, arguments: str) -> str:
-    """Runs one tool call and returns its output as the JSON string a
-    function_call_output item expects. Wrapped in its own savepoint: a
-    constraint or RLS violation aborts up to here, not the request's whole
-    transaction, so the model can see the error, try something else, and
-    the message writes at the end of the request still goes through."""
+async def execute_tool(conn: asyncpg.Connection, name: str, arguments: str, fetch_file: FetchFile) -> str | list[dict]:
+    """Runs one tool call and returns its output as a function_call_output
+    item expects: a JSON string, or a list of content parts when the output
+    comes as content parts (read_document). Wrapped in its own
+    savepoint: a constraint or RLS violation aborts up to here, not the
+    request's whole transaction, so the model can see the error, try
+    something else, and the message writes at the end of the request still
+    goes through."""
     args = json.loads(arguments) if arguments else {}
     try:
         async with conn.transaction():
+            if name == "read_document":
+                return await _read_document(conn, args, fetch_file)
             result = await _HANDLERS[name](conn, args)
     except (asyncpg.PostgresError, _ToolError) as exc:
         result = {"error": str(exc)}
