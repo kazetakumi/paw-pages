@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 
 import httpx
+import jwt
 
 from core.config import get_settings
 
@@ -72,10 +73,26 @@ async def refresh_session(refresh_token: str) -> dict:
     return _unwrap(resp)
 
 
-async def get_user(access_token: str) -> dict:
-    async with _client() as client:
-        resp = await client.get("/user", headers={"Authorization": f"Bearer {access_token}"})
-    return _unwrap(resp)
+# The project's public signing keys, by kid. Fetched once, and again only
+# when a token names a key we haven't seen (Supabase rotated them).
+_signing_keys: dict[str, jwt.PyJWK] = {}
+
+
+async def verify_access_token(access_token: str) -> dict:
+    """The token's claims, checked here against the project's published
+    key instead of a round trip to /user on every request. A token revoked
+    by sign-out stays valid until it expires (an hour); the session cookie
+    is cleared on sign-out anyway."""
+    try:
+        kid = jwt.get_unverified_header(access_token).get("kid")
+        if kid not in _signing_keys:
+            async with _client() as client:
+                keys = _unwrap(await client.get("/.well-known/jwks.json"))["keys"]
+            _signing_keys.update({key["kid"]: jwt.PyJWK(key) for key in keys})
+        key = _signing_keys[kid]
+        return jwt.decode(access_token, key, algorithms=[key.algorithm_name], audience="authenticated")
+    except (jwt.InvalidTokenError, KeyError) as exc:
+        raise GoTrueError(401, str(exc) or "invalid access token") from exc
 
 
 async def sign_out(access_token: str) -> None:

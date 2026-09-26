@@ -28,6 +28,10 @@ async def rls_connection(
     claims = json.dumps({"sub": handler.id, "role": "authenticated"})
     async with get_pool().acquire() as conn:
         async with conn.transaction():
-            await conn.execute("set local role authenticated")
-            await conn.execute("select set_config('request.jwt.claims', $1, true)", claims)
+            # One round trip for both, the way PostgREST does it: the
+            # database is far enough away that each statement costs ~0.4s.
+            await conn.execute(
+                "select set_config('role', 'authenticated', true), set_config('request.jwt.claims', $1, true)",
+                claims,
+            )
             yield conn

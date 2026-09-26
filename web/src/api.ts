@@ -25,6 +25,24 @@ export function onSessionLost(handler: (() => void) | null) {
   sessionLost = handler;
 }
 
+/** GETs every screen repeats on arrival -- who is signed in, the sidebar's
+ *  conversations -- kept until the next write, so moving between screens
+ *  doesn't ask a far-away API the same thing again. Any write, and a session
+ *  running out, drops them. */
+const cache = new Map<string, Promise<unknown>>();
+
+export const clearCache = () => cache.clear();
+
+function cachedGet<T>(path: string): Promise<T> {
+  let hit = cache.get(path);
+  if (!hit) {
+    const fresh = request<T>("GET", path);
+    fresh.catch(() => cache.get(path) === fresh && cache.delete(path));
+    cache.set(path, (hit = fresh));
+  }
+  return hit as Promise<T>;
+}
+
 async function call(method: string, path: string, body?: unknown): Promise<Response> {
   // A File goes up as itself under its own type, because that is what the
   // photo routes take and what the bucket's allowed types are checked against.
@@ -38,8 +56,10 @@ async function call(method: string, path: string, body?: unknown): Promise<Respo
         : { "Content-Type": file ? file.type : "application/json" },
     body: body === undefined ? undefined : (file ?? JSON.stringify(body)),
   });
+  if (method !== "GET") clearCache();
   // A 401 from /auth/* is a rejected credential, not a session that ran out.
   if (res.status === 401 && !path.startsWith("/auth/")) {
+    clearCache();
     sessionLost?.();
     throw new Unauthorized();
   }
@@ -85,7 +105,7 @@ export type HandlerFields = Pick<
   "name" | "date_of_birth" | "gender" | "nationality"
 >;
 
-export const getMe = () => request<Handler>("GET", "/me");
+export const getMe = () => cachedGet<Handler>("/me");
 
 /** Is anyone signed in? Asked at the root, where a 401 is the expected answer
  *  for a visitor rather than a session that ran out — so this one asks the
@@ -357,6 +377,7 @@ export async function sendChatMessage(
     body: JSON.stringify({ conversation_id: conversationId, message }),
   });
   if (res.status === 401) {
+    clearCache();
     sessionLost?.();
     throw new Unauthorized();
   }
@@ -380,6 +401,8 @@ export async function sendChatMessage(
       if (line) onEvent(JSON.parse(line.slice("data: ".length)) as ChatEvent);
     }
   }
+  // The turn is saved now: the sidebar's list and the counts have moved.
+  clearCache();
 }
 
 /** One row for the sidebar. `title` falls back to the first user turn on the
@@ -391,7 +414,7 @@ export type ConversationSummary = {
 };
 
 /** Most recently active first -- the same order the sidebar groups by. */
-export const listConversations = () => request<ConversationSummary[]>("GET", "/conversations");
+export const listConversations = () => cachedGet<ConversationSummary[]>("/conversations");
 
 export type ConversationTurn = { role: "user" | "assistant"; content: string };
 

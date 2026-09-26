@@ -12,6 +12,7 @@ handler's own token so the storage policies apply. No signed URL or
 Supabase domain ever reaches the browser.
 """
 
+import json
 import mimetypes
 import re
 import secrets
@@ -24,7 +25,7 @@ from auth.dependencies import AuthenticatedHandler, get_current_handler
 from db.rls import rls_connection
 from uploads import storage
 
-from .schemas import ArchivedPet, ArchiveIn, Dashboard, DueItem, PetCard, PetOut, PetPatch, PetRecord
+from .schemas import ArchiveIn, Dashboard, PetOut, PetPatch, PetRecord
 
 router = APIRouter(tags=["pets"])
 
@@ -89,17 +90,26 @@ _ARCHIVED = """select id, name, archived_reason, archived_at::date as archived_o
        from pawpages_pets where archived_at is not null order by created_at"""
 
 
+# Each list comes back as one json column, so the whole dashboard is one
+# round trip to the database rather than four.
+_DASHBOARD = f"""select
+       (select coalesce(json_agg(r), '[]') from ({_LEDGER.format(where="")}) r) as ledger,
+       (select coalesce(json_agg(r), '[]') from ({_PET_CARDS}) r) as pets,
+       (select coalesce(json_agg(r), '[]') from ({_ARCHIVED}) r) as archived,
+       c.* from ({_COUNTS}) c"""
+
+_PET_RECORD = f"""select {_PET_COLUMNS},
+       (select coalesce(json_agg(r), '[]') from ({_LEDGER.format(where="where d.pet_id = $1")}) r) as due_items
+       from pawpages_pets where id = $1"""
+
+
 @router.get("/dashboard", response_model=Dashboard)
 async def dashboard(
     handler: AuthenticatedHandler = Depends(get_current_handler),
     conn: asyncpg.Connection = Depends(rls_connection),
 ) -> Dashboard:
-    return Dashboard(
-        ledger=[DueItem(**dict(r)) for r in await conn.fetch(_LEDGER.format(where=""))],
-        pets=[PetCard(**dict(r)) for r in await conn.fetch(_PET_CARDS)],
-        archived=[ArchivedPet(**dict(r)) for r in await conn.fetch(_ARCHIVED)],
-        **dict(await conn.fetchrow(_COUNTS)),
-    )
+    row = dict(await conn.fetchrow(_DASHBOARD))
+    return Dashboard(**row | {key: json.loads(row[key]) for key in ("ledger", "pets", "archived")})
 
 
 @router.get("/pets/{pet_id}", response_model=PetRecord)
@@ -108,12 +118,11 @@ async def read_pet(
     handler: AuthenticatedHandler = Depends(get_current_handler),
     conn: asyncpg.Connection = Depends(rls_connection),
 ) -> PetRecord:
-    row = await conn.fetchrow(f"select {_PET_COLUMNS} from pawpages_pets where id = $1", pet_id)
+    # due_items reads the same view the dashboard ledger does, so the two can't disagree.
+    row = await conn.fetchrow(_PET_RECORD, pet_id)
     if row is None:
         raise _NO_SUCH_PET
-    # The same view the dashboard ledger reads, so the two can't disagree.
-    due = await conn.fetch(_LEDGER.format(where="where d.pet_id = $1"), pet_id)
-    return PetRecord(**dict(row), due_items=[DueItem(**dict(d)) for d in due])
+    return PetRecord(**dict(row) | {"due_items": json.loads(row["due_items"])})
 
 
 @router.patch("/pets/{pet_id}", response_model=PetOut)

@@ -12,6 +12,7 @@ dependencies = [
     "httpx>=0.28.1",
     "openai>=3.19.2",
     "ocr-engine",
+    "pyjwt>=2.10",
 ]
 
 [tool.uv.sources]
