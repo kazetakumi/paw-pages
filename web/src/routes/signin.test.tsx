@@ -65,6 +65,8 @@ describe("signing in", () => {
           archived: [],
         }),
       ),
+      // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+      http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
     );
 
     renderRoute("/signin");
@@ -72,7 +74,9 @@ describe("signing in", () => {
     await userEvent.type(screen.getByLabelText("Password"), "correct horse");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+    ).toBeInTheDocument();
     expect(window.localStorage.length).toBe(0);
     expect(document.cookie).toBe("");
   });

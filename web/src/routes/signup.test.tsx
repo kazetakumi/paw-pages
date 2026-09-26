@@ -73,13 +73,17 @@ describe("signing up", () => {
           archived: [],
         }),
       ),
+      // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+      http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
     );
 
     renderRoute("/signup");
     await fillTheForm();
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
+    expect(
+      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+    ).toBeInTheDocument();
   });
 
   it("puts an already-registered email beside the email field and points at sign in", async () => {
@@ -136,6 +140,8 @@ describe("signing up", () => {
     server.use(http.get("http://localhost:8000/dashboard", () =>
       HttpResponse.json({ ledger: [], pets: [], active_pets: 0, overdue: 0,
         due_within_30_days: 0, archived_pets: 0, archived: [] })));
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    server.use(http.get("http://localhost:8000/conversations", () => HttpResponse.json([])));
     renderRoute("/signup");
     await fillTheForm();
 

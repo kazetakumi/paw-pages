@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paw Pages — Dashboard (Mobile)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#13202E;
+    --ink-2:#4E5A67;
+    --faint:#8D97A1;
+    --paper:#F2F3EF;
+    --card:#FFFFFF;
+    --rule:#DCE0E4;
+    --rule-2:#EDEFF1;
+    --stamp:#B23A24;
+    --stamp-wash:#FBF1EE;
+    --seal:#2E6B4F;
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Public Sans","Segoe UI",system-ui,sans-serif;
+    --data:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+
+    --sidebar-bg:#EBEDE7;
+    --hover:rgba(19,32,46,.06);
+    --active:rgba(19,32,46,.09);
+    color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{
+    background:#D7D4C9;font-family:var(--body);color:var(--ink);font-size:15px;line-height:1.55;
+    display:flex;justify-content:center;min-height:100vh;-webkit-font-smoothing:antialiased;
+  }
+  a{text-decoration:none;color:inherit}
+  button{font-family:var(--body)}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  svg{display:block}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
+  }
+
+  .frame{
+    position:relative;width:100%;max-width:390px;background:var(--paper);min-height:100vh;
+    display:flex;flex-direction:column;overflow:hidden;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  @media (min-width:460px){
+    .frame{margin:24px 0;box-shadow:0 0 0 6px #2A2924,0 16px 32px #00000040;border-radius:24px;min-height:0;height:844px}
+  }
+
+  /* ---------- topbar ---------- */
+  .topbar{
+    flex:none;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 6px 0 8px;
+  }
+  .topbar-left{display:flex;align-items:center;gap:2px}
+  .icon-btn{
+    width:38px;height:38px;border-radius:9px;background:none;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;color:var(--ink-2);flex:none;
+  }
+  .icon-btn:hover{background:var(--hover);color:var(--ink)}
+  .icon-btn svg{width:19px;height:19px}
+  .home-title{font-family:var(--display);font-size:15.5px;font-weight:600;color:var(--ink);padding:0 4px}
+
+  .btn-chat{
+    display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:8px;
+    border:1px solid var(--rule);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .btn-chat svg{width:14px;height:14px;flex:none;color:var(--ink-2)}
+
+  /* ---------- page ---------- */
+  .page-wrap{flex:1;min-height:0;overflow-y:auto}
+  .page{padding:6px 16px 40px}
+
+  .head{display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-bottom:24px}
+  h1{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.02em;margin:0 0 8px}
+  .tally{font-family:var(--data);font-size:11px;letter-spacing:.05em;color:var(--ink-2)}
+  .tally .hot{color:var(--stamp);font-weight:700}
+  .tally i{color:var(--faint);font-style:normal;margin:0 6px}
+
+  .btn{
+    display:inline-flex;align-items:center;font-family:var(--body);font-size:13px;font-weight:600;
+    background:var(--ink);color:#fff;border:1px solid var(--ink);padding:9px 15px;border-radius:6px;
+    cursor:pointer;white-space:nowrap;
+  }
+
+  .sect{display:flex;align-items:center;gap:12px;margin:0 0 3px}
+  .sect h2{font-family:var(--data);font-size:10.5px;font-weight:700;letter-spacing:.13em;
+    text-transform:uppercase;margin:0;white-space:nowrap}
+  .sect .line{flex:1;height:1px;background:var(--rule)}
+  .sect .n{font-family:var(--data);font-size:10.5px;color:var(--faint);letter-spacing:.06em}
+
+  .ledger{background:var(--card);border:1px solid var(--rule);border-radius:3px;margin:14px 0 34px;overflow:hidden}
+  .lrow{display:flex;flex-direction:column;gap:8px;padding:15px 16px;border-bottom:1px solid var(--rule-2);position:relative}
+  .lrow:last-child{border-bottom:0}
+  .lrow .date{font-family:var(--data);font-size:11.5px;letter-spacing:.02em;color:var(--ink-2)}
+  .lrow .what{font-size:14.5px;min-width:0}
+  .lrow .what b{font-family:var(--display);font-weight:600;letter-spacing:-.01em}
+  .lrow .what .slash{color:var(--rule);margin:0 7px}
+  .lrow .what .kind{color:var(--ink-2)}
+  .lrow .when{font-family:var(--data);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+
+  .lrow.over{background:var(--stamp-wash)}
+  .lrow.over .date{color:var(--stamp);font-weight:700}
+  .lrow.over .when{display:none}
+
+  .stamp{
+    align-self:flex-start;font-family:var(--data);font-weight:700;font-size:11px;letter-spacing:.12em;
+    color:var(--stamp);border:2px solid var(--stamp);border-radius:3px;padding:4px 9px 3px;line-height:1;opacity:.86;
+    transform:rotate(-3deg);display:flex;align-items:baseline;gap:7px;
+  }
+  .stamp .days{font-weight:400;font-size:9.5px;letter-spacing:.05em;opacity:.85}
+
+  .pets{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+  .pet{background:var(--card);border:1px solid var(--rule);border-radius:3px;padding:16px}
+  .pet .top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .av{width:42px;height:42px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:16px;font-weight:600;color:var(--ink)}
+  .av.a{background:#DEE5EA} .av.b{background:#E4E8DE} .av.c{background:#EBDFE0}
+  .pet .nm{font-family:var(--display);font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+  .pet .sub{font-size:12px;color:var(--faint);margin-top:2px}
+  .pet .foot{padding-top:12px;border-top:1px solid var(--rule-2)}
+  .fline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+    font-family:var(--data);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
+  .fline + .fline{margin-top:6px}
+  .fline .k{color:var(--faint)}
+  .fline .v{color:var(--ink-2)}
+  .fline .v.over{color:var(--stamp);font-weight:700}
+
+  .pet.add{
+    border-style:dashed;border-color:var(--rule);display:flex;align-items:center;justify-content:center;gap:8px;
+    color:var(--ink-2);padding:18px;
+  }
+  .pet.add .pl{font-family:var(--display);font-size:19px;font-weight:500}
+  .pet.add .tx{font-size:13px}
+
+  .archived{margin-top:22px;font-size:12.5px;color:var(--faint)}
+  .archived a{border-bottom:1px solid var(--rule);padding-bottom:1px}
+
+  /* ---------- off-canvas sidebar drawer (same as home) ---------- */
+  .overlay{
+    position:absolute;inset:0;background:rgba(19,32,46,.42);opacity:0;pointer-events:none;
+    transition:opacity .2s ease;z-index:20;
+  }
+  .overlay.open{opacity:1;pointer-events:auto}
+  .drawer{
+    position:absolute;top:0;bottom:0;left:0;width:82%;max-width:300px;background:var(--sidebar-bg);
+    border-right:1px solid var(--rule);transform:translateX(-100%);transition:transform .22s ease;
+    z-index:21;display:flex;flex-direction:column;
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .drawer.open{transform:translateX(0)}
+  .drawer-top{flex:none;padding:14px 10px 8px;display:flex;flex-direction:column;gap:2px}
+  .brand-row{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 14px}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand-mark{
+    width:24px;height:24px;border-radius:5px;background:var(--ink);color:#fff;flex:none;
+    display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:12px;
+  }
+  .brand-word{font-family:var(--display);font-weight:700;font-size:14.5px;letter-spacing:.02em}
+  .brand-word .p2{color:var(--faint)}
+  .side-row{
+    display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:7px;font-size:13.5px;
+    color:var(--ink);background:none;border:none;cursor:pointer;text-align:left;width:100%;font-family:var(--body);
+  }
+  .side-row:hover{background:var(--hover)}
+  .side-row svg{width:17px;height:17px;flex:none;color:var(--ink-2)}
+  .drawer-scroll{flex:1;min-height:0;overflow-y:auto;padding:8px 8px 8px}
+  .group-label{font-family:var(--data);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:14px 10px 5px}
+  .convo{
+    display:block;padding:8px 10px;border-radius:7px;font-size:13.5px;color:var(--ink);cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .convo:hover{background:var(--hover)}
+  .drawer-bottom{flex:none;border-top:1px solid var(--rule);padding:8px}
+  .settings-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:7px}
+  .settings-row:hover{background:var(--hover)}
+  .settings-avatar{
+    width:27px;height:27px;border-radius:50%;background:var(--ink);color:#fff;font-family:var(--display);
+    font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex:none;letter-spacing:.02em;
+  }
+  .settings-name{font-size:13.5px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .settings-row svg{width:15px;height:15px;color:var(--ink-2);flex:none}
+</style>
+</head>
+<body>
+<div class="frame">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" id="menu-btn" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <span class="home-title">Dashboard</span>
+    </div>
+    <a class="btn-chat" href="../home/mobile.html">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 5.5h16v11H9.5L5 20v-3.5H4v-11Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Chat
+    </a>
+  </div>
+
+  <div class="page-wrap">
+    <div class="page">
+
+      <div class="head">
+        <div>
+          <h1>Your pets</h1>
+          <div class="tally">3 ACTIVE <i>·</i> <span class="hot">1 OVERDUE</span> <i>·</i> 2 DUE WITHIN 30 DAYS</div>
+        </div>
+        <a class="btn" href="../home/mobile.html?new=1">Add a pet</a>
+      </div>
+
+      <div class="sect"><h2>Due &amp; overdue</h2><span class="line"></span><span class="n">3</span></div>
+
+      <div class="ledger">
+        <a class="lrow over" href="../pet-profile/mobile.html">
+          <span class="date">14 JUL 2026</span>
+          <span class="what"><b>Biscuit</b><span class="slash">/</span><span class="kind">Rabies booster</span></span>
+          <span class="stamp">OVERDUE <span class="days">46 DAYS</span></span>
+        </a>
+        <a class="lrow" href="../pet-profile/mobile.html">
+          <span class="date">05 SEP 2026</span>
+          <span class="what"><b>Momo</b><span class="slash">/</span><span class="kind">Deworming</span></span>
+          <span class="when">In 7 days</span>
+        </a>
+        <a class="lrow" href="../pet-profile/mobile.html">
+          <span class="date">21 SEP 2026</span>
+          <span class="what"><b>Pepper</b><span class="slash">/</span><span class="kind">DHPP booster</span></span>
+          <span class="when">In 23 days</span>
+        </a>
+      </div>
+
+      <div class="sect"><h2>Pets</h2><span class="line"></span><span class="n">3</span></div>
+
+      <div class="pets">
+        <a class="pet" href="../pet-profile/mobile.html">
+          <div class="top">
+            <div class="av a">B</div>
+            <div>
+              <div class="nm">Biscuit</div>
+              <div class="sub">Indian Pariah · male · 4 yrs</div>
+            </div>
+          </div>
+          <div class="foot">
+            <div class="fline"><span class="k">Next due</span><span class="v over">14 Jul 2026</span></div>
+            <div class="fline"><span class="k">Last logged</span><span class="v">23 Sep 2026</span></div>
+          </div>
+        </a>
+
+        <a class="pet" href="../pet-profile/mobile.html">
+          <div class="top">
+            <div class="av b">M</div>
+            <div>
+              <div class="nm">Momo</div>
+              <div class="sub">Persian cat · female · 2 yrs</div>
+            </div>
+          </div>
+          <div class="foot">
+            <div class="fline"><span class="k">Next due</span><span class="v">05 Sep 2026</span></div>
+            <div class="fline"><span class="k">Last logged</span><span class="v">21 Aug 2026</span></div>
+          </div>
+        </a>
+
+        <a class="pet" href="../pet-profile/mobile.html">
+          <div class="top">
+            <div class="av c">P</div>
+            <div>
+              <div class="nm">Pepper</div>
+              <div class="sub">Labrador · female · 7 yrs</div>
+            </div>
+          </div>
+          <div class="foot">
+            <div class="fline"><span class="k">Next due</span><span class="v">21 Sep 2026</span></div>
+            <div class="fline"><span class="k">Last logged</span><span class="v">02 Aug 2026</span></div>
+          </div>
+        </a>
+
+        <a class="pet add" href="../home/mobile.html?new=1">
+          <span class="pl">+</span>
+          <span class="tx">Add a pet</span>
+        </a>
+      </div>
+
+      <div class="archived">1 archived pet — <a href="../pet-profile/mobile.html">Toffee</a></div>
+
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-top">
+      <div class="brand-row">
+        <div class="brand">
+          <span class="brand-mark">P</span>
+          <span class="brand-word">Paw<span class="p2">Pages</span></span>
+        </div>
+        <button class="icon-btn" id="close-drawer" aria-label="Close menu">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <a class="side-row" href="../home/mobile.html?new=1">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4.5v15M4.5 12h15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        New chat
+      </a>
+      <a class="side-row" href="../home/mobile.html?view=artifacts">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.3" stroke="currentColor" stroke-width="1.5"/></svg>
+        Artifacts
+      </a>
+    </div>
+    <div class="drawer-scroll">
+      <div class="group-label">Today</div>
+      <a class="convo" href="../home/mobile.html">Logged Biscuit's deworming</a>
+      <a class="convo" href="../home/mobile.html">What's overdue</a>
+      <div class="group-label">Previous 7 days</div>
+      <a class="convo" href="../home/mobile.html">Added Pepper's vet visit</a>
+      <a class="convo" href="../home/mobile.html">Momo's weight this month</a>
+    </div>
+    <div class="drawer-bottom">
+      <a class="settings-row" href="../account/mobile.html">
+        <span class="settings-avatar">AK</span>
+        <span class="settings-name">Akhil</span>
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V19.5a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H4.5a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H10.5a1.65 1.65 0 0 0 1-1.51V4.5a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V10.5a1.65 1.65 0 0 0 1.51 1H19.5a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </aside>
+
+</div>
+<script>
+(function(){
+  var menuBtn = document.getElementById('menu-btn');
+  var closeBtn = document.getElementById('close-drawer');
+  var drawer = document.getElementById('drawer');
+  var overlay = document.getElementById('overlay');
+
+  function openDrawer(){ drawer.classList.add('open'); overlay.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
+  function closeDrawer(){ drawer.classList.remove('open'); overlay.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+  menuBtn.addEventListener('click', openDrawer);
+  closeBtn.addEventListener('click', closeDrawer);
+  overlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeDrawer(); });
+})();
+</script>
+</body>
+</html>

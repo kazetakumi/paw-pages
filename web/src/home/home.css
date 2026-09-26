@@ -1,0 +1,556 @@
+/* The chat screen's own body: thread + composer, and the artifacts grid.
+   The sidebar/drawer/header chrome around it comes from ../shell/shell.css —
+   this file only owns what's inside `.main`. From design/v2/home/{web,mobile}.html. */
+
+.chat-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.thread-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.turn.user {
+  display: flex;
+  justify-content: flex-end;
+}
+.user-bubble {
+  background: var(--card);
+  border: 1px solid var(--rule);
+}
+.turn.assistant {
+  display: flex;
+}
+.assistant-text p {
+  margin: 0 0 10px;
+}
+.assistant-text p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- the "still working" line under a reply that is being written ---- */
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--data);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--stamp);
+}
+.assistant-text p + .thinking {
+  margin-top: 10px;
+}
+.thinking .glyph {
+  width: 1em;
+  text-align: center;
+}
+.thinking .secs {
+  color: var(--faint);
+}
+
+/* ---- inline ledger card: the same editorial identity as the ledger/stamp
+   elsewhere, dropped straight into the conversation. ---- */
+.ledger-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+.ledger-card:hover {
+  border-color: var(--ink);
+}
+.ledger-card .date {
+  font-family: var(--data);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.ledger-card .what {
+  min-width: 0;
+}
+.ledger-card .what b {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ledger-card .what .slash {
+  color: var(--rule);
+  margin: 0 7px;
+}
+.ledger-card .what .kind {
+  color: var(--ink-2);
+}
+.ledger-card .when {
+  font-family: var(--data);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.ledger-card.over {
+  background: var(--stamp-wash);
+  border-color: #edd5ce;
+}
+.ledger-card.over .date {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.card-stamp {
+  font-family: var(--data);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--stamp);
+  border: 2px solid var(--stamp);
+  border-radius: 3px;
+  line-height: 1;
+  opacity: 0.86;
+  transform: rotate(-3deg);
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  white-space: nowrap;
+}
+.card-stamp .days {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.tag svg {
+  width: 9px;
+  height: 9px;
+  flex: none;
+}
+
+/* ---- composer ---- */
+.composer {
+  display: flex;
+  align-items: flex-end;
+  border: 1px solid var(--rule);
+  border-radius: 26px;
+  background: var(--card);
+  box-shadow:
+    0 0 0 1px rgba(19, 32, 46, 0.02),
+    0 9px 9px 0 rgba(19, 32, 46, 0.01),
+    0 2px 5px 0 rgba(19, 32, 46, 0.05);
+}
+.composer-plus {
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  background: var(--card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ink);
+}
+.composer-plus:hover {
+  background: var(--hover);
+}
+.composer textarea {
+  flex: 1;
+  border: none;
+  resize: none;
+  outline: none;
+  font-family: var(--body);
+  line-height: 1.4;
+  background: transparent;
+  color: var(--ink);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.composer textarea::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+.composer textarea::placeholder {
+  color: var(--faint);
+}
+.composer-right {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.mic-btn {
+  border-radius: 50%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+.mic-btn:hover {
+  background: var(--hover);
+}
+.send-btn {
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--send-disabled, #c7ccc3);
+  color: #fff;
+  transition: background 0.12s ease;
+}
+.send-btn.ready {
+  background: var(--ink);
+}
+.disclaimer {
+  text-align: center;
+  font-family: var(--data);
+  color: var(--faint);
+}
+
+/* ---- artifacts ---- */
+.artifacts-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.art-head h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+.art-head p {
+  color: var(--ink-2);
+  margin: 0;
+}
+.art-sect {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 3px;
+}
+.art-sect h2 {
+  font-family: var(--data);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
+}
+.art-sect .line {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.art-sect .n {
+  font-family: var(--data);
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: 0.08em;
+}
+.art-grid {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0 40px;
+}
+.art-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.art-card:hover {
+  border-color: var(--ink);
+}
+.art-card .thumb {
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.art-card .thumb.a {
+  background: #dee5ea;
+}
+.art-card .thumb.b {
+  background: #e4e8de;
+}
+.art-card .thumb.c {
+  background: #ebdfe0;
+}
+.art-card .thumb svg {
+  width: 22px;
+  height: 22px;
+  color: var(--ink-2);
+}
+.art-card.doc .thumb svg {
+  color: var(--stamp);
+}
+.art-card .meta {
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule-2);
+}
+.art-card .fname {
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.art-card .fsub {
+  font-family: var(--data);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  color: var(--faint);
+  margin-top: 4px;
+}
+
+/* ============ desktop sizing ============ */
+.shell-desktop .thread {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+.shell-desktop .user-bubble {
+  max-width: 72%;
+  border-radius: 20px;
+  padding: 11px 17px;
+  font-size: 14.5px;
+}
+.shell-desktop .assistant-text {
+  font-size: 14.5px;
+  max-width: 100%;
+}
+.shell-desktop .ledger-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 16px;
+  margin: 10px 0;
+}
+.shell-desktop .ledger-card .date {
+  font-size: 11.5px;
+  padding-right: 16px;
+  border-right: 1px solid var(--rule-2);
+}
+.shell-desktop .ledger-card.over .date {
+  border-right-color: #edd5ce;
+}
+.shell-desktop .ledger-card .what {
+  font-size: 14.5px;
+}
+.shell-desktop .ledger-card .when {
+  font-size: 11px;
+}
+.shell-desktop .ledger-card.over .when {
+  visibility: hidden;
+}
+.shell-desktop .card-stamp {
+  font-size: 11px;
+  padding: 4px 9px 3px;
+}
+.shell-desktop .card-stamp .days {
+  font-size: 9.5px;
+}
+.shell-desktop .artifacts-in {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 8px 32px 60px;
+}
+.shell-desktop .art-head {
+  margin: 18px 0 28px;
+}
+.shell-desktop .art-head h1 {
+  font-size: 26px;
+}
+.shell-desktop .art-head p {
+  font-size: 13.5px;
+}
+.shell-desktop .art-grid {
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+.shell-desktop .composer-area {
+  flex: none;
+  padding: 8px 24px calc(14px + env(safe-area-inset-bottom, 0px));
+}
+.shell-desktop .composer-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+.shell-desktop .composer {
+  gap: 6px;
+  padding: 8px 8px 8px 12px;
+}
+.shell-desktop .composer-plus {
+  width: 33px;
+  height: 33px;
+}
+.shell-desktop .composer-plus svg {
+  width: 16px;
+  height: 16px;
+}
+.shell-desktop .composer textarea {
+  font-size: 14.5px;
+  padding: 7px 2px;
+  max-height: 180px;
+}
+.shell-desktop .composer-right {
+  gap: 4px;
+}
+.shell-desktop .mic-btn,
+.shell-desktop .send-btn {
+  width: 33px;
+  height: 33px;
+}
+.shell-desktop .mic-btn svg {
+  width: 17px;
+  height: 17px;
+}
+.shell-desktop .send-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.shell-desktop .disclaimer {
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  padding: 9px 0 2px;
+}
+
+/* ============ mobile sizing ============ */
+.shell-mobile .thread {
+  padding: 10px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.shell-mobile .user-bubble {
+  max-width: 84%;
+  border-radius: 18px;
+  padding: 10px 15px;
+  font-size: 14px;
+}
+.shell-mobile .assistant-text {
+  font-size: 14px;
+}
+.shell-mobile .ledger-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  margin: 9px 0;
+}
+.shell-mobile .ledger-card .date {
+  font-size: 11px;
+}
+.shell-mobile .ledger-card .what {
+  font-size: 14px;
+}
+.shell-mobile .ledger-card .when {
+  font-size: 10.5px;
+}
+.shell-mobile .ledger-card.over .when {
+  display: none;
+}
+.shell-mobile .card-stamp {
+  align-self: flex-start;
+  font-size: 10.5px;
+  padding: 4px 8px 3px;
+}
+.shell-mobile .card-stamp .days {
+  font-size: 9px;
+}
+.shell-mobile .artifacts-in {
+  padding: 6px 16px 40px;
+}
+.shell-mobile .art-head {
+  margin: 14px 0 20px;
+}
+.shell-mobile .art-head h1 {
+  font-size: 21px;
+  letter-spacing: -0.01em;
+}
+.shell-mobile .art-head p {
+  font-size: 12.5px;
+}
+.shell-mobile .art-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 14px 0 30px;
+}
+.shell-mobile .art-card .thumb svg {
+  width: 19px;
+  height: 19px;
+}
+.shell-mobile .art-card .meta {
+  padding: 8px 10px;
+}
+.shell-mobile .art-card .fname {
+  font-size: 11.5px;
+}
+.shell-mobile .art-card .fsub {
+  font-size: 10px;
+}
+.shell-mobile .composer-area {
+  flex: none;
+  padding: 6px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.shell-mobile .composer {
+  gap: 5px;
+  padding: 7px 7px 7px 10px;
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 1px rgba(19, 32, 46, 0.02),
+    0 2px 5px 0 rgba(19, 32, 46, 0.05);
+}
+.shell-mobile .composer-plus,
+.shell-mobile .mic-btn,
+.shell-mobile .send-btn {
+  width: 32px;
+  height: 32px;
+}
+.shell-mobile .composer-plus svg {
+  width: 16px;
+  height: 16px;
+}
+.shell-mobile .composer textarea {
+  font-size: 14px;
+  padding: 6px 2px;
+  max-height: 140px;
+}
+.shell-mobile .composer-right {
+  gap: 2px;
+}
+.shell-mobile .mic-btn svg {
+  width: 17px;
+  height: 17px;
+}
+.shell-mobile .send-btn svg {
+  width: 15px;
+  height: 15px;
+}
+.shell-mobile .disclaimer {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  padding: 8px 0 1px;
+}

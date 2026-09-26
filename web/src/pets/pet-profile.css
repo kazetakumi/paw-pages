@@ -1,0 +1,323 @@
+/* A pet's Feed and About tabs, from design/v2/pet-profile/{web,mobile}.html
+   and design/v2/pet-profile/about-{web,mobile}.html. Everything the two tabs
+   need that the shared shell (shell.css) and the app-wide cards (pets.css)
+   don't already provide: the header above the tabs, the history list and its
+   tag chips, and the identity card's mobile-only row layout. Only one layout
+   is ever mounted, so the same class names carry both breakpoints. */
+
+/* ============ the header: avatar, name, meta line, the chat button ======= */
+.phead h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0 0 4px;
+  line-height: 1.05;
+}
+.phead .meta {
+  color: var(--ink-2);
+}
+.pacts {
+  margin-left: auto;
+}
+
+.shell-desktop .phead {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+.shell-desktop .phead .av {
+  width: 74px;
+  height: 74px;
+  font-size: 28px;
+}
+.shell-desktop .phead h1 {
+  font-size: 33px;
+}
+.shell-desktop .phead .meta {
+  font-size: 14.5px;
+}
+
+.shell-mobile .phead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.shell-mobile .phead-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.shell-mobile .phead-top .av {
+  width: 58px;
+  height: 58px;
+  font-size: 22px;
+}
+.shell-mobile .phead h1 {
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+.shell-mobile .phead .meta {
+  font-size: 13px;
+}
+.shell-mobile .phead .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ============ the history list ============ */
+.hist {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.ent .ttl {
+  font-family: var(--display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ent .note {
+  color: var(--ink-2);
+}
+.ent .tags {
+  display: flex;
+  flex-wrap: wrap;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--data);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+}
+.tag.next {
+  color: var(--seal);
+  border-color: #c9dbd1;
+}
+.tag.late {
+  color: var(--stamp);
+  border-color: #e3c4bc;
+  font-weight: 700;
+}
+.tag.vet {
+  color: var(--faint);
+}
+.ent.over {
+  background: var(--stamp-wash);
+}
+
+.more {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--rule-2);
+  font-family: var(--data);
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+  cursor: pointer;
+}
+.more:hover {
+  color: var(--ink);
+  background: #fcfcfb;
+}
+
+.danger {
+  color: var(--faint);
+}
+.danger a {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 1px;
+}
+.danger a:hover {
+  color: var(--stamp);
+  border-color: var(--stamp);
+}
+
+.shell-desktop .ent {
+  display: grid;
+  grid-template-columns: 118px 1fr;
+  gap: 22px;
+  padding: 19px 22px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.shell-desktop .ent:last-of-type {
+  border-bottom: 0;
+}
+.shell-desktop .ent:hover {
+  background: #fcfcfb;
+}
+.shell-desktop .ent .when {
+  font-family: var(--data);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  padding-right: 22px;
+  border-right: 1px solid var(--rule-2);
+  white-space: nowrap;
+}
+.shell-desktop .ent .yr {
+  display: block;
+  color: var(--faint);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.shell-desktop .ent .ttl {
+  font-size: 17.5px;
+}
+.shell-desktop .ent .note {
+  font-size: 14.5px;
+  margin-top: 3px;
+  display: block;
+}
+.shell-desktop .ent .tags {
+  gap: 7px;
+  margin-top: 9px;
+}
+.shell-desktop .tag {
+  font-size: 10px;
+  padding: 3px 8px;
+}
+.shell-desktop .ent.over .when {
+  color: var(--stamp);
+  font-weight: 700;
+  border-right-color: #edd5ce;
+}
+.shell-desktop .more {
+  padding: 15px 22px;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+}
+.shell-desktop .danger {
+  font-size: 13px;
+  margin-top: 30px;
+}
+
+.shell-mobile .ent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.shell-mobile .ent:last-of-type {
+  border-bottom: 0;
+}
+.shell-mobile .ent .when {
+  font-family: var(--data);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.shell-mobile .ent .ttl {
+  font-size: 16px;
+}
+.shell-mobile .ent .note {
+  font-size: 13.5px;
+  margin-top: 2px;
+  display: block;
+}
+.shell-mobile .ent .tags {
+  gap: 6px;
+  margin-top: 8px;
+}
+.shell-mobile .tag {
+  font-size: 9.5px;
+  padding: 3px 7px;
+}
+.shell-mobile .ent.over .when {
+  color: var(--stamp);
+  font-weight: 700;
+}
+.shell-mobile .more {
+  padding: 14px 16px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+.shell-mobile .danger {
+  font-size: 12.5px;
+  margin-top: 24px;
+}
+
+/* ============ the identity card, on the About tab ============
+   Desktop already reads the label-column layout pets.css gives every
+   `.card .row` (190px + value, as design/v2/pet-profile/about-web.html has
+   it). Only the narrow layout needs correcting: the design stacks the label
+   over the value there rather than running them on one line, so it is
+   overridden here, under a card of its own (`.ident`) so nothing else that
+   reuses `.card .row` is touched. */
+.shell-mobile .ident.card .row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 13px 16px;
+}
+.shell-mobile .ident .row .k {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+.shell-mobile .ident .row .v {
+  font-size: 15px;
+  text-align: left;
+}
+.shell-mobile .ident .row .v.mono {
+  font-size: 13px;
+}
+.shell-mobile .ident .row .v .approx {
+  font-size: 12px;
+  margin-left: 4px;
+}
+.shell-mobile .ident .row .v .derived {
+  display: block;
+  margin-top: 2px;
+  margin-left: 0;
+  font-size: 12.5px;
+}
+
+/* The photo control rides along as the identity card's last row; its value
+   column just needs its picker, remove link and hint to sit in a line. */
+.ident .row.photo .v {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ============ the public-page card, mobile sizing ============ */
+.shell-mobile .pub {
+  padding: 16px;
+  margin-bottom: 32px;
+}
+.shell-mobile .pub .hd {
+  margin-bottom: 13px;
+}
+.shell-mobile .pub .st {
+  font-size: 14px;
+}
+.shell-mobile .pub .sw {
+  width: 38px;
+  height: 22px;
+  border-radius: 11px;
+}
+.shell-mobile .pub .sw::after {
+  width: 18px;
+  height: 18px;
+}
+.shell-mobile .pub .url {
+  padding: 9px 11px;
+  gap: 10px;
+}
+.shell-mobile .pub .url .u {
+  font-size: 11px;
+}
+.shell-mobile .pub .shows {
+  margin-top: 14px;
+  font-size: 12.5px;
+}

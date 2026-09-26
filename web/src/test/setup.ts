@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { afterAll, afterEach, beforeAll } from "vitest";
+import { clearCache } from "../api";
 import { server } from "./server";
 
 // jsdom has no matchMedia. Drive it off window.innerWidth so a test can set the
@@ -26,6 +27,7 @@ export function setViewportWidth(width: number) {
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   server.resetHandlers();
+  clearCache();
   window.innerWidth = 1024;
 });
 afterAll(() => server.close());

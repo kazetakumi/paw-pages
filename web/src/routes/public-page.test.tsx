@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
@@ -38,6 +38,10 @@ function published(pet: PublicPet) {
   );
 }
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("the public page", () => {
   it("shows the pet and its whole record in the desktop layout above the breakpoint", async () => {
     published(biscuit);
@@ -59,6 +63,7 @@ describe("the public page", () => {
     for (const entry of biscuit.entries) {
       expect(screen.getByText(entry.title)).toBeInTheDocument();
     }
+    expect(screen.getByText(/Last updated 12 Aug 2026/)).toBeInTheDocument();
   });
 
   it("shows the same document in the mobile layout below the breakpoint", async () => {
@@ -74,6 +79,8 @@ describe("the public page", () => {
     expect(fact("Age")).toHaveTextContent("4 yrs 5 mo");
     expect(fact("Born")).toHaveTextContent("Mar 2022");
     expect(screen.getByText("Rabies booster")).toBeInTheDocument();
+    // the narrow layout drops "Last" for room, unlike the wide one
+    expect(screen.getByText(/^Updated 12 Aug 2026/)).toBeInTheDocument();
   });
 
   it("is a document, not an app screen: no navigation, no avatar, no sign-in prompt", async () => {
@@ -108,6 +115,7 @@ describe("the public page", () => {
     // The last entry's due date is long past. The handler's own screens would
     // stamp it; this page does not know and does not say.
     published(biscuit);
+    vi.setSystemTime(new Date("2026-09-24"));
 
     const { container } = renderRoute(page);
 
@@ -117,6 +125,11 @@ describe("the public page", () => {
     expect(container.querySelector(".stamp, .over, .hot")).toBeNull();
     expect(screen.queryByText(/overdue/i)).toBeNull();
     expect(screen.queryByText(/due today/i)).toBeNull();
+    // a pill still due gets the quiet green; one already past gets quiet grey —
+    // never the app's red, and never told apart by anything but a css class
+    expect(screen.getByText(/Next 12 Nov 2026/)).toHaveClass("nx");
+    expect(screen.getByText(/Next 12 Nov 2026/)).not.toHaveClass("past");
+    expect(screen.getByText(/Next 14 Jul 2026/)).toHaveClass("nx", "past");
   });
   it("says only that the page is not available when the API 404s", async () => {
     // Private, archived or never-existed: the API answers all three the same,

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawpages_pets — Paw Pages Database v2</title>
+<style>
+  :root{
+    --ink:#1c1b19;
+    --ink-soft:#55514b;
+    --ink-faint:#8b857d;
+    --rule:#e4e0d9;
+    --rule-soft:#efece6;
+    --paper:#fbfaf7;
+    --paper-2:#f4f2ed;
+    --accent:#8a5a2b;
+    --accent-soft:#f0e6da;
+    --green:#4a6b46;
+    --amber:#8a6a1f;
+    --red:#a3402f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  main{max-width:760px;margin:0 auto;padding:56px 28px 120px}
+
+  .crumb{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);margin-bottom:22px}
+  .crumb a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  .crumb a:hover{border-bottom-color:var(--accent)}
+
+  .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-family:var(--mono);font-size:34px;line-height:1.15;letter-spacing:-.01em;
+    margin:0 0 16px;font-weight:600;color:var(--ink)}
+  .standfirst{font-size:19px;line-height:1.55;color:var(--ink-soft);max-width:64ch;margin:0 0 26px}
+  .meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:11px 0;display:flex;gap:26px;flex-wrap:wrap;margin-bottom:46px}
+  .meta b{font-weight:600;color:var(--ink-soft)}
+
+  h2{font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:52px 0 6px;
+    padding-top:22px;border-top:1px solid var(--rule)}
+  h2:first-of-type{margin-top:0}
+  .sectnote{color:var(--ink-faint);font-size:15px;margin:0 0 22px;max-width:62ch;font-style:italic}
+  h3{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:-.01em;
+    margin:34px 0 4px;color:var(--accent)}
+  p{max-width:64ch}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0 6px}
+  th{text-align:left;font-family:var(--sans);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);font-weight:600;
+    padding:0 14px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  .ty{font-family:var(--mono);font-size:12px;color:var(--ink-faint);white-space:nowrap}
+  .nn{font-family:var(--sans);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-faint);border:1px solid var(--rule);border-radius:2px;padding:1px 5px}
+  .nn.req{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+  .nn.new{color:var(--green);border-color:#cddcc9;background:#f0f5ee}
+
+  code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+    padding:1px 5px;border-radius:2px;color:var(--accent)}
+  pre{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:16px 18px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--ink);font-size:12.5px;line-height:1.6}
+
+  .why{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:14px 18px;margin:14px 0 0;font-size:15px;color:var(--ink-soft)}
+  .why b{font-family:var(--sans);font-size:10px;text-transform:uppercase;letter-spacing:.11em;
+    color:var(--ink-faint);display:block;margin-bottom:5px;font-weight:600}
+
+  .pager{display:flex;justify-content:space-between;font-family:var(--sans);
+    font-size:13px;margin-top:60px;padding-top:18px;border-top:1px solid var(--rule)}
+  .pager a{color:var(--accent);text-decoration:none}
+  .pager a:hover{text-decoration:underline}
+  .pager .next{margin-left:auto;text-align:right}
+
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--rule);
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<main>
+  <div class="crumb"><a href="index.html">← Database</a></div>
+  <div class="eyebrow">Table · Live on kaze-master-in</div>
+  <h1>pawpages_pets</h1>
+  <p class="standfirst">One row per animal. Belongs to exactly one handler, carries its own
+  public-page toggle, and can be archived without losing its history.</p>
+
+  <div class="meta">
+    <span><b>Rows live</b> &nbsp;1</span>
+    <span><b>RLS</b> &nbsp;enabled</span>
+    <span><b>Primary key</b> &nbsp;<code>id</code></span>
+    <span><b>Added in</b> &nbsp;<code>0001_init.sql</code>, gains <code>conversation_id</code> in v2</span>
+  </div>
+
+  <h2 id="columns">Columns</h2>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td class="ty">uuid</td><td><code>default gen_random_uuid()</code></td></tr>
+      <tr><td><code>handler_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+        <td>→ <a href="handlers.html"><code>pawpages_handlers.id</code></a>, <code>on delete cascade</code>.</td></tr>
+      <tr><td><code>name</code></td><td class="ty">text <span class="nn req">required</span></td><td>1–60 chars.</td></tr>
+      <tr><td><code>species</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>Free text, 1–40 chars. No check list — one would block rabbits and birds for no
+        gain, since nothing branches on it.</td></tr>
+      <tr><td><code>breed</code></td><td class="ty">text</td><td>Optional, ≤ 60 chars.</td></tr>
+      <tr><td><code>sex</code></td><td class="ty">text</td><td>Optional. <code>male</code> or <code>female</code>.</td></tr>
+      <tr><td><code>date_of_birth</code></td><td class="ty">date</td><td>Optional, not in the future.</td></tr>
+      <tr><td><code>dob_is_approx</code></td><td class="ty">boolean</td>
+        <td><code>default false</code>. Rescue pets rarely have a real birthday.</td></tr>
+      <tr><td><code>colour</code></td><td class="ty">text</td><td>Optional, ≤ 60 chars.</td></tr>
+      <tr><td><code>photo_path</code></td><td class="ty">text</td>
+        <td>Optional. Path into the private <code>pet-photos</code> storage bucket. Null until a
+        photo is uploaded.</td></tr>
+      <tr><td><code>slug</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>Unique. Must match <code>^[a-z0-9]+(-[a-z0-9]+)*$</code>. Claimed at insert whether
+        or not the page is public, so toggling it off and on keeps the same URL.</td></tr>
+      <tr><td><code>is_public</code></td><td class="ty">boolean</td><td><code>default false</code>.</td></tr>
+      <tr><td><code>archived_at</code></td><td class="ty">timestamptz</td>
+        <td>Optional. Null means active. Set means excluded from due dates and the public page
+        is offline.</td></tr>
+      <tr><td><code>archived_reason</code></td><td class="ty">text</td>
+        <td>Optional. <code>passed_away</code>, <code>rehomed</code> or <code>other</code>.</td></tr>
+      <tr><td><code>conversation_id</code></td><td class="ty">uuid <span class="nn new">v2</span></td>
+        <td>Optional. → <a href="conversations.html"><code>pawpages_conversations.id</code></a>,
+        <code>on delete set null</code>. Set when this pet was created (or later edited) from a
+        chat turn; null for a pet added the ordinary way, through the form.</td></tr>
+      <tr><td><code>created_at</code> / <code>updated_at</code></td><td class="ty">timestamptz</td>
+        <td><code>default now()</code>; <code>updated_at</code> kept current by
+        <code>pawpages_pets_touch</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="why"><b>Set null, not cascade, on delete</b>
+    Unlike <a href="uploads.html"><code>pawpages_uploads.conversation_id</code></a>, which
+    cascades because an unclaimed upload is disposable, deleting a conversation must never take
+    a pet down with it. <code>set null</code> just drops the provenance link and keeps the pet.</div>
+
+  <h3>Constraints worth knowing</h3>
+  <table>
+    <thead><tr><th>Name</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_archive_is_complete</code></td>
+        <td>Both <code>archived_at</code> and <code>archived_reason</code>, or neither. There is
+        no such thing as a pet archived for no reason.</td></tr>
+      <tr><td><code>pawpages_dob_approx_needs_a_date</code></td>
+        <td><code>dob_is_approx</code> cannot be true with no date. "Approximately nothing" is
+        not a state.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="indexes">Indexes</h2>
+  <table>
+    <thead><tr><th>Index</th><th>Serves</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_pets_handler_active_idx</code></td>
+        <td>The pet list. <code>(handler_id) where archived_at is null</code> — archived pets
+        are not in the index at all.</td></tr>
+      <tr><td><code>pawpages_pets_public_slug_idx</code></td>
+        <td>Public page lookup by URL. <code>(slug) where is_public and archived_at is null</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="rls">Row level security</h2>
+  <table>
+    <thead><tr><th>Policy</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_handler_owns_pets</code></td>
+        <td><code>all</code> where <code>handler_id = (select auth.uid())</code>, same on
+        <code>using</code> and <code>with check</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="public">What a visitor sees</h2>
+  <p>Anonymous visitors never touch this table. They read
+  <code>pawpages_public_pets</code>, a <code>security definer</code> view scoped to
+  <code>where is_public and archived_at is null</code>, exposing a fixed, coarser column set:
+  <code>slug</code>, <code>name</code>, <code>species</code>, <code>breed</code>,
+  <code>colour</code>, <code>sex</code>, <code>photo_path</code>, plus <code>born</code>
+  (<code>Mon YYYY</code>) and precomputed <code>age_years</code> / <code>age_months</code>. The
+  exact <code>date_of_birth</code> never leaves the table, and <code>handler_id</code> is absent
+  entirely rather than filtered.</p>
+
+  <div class="why"><b>Why not RLS alone</b>
+    RLS decides which <em>rows</em> a visitor can read. It cannot hide <em>columns</em>. The
+    public page problem is entirely about columns, so the view — not a policy on this table — is
+    the gate.</div>
+
+  <h2 id="referenced-by">References &amp; referenced by</h2>
+  <table>
+    <thead><tr><th>Table</th><th>Column</th><th>On delete</th></tr></thead>
+    <tbody>
+      <tr><td>← <a href="handlers.html"><code>pawpages_handlers</code></a></td>
+        <td><code>handler_id</code></td><td><code>cascade</code></td></tr>
+      <tr><td>← <a href="conversations.html"><code>pawpages_conversations</code></a></td>
+        <td><code>conversation_id</code> (optional)</td><td><code>set null</code></td></tr>
+      <tr><td>→ <a href="entries.html"><code>pawpages_entries</code></a></td>
+        <td><code>pet_id</code></td><td><code>cascade</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="pager">
+    <a href="handlers.html">← pawpages_handlers</a>
+    <span class="next"><a href="entries.html">pawpages_entries →</a></span>
+  </div>
+
+  <footer>Paw Pages · v2 database design log · <code>pawpages_pets</code> unchanged from v1,
+  gains <code>conversation_id</code> in v2</footer>
+</main>
+</body>
+</html>

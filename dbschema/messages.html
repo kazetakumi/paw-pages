@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawpages_messages â€” Paw Pages Database v2</title>
+<style>
+  :root{
+    --ink:#1c1b19;
+    --ink-soft:#55514b;
+    --ink-faint:#8b857d;
+    --rule:#e4e0d9;
+    --rule-soft:#efece6;
+    --paper:#fbfaf7;
+    --paper-2:#f4f2ed;
+    --accent:#8a5a2b;
+    --accent-soft:#f0e6da;
+    --green:#4a6b46;
+    --amber:#8a6a1f;
+    --red:#a3402f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  main{max-width:760px;margin:0 auto;padding:56px 28px 120px}
+
+  .crumb{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);margin-bottom:22px}
+  .crumb a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  .crumb a:hover{border-bottom-color:var(--accent)}
+
+  .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-family:var(--mono);font-size:34px;line-height:1.15;letter-spacing:-.01em;
+    margin:0 0 16px;font-weight:600;color:var(--ink)}
+  .standfirst{font-size:19px;line-height:1.55;color:var(--ink-soft);max-width:64ch;margin:0 0 26px}
+  .meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:11px 0;display:flex;gap:26px;flex-wrap:wrap;margin-bottom:46px}
+  .meta b{font-weight:600;color:var(--ink-soft)}
+
+  h2{font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:52px 0 6px;
+    padding-top:22px;border-top:1px solid var(--rule)}
+  h2:first-of-type{margin-top:0}
+  .sectnote{color:var(--ink-faint);font-size:15px;margin:0 0 22px;max-width:62ch;font-style:italic}
+  h3{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:-.01em;
+    margin:34px 0 4px;color:var(--accent)}
+  p{max-width:64ch}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0 6px}
+  th{text-align:left;font-family:var(--sans);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);font-weight:600;
+    padding:0 14px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  .ty{font-family:var(--mono);font-size:12px;color:var(--ink-faint);white-space:nowrap}
+  .nn{font-family:var(--sans);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-faint);border:1px solid var(--rule);border-radius:2px;padding:1px 5px}
+  .nn.req{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+
+  code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+    padding:1px 5px;border-radius:2px;color:var(--accent)}
+  pre{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:16px 18px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--ink);font-size:12.5px;line-height:1.6}
+
+  .callout{border-left:3px solid var(--accent);background:var(--paper-2);
+    padding:17px 22px;margin:24px 0;border-radius:0 2px 2px 0}
+  .callout p{margin:0;color:var(--ink-soft)}
+  .callout p+p{margin-top:9px}
+  .callout .ct{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.11em;font-weight:600;color:var(--accent);margin-bottom:6px}
+
+  .why{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:14px 18px;margin:14px 0 0;font-size:15px;color:var(--ink-soft)}
+  .why b{font-family:var(--sans);font-size:10px;text-transform:uppercase;letter-spacing:.11em;
+    color:var(--ink-faint);display:block;margin-bottom:5px;font-weight:600}
+  .why+.why{margin-top:10px}
+
+  .pager{display:flex;justify-content:space-between;font-family:var(--sans);
+    font-size:13px;margin-top:60px;padding-top:18px;border-top:1px solid var(--rule)}
+  .pager a{color:var(--accent);text-decoration:none}
+  .pager a:hover{text-decoration:underline}
+  .pager .next{margin-left:auto;text-align:right}
+
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--rule);
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<main>
+  <div class="crumb"><a href="index.html">← Database</a></div>
+  <div class="eyebrow">Table · v2 · migrations 0010, 0011</div>
+  <h1>pawpages_messages</h1>
+  <p class="standfirst">One row per item in a conversation — every user message, assistant
+  message, tool call and tool output, in order. Replaces the JSONL <code>transcript</code>
+  column that <a href="conversations.html"><code>pawpages_conversations</code></a> carried in
+  0008.</p>
+
+  <div class="meta">
+    <span><b>RLS</b> &nbsp;on</span>
+    <span><b>Primary key</b> &nbsp;<code>id</code></span>
+    <span><b>New for</b> &nbsp;v2</span>
+  </div>
+
+  <h2 id="columns">Columns</h2>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td class="ty">bigint</td>
+        <td><code>generated always as identity</code>. Also the turn order — see below.</td></tr>
+      <tr><td><code>conversation_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+        <td>→ <a href="conversations.html"><code>pawpages_conversations.id</code></a>,
+        <code>on delete cascade</code>.</td></tr>
+      <tr><td><code>handler_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+        <td>→ <a href="handlers.html"><code>pawpages_handlers.id</code></a>, <code>on delete cascade</code>.
+        Copied from the conversation.</td></tr>
+      <tr><td><code>type</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>One of <code>user_message</code>, <code>assistant_message</code>,
+        <code>function_call</code>, <code>function_call_output</code>. Replaced
+        <code>role</code> in 0011.</td></tr>
+      <tr><td><code>content</code></td><td class="ty">jsonb <span class="nn req">required</span></td>
+        <td>The whole item exactly as it's replayed to the model: a <code>{role, content}</code>
+        message, a <code>function_call</code> (<code>call_id</code>, <code>name</code>,
+        <code>arguments</code>), or a <code>function_call_output</code> (<code>call_id</code>,
+        <code>output</code>).</td></tr>
+      <tr><td><code>created_at</code></td><td class="ty">timestamptz</td><td><code>default now()</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="why"><b>Why order by id, not created_at</b>
+    A user turn and its reply are saved in the same transaction, and <code>now()</code> is the
+    transaction's start time, so both rows get the same <code>created_at</code>. An identity
+    column always increases, so it gives a reliable order.</div>
+  <div class="why"><b>Why handler_id is here when the conversation already has it</b>
+    So the RLS policy can be a plain column check, the same shape as every other table's,
+    instead of a join to the conversation on every read.</div>
+  <div class="why"><b>Why tool calls are stored, not just the text</b>
+    Without them the model's next turn sees "user asked, I said done" but not which tool
+    it called, with what arguments, or what came back — exactly what a follow-up like
+    "change that entry's date" needs. Storing every item means loading history is just
+    every row's <code>content</code> in <code>id</code> order, replayed as is.</div>
+  <div class="why"><b>Why one type column, not role plus type</b>
+    0010 had <code>role</code>, which only fits messages. A single <code>type</code> covers
+    all four kinds with one check constraint and no "role only when it's a message" rule.
+    The values are the Responses API's own item names (messages named by role), so the
+    column and the jsonb use the same words. The chat UI reads only
+    <code>user_message</code> and <code>assistant_message</code>; the model gets
+    everything.</div>
+
+  <h2 id="indexes">Indexes</h2>
+  <table>
+    <thead><tr><th>Index</th><th>For</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_messages_conversation_idx</code></td>
+        <td><code>(conversation_id, id)</code> — loading one conversation's turns in order, and
+        the sidebar's first-user-turn lookup.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="rls">Row level security</h2>
+  <table>
+    <thead><tr><th>Policy</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_handler_owns_messages</code></td>
+        <td><code>all</code>. <code>using</code>: <code>handler_id = (select auth.uid())</code>.
+        <code>with check</code>: the same, plus the conversation must be one the handler can
+        see.</td></tr>
+    </tbody>
+  </table>
+  <div class="why"><b>Why with check also looks at the conversation</b>
+    Without it, a handler could write a turn into someone else's conversation by using their
+    own <code>handler_id</code> with that conversation's id. The <code>exists</code> subquery
+    runs under <code>pawpages_conversations</code>' own RLS, so it only finds the handler's own
+    threads.</div>
+
+  <div class="pager">
+    <a href="conversations.html">← pawpages_conversations</a>
+    <span class="next"><a href="uploads.html">pawpages_uploads →</a></span>
+  </div>
+
+  <footer>Paw Pages · v2 database design log · <code>pawpages_messages</code> — new for v2,
+  migrations 0010, 0011</footer>
+</main>
+</body>
+</html>

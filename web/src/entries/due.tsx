@@ -95,38 +95,32 @@ export function Ledger({ items }: { items: DueItem[] }) {
   );
 }
 
-/** One outstanding item on the pet's own page, with the two ways to close it.
- *  Same view as the home ledger, so the feed and the ledger cannot disagree. */
+/** One outstanding item on the pet's own page. Always drawn in the same warm
+ *  wash — due soon or already overdue — with the OVERDUE stamp added only
+ *  once the database says so. Closing it now happens only one way: logging
+ *  the next one has moved to chat. */
 export function Attention({
   item,
-  onLogNext,
   onMarkDone,
 }: {
   item: DueItem;
-  onLogNext: () => void;
   onMarkDone: () => void;
 }) {
   const isDesktop = useIsDesktop();
   return (
-    <div
-      className={item.is_overdue ? "attention over" : "attention"}
-      data-layout={isDesktop ? "desktop" : "mobile"}
-    >
+    <div className="due" data-layout={isDesktop ? "desktop" : "mobile"}>
       <div className="dt">Due {formatDate(item.due_on)}</div>
       <div className="dw">{item.title}</div>
       <div className="ds">
         Last given <span className="d">{formatDate(item.happened_on)}</span>
         {item.vet && ` at ${item.vet}`}.
       </div>
+      {item.is_overdue && <Stamp item={item} short={!isDesktop} />}
       <div className="dacts">
-        <button className="mini" type="button" onClick={onLogNext}>
-          Log the next one
-        </button>
-        <button className="mini q" type="button" onClick={onMarkDone}>
+        <button className="mini" type="button" onClick={onMarkDone}>
           Mark done
         </button>
       </div>
-      {item.is_overdue && <Stamp item={item} short={!isDesktop} />}
     </div>
   );
 }

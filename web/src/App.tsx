@@ -2,13 +2,12 @@ import { useEffect } from "react";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import { onSessionLost } from "./api";
 import Account from "./routes/account";
+import Dashboard from "./routes/dashboard";
 import ForgotPassword from "./routes/forgot-password";
 import Home from "./routes/home";
 import Landing from "./routes/landing";
-import Log from "./routes/log";
 import PetAbout from "./routes/pet-about";
 import PetFeed from "./routes/pet-feed";
-import PetNew from "./routes/pet-new";
 import PublicPage from "./routes/public-page";
 import ResetPassword from "./routes/reset-password";
 import SignIn from "./routes/signin";
@@ -31,9 +30,8 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/home" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/account" element={<Account />} />
-        <Route path="/log" element={<Log />} />
-        <Route path="/pets/new" element={<PetNew />} />
         <Route path="/pets/:id" element={<PetFeed />} />
         <Route path="/pets/:id/about" element={<PetAbout />} />
         {/* No account, no cookie, no Shell: a document a visitor was handed. */}

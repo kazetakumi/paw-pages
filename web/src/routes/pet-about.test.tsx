@@ -31,19 +31,20 @@ function signedInWith(pet: Pet) {
   server.use(
     http.get("http://localhost:8000/me", () => HttpResponse.json(me)),
     http.get(`http://localhost:8000/pets/${pet.id}`, () => HttpResponse.json(pet)),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
 }
 
 describe("a pet's About tab", () => {
-  it("shows every identity field in the desktop layout above the breakpoint", async () => {
+  it("shows the header, tabs, and every identity field", async () => {
     signedInWith(biscuit);
-    setViewportWidth(1200);
 
-    const { container } = renderRoute(about);
+    renderRoute(about);
 
     expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="desktop"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="mobile"]')).toBeNull();
+    expect(screen.getByRole("link", { name: "Feed" })).toHaveAttribute("href", `/pets/${biscuit.id}`);
+    expect(screen.getByRole("link", { name: /dashboard/i })).toHaveAttribute("href", "/dashboard");
     for (const shown of ["Species", "Breed", "Sex", "Colour"]) {
       expect(screen.getByText(shown)).toBeInTheDocument();
     }
@@ -55,7 +56,6 @@ describe("a pet's About tab", () => {
 
   it("capitalises the sex in the identity row but leaves the header line alone", async () => {
     signedInWith(biscuit);
-    setViewportWidth(1200);
 
     renderRoute(about);
 
@@ -64,17 +64,14 @@ describe("a pet's About tab", () => {
     expect(screen.getByText(/Indian Pariah ·/)).toHaveTextContent("male");
   });
 
-  it("shows the same identity in the mobile layout below the breakpoint", async () => {
+  it("stacks the header below the breakpoint, beside the avatar above it", async () => {
     signedInWith(biscuit);
     setViewportWidth(390);
 
     const { container } = renderRoute(about);
 
-    expect(await screen.findByRole("heading", { name: "Biscuit" })).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="mobile"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-layout="desktop"]')).toBeNull();
-    expect(screen.getByText("Indian Pariah")).toBeInTheDocument();
-    expect(screen.getByText("Tan & white")).toBeInTheDocument();
+    await screen.findByRole("heading", { name: "Biscuit" });
+    expect(container.querySelector(".phead-top")).toBeInTheDocument();
   });
 
   it("shows the age beside the date of birth, with the approximate flag visible", async () => {
@@ -96,58 +93,14 @@ describe("a pet's About tab", () => {
     expect(screen.queryByText(/approx/i)).not.toBeInTheDocument();
   });
 
-  it("saves an edit to any identity field", async () => {
+  it("sends identity edits to chat instead of a form on the page", async () => {
     signedInWith(biscuit);
-    let sent: Record<string, unknown> | null = null;
-    server.use(
-      http.patch(`http://localhost:8000/pets/${biscuit.id}`, async ({ request }) => {
-        sent = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...biscuit, ...sent });
-      }),
-    );
 
     renderRoute(about);
-    await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
 
-    // every identity field, editable after the fact
-    for (const field of ["Name", "Species", "Breed", "Sex", "Date of birth", "Colour"]) {
-      expect(screen.getByLabelText(field)).toBeInTheDocument();
-    }
-    expect(screen.getByLabelText(/approximate/i)).toBeInTheDocument();
-
-    const colour = screen.getByLabelText("Colour");
-    await userEvent.clear(colour);
-    await userEvent.type(colour, "Brindle");
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    expect(await screen.findByText("Brindle")).toBeInTheDocument();
-    expect(sent).toMatchObject({ colour: "Brindle", name: "Biscuit", species: "dog" });
-  });
-
-  it("puts a field the API rejected beside that field", async () => {
-    signedInWith({ ...biscuit, date_of_birth: null, dob_is_approx: false, age_years: null, age_months: null });
-    server.use(
-      http.patch(`http://localhost:8000/pets/${biscuit.id}`, () =>
-        HttpResponse.json(
-          {
-            detail: {
-              field: "dob_is_approx",
-              message: "Mark a date of birth approximate only when there is a date.",
-            },
-          },
-          { status: 422 },
-        ),
-      ),
-    );
-
-    renderRoute(about);
-    await userEvent.click(await screen.findByRole("button", { name: "Edit" }));
-    await userEvent.click(screen.getByLabelText(/approximate/i));
-    await userEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    expect(await screen.findByLabelText(/approximate/i)).toHaveAccessibleDescription(
-      /only when there is a date/,
-    );
+    const link = await screen.findByRole("link", { name: "Edit in chat" });
+    expect(link).toHaveAttribute("href", "/home?new=1");
+    expect(screen.queryByLabelText("Name")).not.toBeInTheDocument();
   });
 });
 
@@ -247,6 +200,17 @@ describe("a pet's photo, from the About tab", () => {
     expect(screen.getByText("B")).toBeInTheDocument();
   });
 
+  it("shows the photo control as a row on the identity card", async () => {
+    signedInWith(biscuit);
+
+    const { container } = renderRoute(about);
+
+    const row = (await screen.findByLabelText(/photo/i)).closest(".row");
+    expect(row).toHaveClass("row", "photo");
+    expect(row!.closest(".card")).toHaveClass("ident");
+    expect(container.querySelectorAll(".sect")).toHaveLength(3);
+  });
+
   it("uploads a chosen photo and shows it in place of the letter", async () => {
     signedInWith(biscuit);
     let sentType: string | null = null;
@@ -311,28 +275,6 @@ describe("a pet's photo, from the About tab", () => {
     );
 
     expect(await screen.findByLabelText(/photo/i)).toHaveAccessibleDescription(/over 5 MB/);
-  });
-
-  it("gives the upload control a desktop layout above the breakpoint", async () => {
-    signedInWith(biscuit);
-    setViewportWidth(1200);
-
-    const { container } = renderRoute(about);
-
-    expect(await screen.findByLabelText(/photo/i)).toBeInTheDocument();
-    expect(container.querySelector('[data-photo="desktop"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-photo="mobile"]')).toBeNull();
-  });
-
-  it("gives it a mobile layout below the breakpoint", async () => {
-    signedInWith(biscuit);
-    setViewportWidth(390);
-
-    const { container } = renderRoute(about);
-
-    expect(await screen.findByLabelText(/photo/i)).toBeInTheDocument();
-    expect(container.querySelector('[data-photo="mobile"]')).toBeInTheDocument();
-    expect(container.querySelector('[data-photo="desktop"]')).toBeNull();
   });
 });
 
@@ -439,5 +381,4 @@ describe("archiving a pet", () => {
     expect(container.querySelector('[data-archive="mobile"]')).toBeInTheDocument();
     expect(container.querySelector('[data-archive="desktop"]')).toBeNull();
   });
-
 });

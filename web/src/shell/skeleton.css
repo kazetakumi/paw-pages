@@ -1,0 +1,33 @@
+/* The placeholder a screen draws while its first request is in flight. `.av`
+   is listed so a bone borrowing an avatar's size still shimmers over the
+   avatar's own flat tint. */
+.bone,
+.av.bone {
+  display: block;
+  height: 12px;
+  max-width: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--paper-2) 25%, var(--rule-2) 50%, var(--paper-2) 75%);
+  background-size: 200% 100%;
+  animation: bone 1.4s ease-in-out infinite;
+}
+.av.bone {
+  border-radius: 50%;
+}
+.bone + .bone {
+  margin-top: 9px;
+}
+@keyframes bone {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bone,
+  .av.bone {
+    animation: none;
+  }
+}

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pawpages_uploads — Paw Pages Database v2</title>
+<style>
+  :root{
+    --ink:#1c1b19;
+    --ink-soft:#55514b;
+    --ink-faint:#8b857d;
+    --rule:#e4e0d9;
+    --rule-soft:#efece6;
+    --paper:#fbfaf7;
+    --paper-2:#f4f2ed;
+    --accent:#8a5a2b;
+    --accent-soft:#f0e6da;
+    --green:#4a6b46;
+    --amber:#8a6a1f;
+    --red:#a3402f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--serif);font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  main{max-width:760px;margin:0 auto;padding:56px 28px 120px}
+
+  .crumb{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);margin-bottom:22px}
+  .crumb a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+  .crumb a:hover{border-bottom-color:var(--accent)}
+
+  .eyebrow{font-family:var(--sans);font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-faint);margin-bottom:14px}
+  h1{font-family:var(--mono);font-size:34px;line-height:1.15;letter-spacing:-.01em;
+    margin:0 0 16px;font-weight:600;color:var(--ink)}
+  .standfirst{font-size:19px;line-height:1.55;color:var(--ink-soft);max-width:64ch;margin:0 0 26px}
+  .meta{font-family:var(--sans);font-size:12.5px;color:var(--ink-faint);
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+    padding:11px 0;display:flex;gap:26px;flex-wrap:wrap;margin-bottom:46px}
+  .meta b{font-weight:600;color:var(--ink-soft)}
+
+  h2{font-size:15px;font-family:var(--sans);font-weight:600;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:52px 0 6px;
+    padding-top:22px;border-top:1px solid var(--rule)}
+  h2:first-of-type{margin-top:0}
+  .sectnote{color:var(--ink-faint);font-size:15px;margin:0 0 22px;max-width:62ch;font-style:italic}
+  h3{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:-.01em;
+    margin:34px 0 4px;color:var(--accent)}
+  p{max-width:64ch}
+
+  table{border-collapse:collapse;width:100%;font-size:14.5px;margin:14px 0 6px}
+  th{text-align:left;font-family:var(--sans);font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--ink-faint);font-weight:600;
+    padding:0 14px 8px 0;border-bottom:1px solid var(--rule);white-space:nowrap}
+  td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule-soft);
+    vertical-align:top;color:var(--ink-soft)}
+  td:first-child{color:var(--ink)}
+  .ty{font-family:var(--mono);font-size:12px;color:var(--ink-faint);white-space:nowrap}
+  .nn{font-family:var(--sans);font-size:9.5px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--ink-faint);border:1px solid var(--rule);border-radius:2px;padding:1px 5px}
+  .nn.req{color:var(--accent);border-color:var(--accent-soft);background:var(--accent-soft)}
+  .nn.new{color:var(--green);border-color:#cddcc9;background:#f0f5ee}
+
+  code{font-family:var(--mono);font-size:13px;background:var(--paper-2);
+    padding:1px 5px;border-radius:2px;color:var(--accent)}
+  pre{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:16px 18px;overflow-x:auto;margin:16px 0}
+  pre code{background:none;padding:0;color:var(--ink);font-size:12.5px;line-height:1.6}
+
+  .callout{border-left:3px solid var(--accent);background:var(--paper-2);
+    padding:17px 22px;margin:24px 0;border-radius:0 2px 2px 0}
+  .callout p{margin:0;color:var(--ink-soft)}
+  .callout p+p{margin-top:9px}
+  .callout .ct{font-family:var(--sans);font-size:10.5px;text-transform:uppercase;
+    letter-spacing:.11em;font-weight:600;color:var(--accent);margin-bottom:6px}
+  .callout.warn{border-left-color:var(--red);background:#fdf7f5}
+  .callout.warn .ct{color:var(--red)}
+
+  .why{background:#fff;border:1px solid var(--rule);border-radius:2px;
+    padding:14px 18px;margin:14px 0 0;font-size:15px;color:var(--ink-soft)}
+  .why b{font-family:var(--sans);font-size:10px;text-transform:uppercase;letter-spacing:.11em;
+    color:var(--ink-faint);display:block;margin-bottom:5px;font-weight:600}
+
+  .pager{display:flex;justify-content:space-between;font-family:var(--sans);
+    font-size:13px;margin-top:60px;padding-top:18px;border-top:1px solid var(--rule)}
+  .pager a{color:var(--accent);text-decoration:none}
+  .pager a:hover{text-decoration:underline}
+  .pager .next{margin-left:auto;text-align:right}
+
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--rule);
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<main>
+  <div class="crumb"><a href="index.html">← Database</a></div>
+  <div class="eyebrow">Table · v2 draft, not yet migrated</div>
+  <h1>pawpages_uploads</h1>
+  <p class="standfirst">One row per photo a handler sends in — from the chat composer's
+  attach button, or straight from a pet's edit screen. Tracks it from the moment it lands in
+  storage until (if ever) it becomes a pet's or an entry's photo.</p>
+
+  <div class="meta">
+    <span><b>Rows live</b> &nbsp;0 — not migrated</span>
+    <span><b>RLS</b> &nbsp;planned</span>
+    <span><b>Primary key</b> &nbsp;<code>id</code></span>
+    <span><b>Bucket</b> &nbsp;<code>pet-photos</code> (existing)</span>
+  </div>
+
+  <h2 id="why">Why this exists</h2>
+  <p>A photo attached in chat can't always be filed straight to
+  <code>{pet_id}/{filename}</code> — the same convention <a href="pets.html">pets</a> and
+  <a href="entries.html">entries</a> already use — because the assistant may not yet know which
+  pet the message is about when the upload happens. This table is the staging area: the object
+  lands under <code>{handler_id}/uploads/{filename}</code> immediately, and stays there. Nothing
+  moves the file once it's claimed — a pet's or an entry's <code>photo_path</code> just points
+  straight at wherever it already is.</p>
+
+  <h2 id="columns">Columns</h2>
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code></td><td class="ty">uuid</td><td><code>default gen_random_uuid()</code></td></tr>
+      <tr><td><code>handler_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+        <td>→ <a href="handlers.html"><code>pawpages_handlers.id</code></a>, <code>on delete cascade</code>.</td></tr>
+      <tr><td><code>conversation_id</code></td><td class="ty">uuid</td>
+        <td>Optional. → <code>pawpages_conversations.id</code>, <code>on delete cascade</code>.
+        Null when the upload didn't happen inside a chat — a profile photo set from a pet's edit
+        screen, for instance.</td></tr>
+      <tr><td><code>storage_path</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>Unique. The object's path in <code>pet-photos</code>:
+        <code>{handler_id}/uploads/{filename}</code>.</td></tr>
+      <tr><td><code>content_type</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>MIME type, so the app can serve it back with the right header.</td></tr>
+      <tr><td><code>claimed_by_entry_id</code></td><td class="ty">uuid</td>
+        <td>Optional. → <a href="entries.html"><code>pawpages_entries.id</code></a>,
+        <code>on delete cascade</code>.</td></tr>
+      <tr><td><code>claimed_by_pet_id</code></td><td class="ty">uuid</td>
+        <td>Optional. → <a href="pets.html"><code>pawpages_pets.id</code></a>,
+        <code>on delete cascade</code>.</td></tr>
+      <tr><td><code>claimed_at</code></td><td class="ty">timestamptz</td>
+        <td>Optional. Set the moment this path is copied into a <code>pets.photo_path</code> or
+        <code>entries.photo_path</code>. Null means still sitting unclaimed.</td></tr>
+      <tr><td><code>created_at</code></td><td class="ty">timestamptz</td><td><code>default now()</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="why"><b>Why no updated_at</b>
+    The only thing that ever changes on this row is the claim, and <code>claimed_at</code>
+    already records when. A second timestamp tracking "last touched" would say nothing
+    <code>claimed_at</code> doesn't.</div>
+
+  <h3>Constraints worth knowing</h3>
+  <table>
+    <thead><tr><th>Name</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_claimed_by_one_target</code></td>
+        <td><code>claimed_by_entry_id is null or claimed_by_pet_id is null</code> — never
+        claimed by both at once.</td></tr>
+      <tr><td><code>pawpages_claim_is_complete</code></td>
+        <td><code>claimed_at</code> is set exactly when at least one claim column is set.
+        Mirrors <code>pawpages_archive_is_complete</code> on <a href="pets.html">pets</a>: the
+        pair travels together or neither is there.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <p class="ct">No reverse FK from entries or pets</p>
+    <p>This table points at what claimed it, not the other way around — <code>pets</code> and
+    <code>entries</code> don't gain a column pointing back at
+    <code>pawpages_uploads</code>. They already carry the storage path directly in
+    <code>photo_path</code>, which is the only thing serving a photo needs. If you ever need to
+    ask "was this pet's photo one that came through chat," the answer is
+    <code>pawpages_uploads.storage_path = pawpages_pets.photo_path</code> — a lookup by value,
+    same as it's always been.</p>
+  </div>
+
+  <h2 id="cleanup">What isn't handled here</h2>
+  <p>An upload that's never claimed is an orphaned object with no cleanup job — the same gap
+  that already exists for a deleted pet's or entry's photo. <code>on delete cascade</code> on
+  <code>claimed_by_entry_id</code> / <code>claimed_by_pet_id</code> removes this tracking row
+  when the thing that claimed it is deleted, on the assumption the app deletes the underlying
+  storage object at the same time, as it already does for entry photos (see
+  <a href="entries.html">entries</a>). Storage has no foreign keys of its own, so that promise
+  is only as good as the app code that keeps it.</p>
+
+  <h2 id="storage">Storage policy — not yet written</h2>
+  <p>The four handler policies from <code>0004</code> key off
+  <code>(storage.foldername(name))[1]</code> matching a <em>pet</em> id the handler owns, so
+  they don't cover <code>{handler_id}/uploads/…</code> — segment one there is a handler id, not
+  a pet id. This needs one new, additive storage policy granting a handler read/write/delete on
+  objects under their own <code>{handler_id}/uploads/</code> prefix, in the same spirit as
+  <code>0007</code>'s policy for published entry photos. Nothing on <code>0003</code>/
+  <code>0004</code> gets touched.</p>
+
+  <h2 id="rls">Row level security — planned</h2>
+  <table>
+    <thead><tr><th>Policy</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_handler_owns_uploads</code></td>
+        <td><code>all</code> where <code>handler_id = (select auth.uid())</code>, same on
+        <code>using</code> and <code>with check</code> — the same shape as
+        <a href="pets.html"><code>pawpages_handler_owns_pets</code></a>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="references">References</h2>
+  <table>
+    <thead><tr><th>Table</th><th>Column</th><th>On delete</th></tr></thead>
+    <tbody>
+      <tr><td><a href="handlers.html"><code>pawpages_handlers</code></a></td>
+        <td><code>handler_id</code></td><td><code>cascade</code></td></tr>
+      <tr><td><a href="conversations.html"><code>pawpages_conversations</code></a></td>
+        <td><code>conversation_id</code></td><td><code>cascade</code></td></tr>
+      <tr><td><a href="entries.html"><code>pawpages_entries</code></a></td>
+        <td><code>claimed_by_entry_id</code></td><td><code>cascade</code></td></tr>
+      <tr><td><a href="pets.html"><code>pawpages_pets</code></a></td>
+        <td><code>claimed_by_pet_id</code></td><td><code>cascade</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="pager">
+    <a href="messages.html">← pawpages_messages</a>
+    <span class="next"><a href="index.html">Database →</a></span>
+  </div>
+
+  <footer>Paw Pages · v2 database design log · <code>pawpages_uploads</code> — new for v2,
+  draft, not yet migrated</footer>
+</main>
+</body>
+</html>

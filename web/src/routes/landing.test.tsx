@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
@@ -20,43 +20,34 @@ function signedIn() {
     http.get("http://localhost:8000/me", () =>
       HttpResponse.json({ id: "h1", name: "Akhil", email: "akhil@example.com" }),
     ),
-    http.get("http://localhost:8000/dashboard", () =>
-      HttpResponse.json({
-        ledger: [],
-        pets: [],
-        active_pets: 0,
-        overdue: 0,
-        due_within_30_days: 0,
-        archived_pets: 0,
-        archived: [],
-      }),
-    ),
+    // The sidebar's conversation list -- irrelevant to this screen, empty is fine.
+    http.get("http://localhost:8000/conversations", () => HttpResponse.json([])),
   );
 }
 
 describe("the landing page", () => {
-  it("shows a real pet record, not an illustration", async () => {
+  it("pitches the chat-first record, not a form", async () => {
     signedOut();
 
-    renderRoute("/");
+    const { container } = renderRoute("/");
 
-    const record = await screen.findByRole("region", { name: "Pet record" });
-    expect(within(record).getByText("Biscuit")).toBeInTheDocument();
-    expect(within(record).getByText("Indian Pariah · male · 4 yrs")).toBeInTheDocument();
-    expect(within(record).getByText("Rabies booster")).toBeInTheDocument();
-    // Space Mono is the app's face for every date, and these are the app's
-    // own dates, formatted by the same helper the pet's own page uses.
-    expect(within(record).getByText("14 Jul 2026")).toHaveClass("date");
-    expect(within(record).getByText("20 Apr 2026")).toHaveClass("date");
+    expect(await screen.findByText("Tell it what happened.")).toBeInTheDocument();
+    expect(container.querySelector("h1")).toHaveTextContent(
+      "Tell it what happened.It keeps the record.",
+    );
+    // The hero's chat mock is the actual product, in miniature: a due date,
+    // an overdue stamp, and a logged reply, same as the real /home screen.
+    expect(screen.getByText("OVERDUE")).toBeInTheDocument();
+    expect(screen.getByText("Biscuit had his deworming today — no issues.")).toBeInTheDocument();
   });
 
-  it("states that it sends no email and no notification", async () => {
+  it("states that it needs nothing but a chat message", async () => {
     signedOut();
 
     renderRoute("/");
 
     expect(
-      await screen.findByText(/Paw Pages sends no email and no notification\./),
+      await screen.findByText(/No emails\. No notifications\./),
     ).toBeInTheDocument();
   });
 
@@ -82,6 +73,21 @@ describe("the landing page", () => {
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeInTheDocument();
   });
 
+  it("sends 'See an example' at the chat screen and 'Example pet page' at the public page", async () => {
+    signedOut();
+
+    renderRoute("/");
+
+    expect(await screen.findByRole("link", { name: "See an example" })).toHaveAttribute(
+      "href",
+      "/home",
+    );
+    expect(screen.getByRole("link", { name: "Example pet page" })).toHaveAttribute(
+      "href",
+      "/p/biscuit-a4f2",
+    );
+  });
+
   it("sends a signed-in handler to their home screen without showing them the page", async () => {
     signedIn();
 
@@ -90,8 +96,10 @@ describe("the landing page", () => {
     // Nothing at all until the API has said whether there is a session: the
     // landing page never flashes past on the way to the home screen.
     expect(container).toBeEmptyDOMElement();
-    expect(await screen.findByRole("heading", { name: "Your pets" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Pet record" })).toBeNull();
+    expect(
+      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Tell it what happened/)).toBeNull();
   });
 
   it("draws the desktop layout above the breakpoint", async () => {
@@ -100,7 +108,7 @@ describe("the landing page", () => {
 
     const { container } = renderRoute("/");
 
-    await screen.findByRole("region", { name: "Pet record" });
+    await screen.findByText("Tell it what happened.");
     expect(container.querySelector('[data-layout="desktop"]')).toBeInTheDocument();
     expect(container.querySelector('[data-layout="mobile"]')).toBeNull();
   });
@@ -111,7 +119,7 @@ describe("the landing page", () => {
 
     const { container } = renderRoute("/");
 
-    await screen.findByRole("region", { name: "Pet record" });
+    await screen.findByText("Tell it what happened.");
     expect(container.querySelector('[data-layout="mobile"]')).toBeInTheDocument();
     expect(container.querySelector('[data-layout="desktop"]')).toBeNull();
   });

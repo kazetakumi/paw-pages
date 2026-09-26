@@ -27,24 +27,41 @@
   padding: 28px 18px;
 }
 
-.auth .mark {
-  display: block;
-  text-align: center;
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+.auth .brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
   margin-bottom: 30px;
 }
-.auth .mark .p2 {
+.auth .brand-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: #fff;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 12px;
+}
+.auth .brand-word {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.02em;
+}
+.auth .brand-word .p2 {
   color: var(--faint);
 }
 
 .auth .sheet {
   background: var(--card);
   border: 1px solid var(--rule);
-  border-radius: 2px;
+  border-radius: 8px;
   padding: 30px 28px 26px;
 }
 .auth .sheet h1 {
@@ -145,7 +162,7 @@
   color: #fff;
   border: 1px solid var(--ink);
   padding: 14px 18px;
-  border-radius: 2px;
+  border-radius: 8px;
   cursor: pointer;
   margin-top: 6px;
 }
@@ -180,4 +197,52 @@
 }
 .auth .alt a:hover {
   border-color: var(--ink);
+}
+
+/* mobile: the drawn scale runs a notch smaller throughout, per
+   design/v2/signin/mobile.html and design/v2/signup/mobile.html */
+.auth[data-layout="mobile"] .brand {
+  margin-bottom: 28px;
+}
+.auth[data-layout="mobile"] .sheet {
+  padding: 26px 22px 22px;
+}
+.auth[data-layout="mobile"] .sheet h1 {
+  font-size: 24px;
+}
+.auth[data-layout="mobile"] .lede {
+  font-size: 13.5px;
+  margin-bottom: 24px;
+}
+.auth[data-layout="mobile"] .f {
+  margin-bottom: 19px;
+}
+.auth[data-layout="mobile"] .lab {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+}
+.auth[data-layout="mobile"] .lab .aux {
+  letter-spacing: 0.08em;
+}
+.auth[data-layout="mobile"] .field input {
+  padding: 8px 0;
+  font-size: 16px;
+}
+.auth[data-layout="mobile"] .hint {
+  font-size: 11.5px;
+  margin-top: 7px;
+}
+.auth[data-layout="mobile"] .btn {
+  font-size: 14.5px;
+  padding: 13px 18px;
+  margin-top: 4px;
+}
+.auth[data-layout="mobile"] .note {
+  font-size: 11.5px;
+  margin: 14px 0 0;
+  line-height: 1.5;
+}
+.auth[data-layout="mobile"] .alt {
+  margin-top: 22px;
+  font-size: 13.5px;
 }
