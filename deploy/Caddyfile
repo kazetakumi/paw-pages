@@ -33,6 +33,11 @@
 		# these for good instead of rechecking through the tunnel.
 		@assets path /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
+		# Everything else is index.html, which names this build's assets. With
+		# no header a browser may guess a lifetime and keep running an old
+		# build after a deploy, so it must check back every time.
+		@shell not path /assets/*
+		header @shell Cache-Control "no-cache"
 		root * web/dist
 		try_files {path} /index.html
 		file_server
