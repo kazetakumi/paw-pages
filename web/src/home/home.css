@@ -34,6 +34,20 @@
 .assistant-text p:last-child {
   margin-bottom: 0;
 }
+.assistant-text ul,
+.assistant-text ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+.assistant-text li + li {
+  margin-top: 4px;
+}
+.assistant-text :is(ul, ol):last-child {
+  margin-bottom: 0;
+}
+.assistant-text strong {
+  font-weight: 600;
+}
 
 /* ---- the "still working" line under a reply that is being written ---- */
 .thinking {
@@ -45,7 +59,7 @@
   letter-spacing: 0.04em;
   color: var(--stamp);
 }
-.assistant-text p + .thinking {
+.assistant-text :is(p, ul, ol) + .thinking {
   margin-top: 10px;
 }
 .thinking .glyph {
