@@ -23,7 +23,7 @@ from auth import gotrue
 from auth.cookies import clear_session_cookie
 from auth.dependencies import AuthenticatedHandler, get_current_handler
 from core.config import get_settings
-from db.rls import rls_connection
+from db.rls import rls_connection, rls_read_connection
 from uploads import storage
 
 from .schemas import EmailIn, MeOut, MePatch, PasswordIn
@@ -56,7 +56,7 @@ def _field_error(field: str, message: str, code: int = status.HTTP_422_UNPROCESS
 @router.get("/me", response_model=MeOut)
 async def me(
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> MeOut:
     return await _read_me(conn, handler.email)
 

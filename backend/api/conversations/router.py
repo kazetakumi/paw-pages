@@ -23,7 +23,7 @@ from fastapi.responses import StreamingResponse
 
 from auth.dependencies import AuthenticatedHandler, get_current_handler
 from core.llm import get_llm
-from db.rls import rls_connection
+from db.rls import rls_connection, rls_read_connection
 from uploads import storage
 
 from agent.conversation import (  # noqa: E402  (core.llm puts backend/ on sys.path)
@@ -56,7 +56,7 @@ def _sse(event: dict) -> str:
 @router.get("", response_model=list[ConversationSummary])
 async def list_conversations(
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> list[ConversationSummary]:
     rows = await list_summaries(conn)
     return [
@@ -73,7 +73,7 @@ async def list_conversations(
 async def get_conversation(
     conversation_id: str,
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> ConversationDetail:
     detail = await get_detail(conn, conversation_id)
     if detail is None:

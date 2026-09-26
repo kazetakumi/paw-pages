@@ -22,7 +22,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from auth.dependencies import AuthenticatedHandler, get_current_handler
-from db.rls import rls_connection
+from db.rls import rls_connection, rls_read_connection
 from uploads import storage
 
 from .schemas import ArchiveIn, Dashboard, PetOut, PetPatch, PetRecord
@@ -106,7 +106,7 @@ _PET_RECORD = f"""select {_PET_COLUMNS},
 @router.get("/dashboard", response_model=Dashboard)
 async def dashboard(
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> Dashboard:
     row = dict(await conn.fetchrow(_DASHBOARD))
     return Dashboard(**row | {key: json.loads(row[key]) for key in ("ledger", "pets", "archived")})
@@ -116,7 +116,7 @@ async def dashboard(
 async def read_pet(
     pet_id: UUID,
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> PetRecord:
     # due_items reads the same view the dashboard ledger does, so the two can't disagree.
     row = await conn.fetchrow(_PET_RECORD, pet_id)
@@ -189,7 +189,7 @@ async def restore_pet(
 async def read_photo(
     pet_id: UUID,
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> Response:
     path = await conn.fetchval("select photo_path from pawpages_pets where id = $1", pet_id)
     if path is None:

@@ -15,7 +15,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from auth.dependencies import AuthenticatedHandler, get_current_handler
-from db.rls import rls_connection
+from db.rls import rls_connection, rls_read_connection
 
 from .schemas import EntryOut, FeedPage
 
@@ -51,7 +51,7 @@ async def pet_feed(
     cursor: str | None = None,
     limit: int = Query(default=5, ge=1, le=50),
     handler: AuthenticatedHandler = Depends(get_current_handler),
-    conn: asyncpg.Connection = Depends(rls_connection),
+    conn: asyncpg.Connection = Depends(rls_read_connection),
 ) -> FeedPage:
     """One page, newest first. Keyset rather than offset, on the same
     (happened_on desc, id desc) the feed index is built on, so a page can't
