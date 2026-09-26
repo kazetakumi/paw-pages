@@ -19,7 +19,7 @@ from fastapi import Depends
 
 from auth.dependencies import AuthenticatedHandler, get_current_handler
 
-from .pool import get_pool
+from .pool import get_anon_pool, get_pool
 
 
 async def rls_connection(
@@ -40,8 +40,7 @@ async def rls_connection(
 async def anon_connection() -> AsyncIterator[asyncpg.Connection]:
     """A visitor's connection: no cookie, no claims. `anon` has no policy on
     pawpages_pets or pawpages_entries, so the only rows it can reach are the
-    ones pawpages_public_pets and pawpages_public_entries hand over."""
-    async with get_pool().acquire() as conn:
-        async with conn.transaction():
-            await conn.execute("set local role anon")
-            yield conn
+    ones pawpages_public_pets and pawpages_public_entries hand over. No
+    transaction: every visitor route is a single statement."""
+    async with get_anon_pool().acquire() as conn:
+        yield conn
