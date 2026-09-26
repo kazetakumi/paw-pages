@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import Markdown from "react-markdown";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   getConversation,
@@ -226,7 +227,9 @@ function TurnEl({ turn, working }: { turn: Turn; working: boolean }) {
           block.kind === "card" ? (
             <LedgerCardEl key={i} card={block.card} />
           ) : (
-            block.text && <p key={i}>{block.text}</p>
+            // The model replies in markdown. react-markdown builds React
+            // elements and ignores raw HTML, so a reply can't inject markup.
+            block.text && <Markdown key={i}>{block.text}</Markdown>
           ),
         )}
         {working && <Thinking />}

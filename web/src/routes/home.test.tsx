@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { server } from "../test/server";
@@ -32,6 +32,32 @@ const sse = (...events: object[]) =>
   new HttpResponse(events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join(""), {
     headers: { "Content-Type": "text/event-stream" },
   });
+
+describe("a reply on the chat screen", () => {
+  it("renders the model's markdown instead of showing it raw", async () => {
+    signedInAs(akhil);
+    setViewportWidth(1200);
+    const reply = "You have one active pet:\n\n- **Simba** — a female grey Persian cat.";
+    server.use(
+      http.post("http://localhost:8000/conversations/messages", () =>
+        sse(
+          { type: "conversation", id: "c1" },
+          { type: "text.delta", text: reply },
+          { type: "done", text: reply, credits: 94 },
+        ),
+      ),
+    );
+
+    renderRoute("/home");
+
+    await userEvent.type(await screen.findByPlaceholderText(/ask paw pages/i), "Which pets do I have?{Enter}");
+
+    const item = await screen.findByRole("listitem");
+    expect(item).toHaveTextContent("Simba — a female grey Persian cat.");
+    expect(within(item).getByText("Simba").tagName).toBe("STRONG");
+    expect(screen.queryByText(/\*\*/)).toBeNull();
+  });
+});
 
 describe("credits on the chat screen", () => {
   it("shows the balance in the sidebar and moves it after a turn", async () => {
