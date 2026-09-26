@@ -196,18 +196,18 @@ sensible default.
 `backend/api/.env` (gitignored; `.env.example` is committed):
 
 ```
-SUPABASE_URL=https://hhbrylznsguxemafzgjn.supabase.co
+SUPABASE_URL=https://oomzhjujlztfazvvsfrf.supabase.co
 SUPABASE_ANON_KEY=<anon key>
 SUPABASE_SERVICE_ROLE_KEY=<only account deletion (DELETE /me) needs this>
-DATABASE_URL=<connection string for the kaze-master project>
+DATABASE_URL=<connection string for the kaze-master-in project>
 TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
 COOKIE_SECURE=false   # true in production
 ```
 
 The standalone `paw-pages` Supabase project (`ywfmrpmvfcaokzavcuzx`) that
 `0001`–`0004` were originally applied against is retired/inactive. The live
-`pawpages_*` schema now lives inside the shared `kaze-master` project
-(`hhbrylznsguxemafzgjn`), alongside other apps' tables — exactly the
+`pawpages_*` schema now lives inside the shared `kaze-master-in` project
+(`oomzhjujlztfazvvsfrf`, ap-south-1 Mumbai), alongside other apps' tables — exactly the
 multi-app-per-database shape rule 9's `pawpages_` prefix was designed for.
 **It is also the live production database** — v1 serves real traffic from it,
 so v1.1 shares it deliberately rather than paying for a dev branch. Apply
@@ -215,6 +215,11 @@ so v1.1 shares it deliberately rather than paying for a dev branch. Apply
 request could be mid-flight in a way that matters. Iterate with `execute_sql`
 and write the migration once the shape settles, so the applied history stays
 clean.
+
+`kaze-master-in` replaced `kaze-master` (`hhbrylznsguxemafzgjn`, ap-southeast-2
+Sydney) on 2026-09-26: schema, auth users and data were copied across, because
+each round trip from India to Sydney cost ~390ms against ~40ms to Mumbai. Sydney
+is still up as a fallback; nothing reads or writes it now.
 
 v1.1 is developed in a separate git worktree at `D:\kaze\POCs\paw-pages-v1.1.0`
 (branch `v1.1.0`). Build there, never in `D:\kaze\POCs\paw-pages` — the

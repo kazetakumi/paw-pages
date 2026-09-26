@@ -51,7 +51,7 @@ it in; `.env` is gitignored.
 
 ## Two settings to change in the Supabase dashboard
 
-The `kaze-master` project has **email confirmation on**. With it on,
+The `kaze-master-in` project has **email confirmation on**. With it on,
 `POST /auth/v1/signup` returns a user and a `confirmation_sent_at` but no
 session, so signing up against the live project cannot sign anyone in and
 `POST /auth/signup` answers 502 rather than 201. Turn it off under
