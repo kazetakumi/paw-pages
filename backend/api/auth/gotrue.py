@@ -103,3 +103,25 @@ async def update_password(access_token: str, new_password: str) -> dict:
             json={"password": new_password},
         )
     return _unwrap(resp)
+
+
+async def update_email(access_token: str, new_email: str) -> dict:
+    async with _client() as client:
+        resp = await client.put(
+            "/user",
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={"email": new_email},
+        )
+    return _unwrap(resp)
+
+
+async def admin_delete_user(user_id: str, service_role_key: str) -> None:
+    """The one call no handler's own token can make. The service-role key
+    rides on this request only -- never on _client()."""
+    settings = get_settings()
+    async with httpx.AsyncClient(base_url=f"{settings.supabase_url}/auth/v1", timeout=10.0) as client:
+        resp = await client.delete(
+            f"/admin/users/{user_id}",
+            headers={"apikey": service_role_key, "Authorization": f"Bearer {service_role_key}"},
+        )
+    _unwrap(resp)

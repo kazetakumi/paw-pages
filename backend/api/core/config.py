@@ -12,6 +12,9 @@ class Settings(BaseSettings):
 
     supabase_url: str
     supabase_anon_key: str
+    # Only DELETE /me uses it, to delete the auth user. Unset means account
+    # deletion answers 503 before anything is removed.
+    supabase_service_role_key: str | None = None
 
     # The chat loop's model calls -- see backend/agent/llm.py.
     openai_api_key: str
