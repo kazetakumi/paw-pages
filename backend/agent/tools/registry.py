@@ -1,11 +1,9 @@
 """Tool schemas offered to the chat model, and the DB-backed functions that
-answer them. Every mutation and lookup rides on the RLS-scoped connection a
-request already holds -- pawpages_handler_owns_entries (via the pet's
+answer them. execute_tool takes the caller's RLS-scoped asyncpg connection
+as a parameter rather than opening one of its own -- this module has no
+connection to hand out. pawpages_handler_owns_entries (via the pet's
 handler_id) means a tool never has to check ownership itself; Postgres
 refuses to touch a row RLS says isn't the caller's.
-
-Execution lives here, not in backend/agent, because it needs that
-connection -- agent/ has no DB access and isn't meant to grow one.
 """
 
 import json

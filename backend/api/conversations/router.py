@@ -26,9 +26,9 @@ from core.llm import get_llm
 from db.rls import rls_connection
 
 from agent.chat import stream_turn  # noqa: E402  (core.llm puts backend/ on sys.path)
+from agent.tools.registry import TOOLS, execute_tool  # noqa: E402
 
 from .schemas import ConversationDetail, ConversationSummary, SendMessageRequest
-from .tools import TOOLS, execute_tool
 
 logger = logging.getLogger(__name__)
 
