@@ -11,8 +11,14 @@ Each pawpages_messages row's content is one item exactly as the model takes
 it, so loading history is just reading content back in id order. content is
 jsonb, and asyncpg has no jsonb codec registered here, so it goes in as a
 json.dumps string and comes back as one to json.loads.
+
+Photos: a user message with uploads is saved as plain text naming each
+upload's id, so the model can later pass that id to a tool. The image
+itself goes to the model only on the turn it was sent (with_images) --
+never saved, never replayed, since every later turn would pay for it again.
 """
 
+import base64
 import json
 
 import asyncpg
@@ -21,6 +27,11 @@ import asyncpg
 class ConversationNotFound(Exception):
     """A conversation_id was given that doesn't exist (or isn't the
     caller's -- RLS makes those look the same)."""
+
+
+class UploadNotAvailable(Exception):
+    """An upload_id that doesn't exist, isn't the caller's, was already
+    filed as a photo, or was already sent in a different conversation."""
 
 
 # The first user turn's text, pulled per conversation without loading the
@@ -76,11 +87,11 @@ async def _load_items(conn: asyncpg.Connection, conversation_id: str, filter_sql
 
 
 async def load_or_start(
-    conn: asyncpg.Connection, handler_id: str, conversation_id: str | None, message: str
+    conn: asyncpg.Connection, handler_id: str, conversation_id: str | None
 ) -> tuple[str, list[dict]]:
-    """Returns (conversation_id, history) with the new user turn already
-    appended to history. Starts a new conversation when conversation_id is
-    None; raises ConversationNotFound when one was given but doesn't exist."""
+    """Returns (conversation_id, history so far). Starts a new conversation
+    when conversation_id is None; raises ConversationNotFound when one was
+    given but doesn't exist."""
     if conversation_id:
         exists = await conn.fetchval("select 1 from pawpages_conversations where id = $1", conversation_id)
         if exists is None:
@@ -93,21 +104,62 @@ async def load_or_start(
         conversation_id = str(row["id"])
         history = []
 
-    history.append({"role": "user", "content": message})
     return conversation_id, history
 
 
-async def save_turn(
-    conn: asyncpg.Connection, handler_id: str, conversation_id: str, user_message: str, items: list[dict]
-) -> None:
-    """items is run_turn's: everything the turn added after the user
-    message, in order. executemany inserts in list order, so ids keep it."""
+async def attach_uploads(conn: asyncpg.Connection, conversation_id: str, upload_ids: list[str]) -> list[asyncpg.Record]:
+    """Ties each upload to this conversation and returns (id, storage_path,
+    content_type) for each, in the order given. Raises UploadNotAvailable if
+    any one can't be used here."""
+    if not upload_ids:
+        return []
+    rows = await conn.fetch(
+        """
+        update pawpages_uploads set conversation_id = $1
+        where id = any($2::uuid[]) and claimed_at is null
+          and (conversation_id is null or conversation_id = $1)
+        returning id, storage_path, content_type
+        """,
+        conversation_id,
+        upload_ids,
+    )
+    by_id = {str(r["id"]): r for r in rows}
+    if len(by_id) != len(set(upload_ids)):
+        raise UploadNotAvailable([i for i in upload_ids if i not in by_id])
+    return [by_id[i] for i in upload_ids]
+
+
+def user_message(text: str, upload_ids: list[str]) -> dict:
+    """The user turn as saved: the handler's text, plus one line per photo
+    naming the id a tool needs to file it."""
+    lines = [text] if text else []
+    lines += [f"[photo attached, upload_id: {i}]" for i in upload_ids]
+    return {"role": "user", "content": "\n".join(lines)}
+
+
+def with_images(message: dict, images: list[tuple[str, bytes]]) -> dict:
+    """The same user turn as the model sees it on the turn it's sent: its
+    text plus each (content_type, bytes) photo inline as a data URL."""
+    if not images:
+        return message
+    return {
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": message["content"]},
+            *(
+                {"type": "input_image", "image_url": f"data:{ct};base64,{base64.b64encode(data).decode()}"}
+                for ct, data in images
+            ),
+        ],
+    }
+
+
+async def save_turn(conn: asyncpg.Connection, handler_id: str, conversation_id: str, items: list[dict]) -> None:
+    """items is the saved user message followed by run_turn's items, in
+    order. executemany inserts in list order, so ids keep it."""
     await conn.executemany(
         "insert into pawpages_messages (conversation_id, handler_id, type, content) values ($1, $2, $3, $4)",
-        [
-            (conversation_id, handler_id, _item_type(item), json.dumps(item))
-            for item in [{"role": "user", "content": user_message}, *items]
-        ],
+        [(conversation_id, handler_id, _item_type(item), json.dumps(item)) for item in items],
     )
     # Nothing updates the conversation row itself any more, so its touch
     # trigger would never fire -- bump updated_at here to keep the sidebar's

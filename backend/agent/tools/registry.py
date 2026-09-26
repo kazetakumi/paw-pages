@@ -13,6 +13,17 @@ from datetime import date
 
 import asyncpg
 
+
+def _photo_upload_id(what: str) -> dict:
+    return {
+        "type": ["string", "null"],
+        "description": (
+            f"{what}: the upload_id from a '[photo attached, upload_id: ...]' line in the handler's "
+            "message, or null for no photo. Each photo can be filed once."
+        ),
+    }
+
+
 TOOLS = [
     {
         "type": "function",
@@ -52,8 +63,9 @@ TOOLS = [
                     "type": "boolean",
                     "description": "Whether the pet gets a public page right away. Ask the handler before setting this true.",
                 },
+                "photo_upload_id": _photo_upload_id("The pet's profile photo"),
             },
-            "required": ["name", "species", "breed", "sex", "date_of_birth", "dob_is_approx", "colour", "is_public"],
+            "required": ["name", "species", "breed", "sex", "date_of_birth", "dob_is_approx", "colour", "is_public", "photo_upload_id"],
             "additionalProperties": False,
         },
         "strict": True,
@@ -77,8 +89,9 @@ TOOLS = [
                 "dob_is_approx": {"type": ["boolean", "null"], "description": "Whether the date of birth is approximate, or null to leave unchanged."},
                 "colour": {"type": ["string", "null"], "description": "New colour/markings, or null to leave unchanged."},
                 "is_public": {"type": ["boolean", "null"], "description": "Turn the pet's public page on or off, or null to leave unchanged."},
+                "photo_upload_id": _photo_upload_id("A new profile photo for the pet"),
             },
-            "required": ["pet_id", "name", "species", "breed", "sex", "date_of_birth", "dob_is_approx", "colour", "is_public"],
+            "required": ["pet_id", "name", "species", "breed", "sex", "date_of_birth", "dob_is_approx", "colour", "is_public", "photo_upload_id"],
             "additionalProperties": False,
         },
         "strict": True,
@@ -139,8 +152,9 @@ TOOLS = [
                 },
                 "vet": {"type": ["string", "null"], "description": "Vet or clinic name, or null."},
                 "note": {"type": ["string", "null"], "description": "Free-text note, up to 2000 characters, or null. Never shown on the pet's public page."},
+                "photo_upload_id": _photo_upload_id("A photo for the entry, e.g. a vaccination certificate"),
             },
-            "required": ["pet_id", "title", "happened_on", "due_on", "vet", "note"],
+            "required": ["pet_id", "title", "happened_on", "due_on", "vet", "note", "photo_upload_id"],
             "additionalProperties": False,
         },
         "strict": True,
@@ -166,8 +180,9 @@ TOOLS = [
                     "type": ["boolean", "null"],
                     "description": "true marks the due date done now, false reopens it, null leaves it as is.",
                 },
+                "photo_upload_id": _photo_upload_id("A new photo for the entry"),
             },
-            "required": ["entry_id", "title", "happened_on", "due_on", "vet", "note", "due_closed"],
+            "required": ["entry_id", "title", "happened_on", "due_on", "vet", "note", "due_closed", "photo_upload_id"],
             "additionalProperties": False,
         },
         "strict": True,
@@ -210,12 +225,37 @@ TOOLS = [
     },
 ]
 
-_ENTRY_COLUMNS = "id, pet_id, title, happened_on, due_on, due_closed_at, vet, note"
-_PET_COLUMNS = "id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug, is_public, archived_at, archived_reason"
+_ENTRY_COLUMNS = "id, pet_id, title, happened_on, due_on, due_closed_at, vet, note, photo_path"
+_PET_COLUMNS = "id, name, species, breed, sex, date_of_birth, dob_is_approx, colour, slug, is_public, archived_at, archived_reason, photo_path"
+
+
+class _ToolError(Exception):
+    """Returned to the model as {"error": ...}. Raised rather than returned
+    so execute_tool's savepoint rolls back whatever the tool already wrote."""
 
 
 def _parse_date(value: str | None) -> date | None:
     return date.fromisoformat(value) if value else None
+
+
+async def _attach_photo(conn: asyncpg.Connection, row: dict, upload_id: str | None, *, table: str) -> dict:
+    """Claims the upload for the pet or entry `row` and points its
+    photo_path at it -- the object stays where it is (see
+    dbschema/uploads.html). A no-op when upload_id is null. A photo it
+    replaces stays in storage, unreferenced."""
+    if not upload_id:
+        return row
+    claim_column = "claimed_by_pet_id" if table == "pawpages_pets" else "claimed_by_entry_id"
+    path = await conn.fetchval(
+        f"update pawpages_uploads set {claim_column} = $2, claimed_at = now() "
+        "where id = $1 and claimed_at is null returning storage_path",
+        upload_id,
+        row["id"],
+    )
+    if path is None:
+        raise _ToolError("no unfiled photo with that upload_id")
+    await conn.execute(f"update {table} set photo_path = $2 where id = $1", row["id"], path)
+    return {**row, "photo_path": path}
 
 
 def _slugify(name: str) -> str:
@@ -263,7 +303,7 @@ async def _create_pet(conn: asyncpg.Connection, args: dict) -> dict:
         except asyncpg.UniqueViolationError:
             slug = f"{base_slug}-{secrets.token_hex(2)}"
             continue
-        return dict(row)
+        return await _attach_photo(conn, dict(row), args["photo_upload_id"], table="pawpages_pets")
     return {"error": "could not find a free slug for that name"}
 
 
@@ -292,7 +332,9 @@ async def _update_pet(conn: asyncpg.Connection, args: dict) -> dict:
         args["colour"],
         args["is_public"],
     )
-    return dict(row) if row else {"error": "no pet with that id"}
+    if not row:
+        return {"error": "no pet with that id"}
+    return await _attach_photo(conn, dict(row), args["photo_upload_id"], table="pawpages_pets")
 
 
 async def _get_pet(conn: asyncpg.Connection, args: dict) -> dict:
@@ -321,7 +363,7 @@ async def _create_entry(conn: asyncpg.Connection, args: dict) -> dict:
         args["vet"],
         args["note"],
     )
-    return dict(row)
+    return await _attach_photo(conn, dict(row), args["photo_upload_id"], table="pawpages_entries")
 
 
 async def _update_entry(conn: asyncpg.Connection, args: dict) -> dict:
@@ -349,7 +391,9 @@ async def _update_entry(conn: asyncpg.Connection, args: dict) -> dict:
         args["note"],
         args["due_closed"],
     )
-    return dict(row) if row else {"error": "no entry with that id"}
+    if not row:
+        return {"error": "no entry with that id"}
+    return await _attach_photo(conn, dict(row), args["photo_upload_id"], table="pawpages_entries")
 
 
 async def _list_entries(conn: asyncpg.Connection, args: dict) -> list[dict]:
@@ -395,6 +439,6 @@ async def execute_tool(conn: asyncpg.Connection, name: str, arguments: str) -> s
     try:
         async with conn.transaction():
             result = await _HANDLERS[name](conn, args)
-    except asyncpg.PostgresError as exc:
+    except (asyncpg.PostgresError, _ToolError) as exc:
         result = {"error": str(exc)}
     return json.dumps(result, default=str)

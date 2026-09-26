@@ -29,9 +29,12 @@ class AuthenticatedHandler:
     name: str | None
     email_confirmed: bool
     joined_on: str
+    # For calls to Supabase Storage as this handler, so storage policies
+    # apply -- see uploads/storage.py.
+    access_token: str
 
 
-def handler_from_payload(payload: dict) -> AuthenticatedHandler:
+def handler_from_payload(payload: dict, access_token: str) -> AuthenticatedHandler:
     metadata = payload.get("user_metadata") or {}
     return AuthenticatedHandler(
         id=payload["id"],
@@ -39,6 +42,7 @@ def handler_from_payload(payload: dict) -> AuthenticatedHandler:
         name=metadata.get("name"),
         email_confirmed=bool(payload.get("confirmed_at") or payload.get("email_confirmed_at")),
         joined_on=(payload.get("created_at") or "")[:10],
+        access_token=access_token,
     )
 
 
@@ -68,10 +72,11 @@ async def get_current_handler(request: Request, response: Response) -> Authentic
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "session expired, please sign in again")
 
         set_session_cookie(response, session["access_token"], session["refresh_token"])
+        access_token = session["access_token"]
         payload = session["user"]
         logger.info("Silently refreshed session for %s", payload.get("email"))
 
-    return handler_from_payload(payload)
+    return handler_from_payload(payload, access_token)
 
 
 async def require_verified_email(

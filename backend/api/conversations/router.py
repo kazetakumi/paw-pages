@@ -24,14 +24,19 @@ from fastapi.responses import StreamingResponse
 from auth.dependencies import AuthenticatedHandler, get_current_handler
 from core.llm import get_llm
 from db.rls import rls_connection
+from uploads import storage
 
 from agent.conversation import (  # noqa: E402  (core.llm puts backend/ on sys.path)
     ConversationNotFound,
+    UploadNotAvailable,
+    attach_uploads,
     display_title,
     get_detail,
     list_summaries,
     load_or_start,
     save_turn,
+    user_message,
+    with_images,
 )
 from agent.loop import run_turn  # noqa: E402
 
@@ -81,13 +86,23 @@ async def send_message(
     handler: AuthenticatedHandler = Depends(get_current_handler),
     conn: asyncpg.Connection = Depends(rls_connection),
 ) -> StreamingResponse:
+    upload_ids = [str(i) for i in body.upload_ids]
     try:
-        conversation_id, history = await load_or_start(conn, handler.id, body.conversation_id, body.message)
+        conversation_id, history = await load_or_start(conn, handler.id, body.conversation_id)
+        uploads = await attach_uploads(conn, conversation_id, upload_ids)
     except ConversationNotFound:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "conversation not found")
+    except UploadNotAvailable as exc:
+        # Raising here rolls back the whole request, including a
+        # conversation load_or_start just created.
+        raise HTTPException(status.HTTP_409_CONFLICT, f"upload(s) not available: {', '.join(exc.args[0])}")
 
     if not body.conversation_id:
         logger.info("Started conversation %s for %s", conversation_id, handler.email)
+
+    saved_user = user_message(body.message, upload_ids)
+    images = [(u["content_type"], await storage.get(handler.access_token, u["storage_path"])) for u in uploads]
+    history.append(with_images(saved_user, images))
 
     async def events():
         yield _sse({"type": "conversation", "id": conversation_id})
@@ -100,6 +115,6 @@ async def send_message(
                 reply_text, items = event["text_response"], event["items"]
 
         yield _sse({"type": "done", "text": reply_text})
-        await save_turn(conn, handler.id, conversation_id, body.message, items)
+        await save_turn(conn, handler.id, conversation_id, [saved_user, *items])
 
     return StreamingResponse(events(), media_type="text/event-stream")
