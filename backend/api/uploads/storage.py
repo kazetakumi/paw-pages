@@ -37,7 +37,7 @@ async def put(access_token: str, path: str, data: bytes, content_type: str) -> N
 
 async def get(access_token: str, path: str) -> bytes:
     async with _client(access_token) as client:
-        return _check(await client.get(f"/authenticated/{path}")).content
+        return _check(await client.get(f"/{path}")).content
 
 
 async def delete(access_token: str, path: str) -> None:
