@@ -14,6 +14,7 @@ from core.logging import configure_logging
 from db.pool import close_pool, init_pool
 from entries.router import router as entries_router
 from pets.router import router as pets_router
+from public.router import router as public_router
 from uploads.router import router as uploads_router
 
 settings = get_settings()
@@ -66,6 +67,7 @@ app.include_router(conversations_router)
 app.include_router(handlers_router)
 app.include_router(entries_router)
 app.include_router(pets_router)
+app.include_router(public_router)
 app.include_router(uploads_router)
 
 

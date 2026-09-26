@@ -1,6 +1,6 @@
 """The dashboard and the routes a pet's own screens call, ported from v1's
 backend/app/main.py, pets.py and due.py. Not ported yet: listing and
-creating pets through a form, and the visitor-facing public page.
+creating pets through a form. The visitor-facing page is in public/router.py.
 
 pawpages_due_items is the one definition of due and overdue; nothing here
 works out what overdue means. No `where handler_id = ...`: the RLS
