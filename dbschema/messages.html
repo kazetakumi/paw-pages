@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>pawpages_conversations — Paw Pages Database v2</title>
+<title>pawpages_messages â€” Paw Pages Database v2</title>
 <style>
   :root{
     --ink:#1c1b19;
@@ -95,15 +95,15 @@
 <body>
 <main>
   <div class="crumb"><a href="index.html">← Database</a></div>
-  <div class="eyebrow">Table · v2 draft, not yet migrated</div>
-  <h1>pawpages_conversations</h1>
-  <p class="standfirst">One row per chat thread: a title, which pets came up, and when it was
-  last active. The turns themselves live in
-  <a href="messages.html"><code>pawpages_messages</code></a>, one row each.</p>
+  <div class="eyebrow">Table · v2 · migrations 0010, 0011</div>
+  <h1>pawpages_messages</h1>
+  <p class="standfirst">One row per item in a conversation — every user message, assistant
+  message, tool call and tool output, in order. Replaces the JSONL <code>transcript</code>
+  column that <a href="conversations.html"><code>pawpages_conversations</code></a> carried in
+  0008.</p>
 
   <div class="meta">
-    <span><b>Rows live</b> &nbsp;0 — not migrated</span>
-    <span><b>RLS</b> &nbsp;planned</span>
+    <span><b>RLS</b> &nbsp;on</span>
     <span><b>Primary key</b> &nbsp;<code>id</code></span>
     <span><b>New for</b> &nbsp;v2</span>
   </div>
@@ -112,79 +112,80 @@
   <table>
     <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td><code>id</code></td><td class="ty">uuid</td><td><code>default gen_random_uuid()</code></td></tr>
+      <tr><td><code>id</code></td><td class="ty">bigint</td>
+        <td><code>generated always as identity</code>. Also the turn order — see below.</td></tr>
+      <tr><td><code>conversation_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
+        <td>→ <a href="conversations.html"><code>pawpages_conversations.id</code></a>,
+        <code>on delete cascade</code>.</td></tr>
       <tr><td><code>handler_id</code></td><td class="ty">uuid <span class="nn req">required</span></td>
-        <td>→ <a href="handlers.html"><code>pawpages_handlers.id</code></a>, <code>on delete cascade</code>.</td></tr>
-      <tr><td><code>title</code></td><td class="ty">text</td>
-        <td>Optional. Null until the handler renames it or the app derives one from the first
-        turn.</td></tr>
-      <tr><td><code>pet_ids</code></td><td class="ty">uuid[]</td>
-        <td>Optional. Which pets came up in this conversation. No foreign key — see below.</td></tr>
-      <tr><td><code>transcript</code></td><td class="ty">text</td>
-        <td><b>Unused since 0010.</b> Was newline-delimited JSON, one line per turn. Left in
-        place only because rule 9 forbids dropping a column on the live project; nothing reads
-        or writes it.</td></tr>
-      <tr><td><code>created_at</code> / <code>updated_at</code></td><td class="ty">timestamptz</td>
-        <td><code>default now()</code>. <code>updated_at</code> is bumped by the app every time
-        a turn is saved, which is what lets the sidebar sort by recency without a separate
-        <code>last_message_at</code>.</td></tr>
+        <td>→ <a href="handlers.html"><code>pawpages_handlers.id</code></a>, <code>on delete cascade</code>.
+        Copied from the conversation.</td></tr>
+      <tr><td><code>type</code></td><td class="ty">text <span class="nn req">required</span></td>
+        <td>One of <code>user_message</code>, <code>assistant_message</code>,
+        <code>function_call</code>, <code>function_call_output</code>. Replaced
+        <code>role</code> in 0011.</td></tr>
+      <tr><td><code>content</code></td><td class="ty">jsonb <span class="nn req">required</span></td>
+        <td>The whole item exactly as it's replayed to the model: a <code>{role, content}</code>
+        message, a <code>function_call</code> (<code>call_id</code>, <code>name</code>,
+        <code>arguments</code>), or a <code>function_call_output</code> (<code>call_id</code>,
+        <code>output</code>).</td></tr>
+      <tr><td><code>created_at</code></td><td class="ty">timestamptz</td><td><code>default now()</code></td></tr>
     </tbody>
   </table>
 
-  <div class="why"><b>Why the turns moved out to their own table</b>
-    0008 kept the whole exchange here as one JSONL <code>text</code> column. Three things made
-    that the wrong shape once chat had tools. Appending a turn rewrote the whole value, since
-    Postgres has no in-place text append, so every save got slower as the chat grew. The
-    sidebar's fallback title had to read every conversation's full transcript to find its
-    first user line. And there was no natural place for tool calls and their results. One row
-    per turn in <a href="messages.html"><code>pawpages_messages</code></a> fixes all three.</div>
-  <div class="why"><b>Why updated_at is bumped by the app, not the trigger alone</b>
-    The <code>touch_updated_at</code> trigger only fires when this row is updated. Saving a turn
-    is now an insert into <code>pawpages_messages</code>, so <code>save_turn</code> also runs
-    <code>update … set updated_at = now()</code> on the conversation.</div>
-  <div class="why"><b>Why pet_ids is an array, not a join table</b>
-    Chosen for simplicity over enforcement. It means no foreign key, no <code>on delete
-    cascade</code> — if a pet is deleted, nothing automatically removes its id from every
-    conversation's array. That cleanup, if it matters, is the app's job (a trigger could do it,
-    but none exists yet).</div>
+  <div class="why"><b>Why order by id, not created_at</b>
+    A user turn and its reply are saved in the same transaction, and <code>now()</code> is the
+    transaction's start time, so both rows get the same <code>created_at</code>. An identity
+    column always increases, so it gives a reliable order.</div>
+  <div class="why"><b>Why handler_id is here when the conversation already has it</b>
+    So the RLS policy can be a plain column check, the same shape as every other table's,
+    instead of a join to the conversation on every read.</div>
+  <div class="why"><b>Why tool calls are stored, not just the text</b>
+    Without them the model's next turn sees "user asked, I said done" but not which tool
+    it called, with what arguments, or what came back — exactly what a follow-up like
+    "change that entry's date" needs. Storing every item means loading history is just
+    every row's <code>content</code> in <code>id</code> order, replayed as is.</div>
+  <div class="why"><b>Why one type column, not role plus type</b>
+    0010 had <code>role</code>, which only fits messages. A single <code>type</code> covers
+    all four kinds with one check constraint and no "role only when it's a message" rule.
+    The values are the Responses API's own item names (messages named by role), so the
+    column and the jsonb use the same words. The chat UI reads only
+    <code>user_message</code> and <code>assistant_message</code>; the model gets
+    everything.</div>
 
-  <h2 id="rls">Row level security — planned</h2>
+  <h2 id="indexes">Indexes</h2>
+  <table>
+    <thead><tr><th>Index</th><th>For</th></tr></thead>
+    <tbody>
+      <tr><td><code>pawpages_messages_conversation_idx</code></td>
+        <td><code>(conversation_id, id)</code> — loading one conversation's turns in order, and
+        the sidebar's first-user-turn lookup.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="rls">Row level security</h2>
   <table>
     <thead><tr><th>Policy</th><th>Rule</th></tr></thead>
     <tbody>
-      <tr><td><code>pawpages_handler_owns_conversations</code></td>
-        <td><code>all</code> where <code>handler_id = (select auth.uid())</code>, same on
-        <code>using</code> and <code>with check</code> — the same shape as
-        <a href="pets.html"><code>pawpages_handler_owns_pets</code></a>.</td></tr>
+      <tr><td><code>pawpages_handler_owns_messages</code></td>
+        <td><code>all</code>. <code>using</code>: <code>handler_id = (select auth.uid())</code>.
+        <code>with check</code>: the same, plus the conversation must be one the handler can
+        see.</td></tr>
     </tbody>
   </table>
-
-  <h2 id="referenced-by">Referenced by</h2>
-  <table>
-    <thead><tr><th>Table</th><th>Column</th><th>On delete</th></tr></thead>
-    <tbody>
-      <tr><td><a href="messages.html"><code>pawpages_messages</code></a></td>
-        <td><code>conversation_id</code> (required)</td><td><code>cascade</code></td></tr>
-      <tr><td><a href="pets.html"><code>pawpages_pets</code></a></td>
-        <td><code>conversation_id</code> (optional)</td><td><code>set null</code></td></tr>
-      <tr><td><a href="entries.html"><code>pawpages_entries</code></a></td>
-        <td><code>conversation_id</code> (optional)</td><td><code>set null</code></td></tr>
-      <tr><td><a href="uploads.html"><code>pawpages_uploads</code></a></td>
-        <td><code>conversation_id</code> (optional)</td><td><code>cascade</code></td></tr>
-    </tbody>
-  </table>
-  <div class="why"><b>Why the on-delete behaviour isn't the same for all three</b>
-    An unclaimed upload is disposable — cascading it away with its conversation is correct. A
-    pet or an entry is never disposable just because the chat that created it got deleted, so
-    those two use <code>set null</code>: the provenance link is dropped, the record stays.</div>
+  <div class="why"><b>Why with check also looks at the conversation</b>
+    Without it, a handler could write a turn into someone else's conversation by using their
+    own <code>handler_id</code> with that conversation's id. The <code>exists</code> subquery
+    runs under <code>pawpages_conversations</code>' own RLS, so it only finds the handler's own
+    threads.</div>
 
   <div class="pager">
-    <a href="entries.html">← pawpages_entries</a>
-    <span class="next"><a href="messages.html">pawpages_messages →</a></span>
+    <a href="conversations.html">← pawpages_conversations</a>
+    <span class="next"><a href="uploads.html">pawpages_uploads →</a></span>
   </div>
 
-  <footer>Paw Pages · v2 database design log · <code>pawpages_conversations</code> — new for
-  v2, draft, not yet migrated</footer>
+  <footer>Paw Pages · v2 database design log · <code>pawpages_messages</code> — new for v2,
+  migrations 0010, 0011</footer>
 </main>
 </body>
 </html>

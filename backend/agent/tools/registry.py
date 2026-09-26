@@ -390,7 +390,7 @@ async def execute_tool(conn: asyncpg.Connection, name: str, arguments: str) -> s
     function_call_output item expects. Wrapped in its own savepoint: a
     constraint or RLS violation aborts up to here, not the request's whole
     transaction, so the model can see the error, try something else, and
-    the transcript write at the end of the request still goes through."""
+    the message writes at the end of the request still goes through."""
     args = json.loads(arguments) if arguments else {}
     try:
         async with conn.transaction():

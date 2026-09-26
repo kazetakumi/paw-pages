@@ -16,7 +16,7 @@ def stream_turn(llm: LLM, history: list[dict], tools: list[dict]):
     """Stream one assistant reply. `history` is the conversation so far,
     ending with the new user turn -- each item either {"role": "user" |
     "assistant", "content": str}, or a function_call / function_call_output
-    item from a tool round-trip earlier in this same turn. Yields
+    item from a tool round-trip earlier in the conversation. Yields
     LLM.stream()'s events unchanged: {"type": "text.delta", "text": ...} as
     tokens arrive, then one {"type": "done", "text_response": ...,
     "tool_calls": ...} -- tool_calls is a list of the model's requested

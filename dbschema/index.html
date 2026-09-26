@@ -96,7 +96,8 @@
   never timestamps, due/overdue computed in a view, public page exposes a narrow column set
   through <code>security definer</code> views, RLS is the only access boundary — see
   <code>CONTEXT.md</code> for the full rule list. What v2 adds on top: the conversation itself
-  is a table (<a href="conversations.html"><code>pawpages_conversations</code></a>), and a
+  is a table (<a href="conversations.html"><code>pawpages_conversations</code></a>, with its
+  turns in <a href="messages.html"><code>pawpages_messages</code></a>), and a
   chat-attached photo has a staging table of its own
   (<a href="uploads.html"><code>pawpages_uploads</code></a>) before it ever becomes a pet's or
   an entry's photo. How a free-text chat turn like <em>"Biscuit had his deworming today, next
@@ -122,8 +123,12 @@
         photo; gains an optional <code>conversation_id</code> in v2.</td></tr>
       <tr><td><a href="conversations.html"><code>pawpages_conversations</code></a></td>
         <td><span class="status settled">settled</span></td>
-        <td>New for v2. One row per chat thread — title, which pets came up, and the raw
-        transcript.</td></tr>
+        <td>New for v2. One row per chat thread — title, which pets came up, when it was last
+        active.</td></tr>
+      <tr><td><a href="messages.html"><code>pawpages_messages</code></a></td>
+        <td><span class="status settled">settled</span></td>
+        <td>New for v2 (0010, 0011). One row per item in a conversation — messages, tool
+        calls and tool outputs — in order.</td></tr>
       <tr><td><a href="uploads.html"><code>pawpages_uploads</code></a></td>
         <td><span class="status settled">settled</span></td>
         <td>New for v2. Tracks a photo from the moment it's uploaded — in chat or from a pet's
