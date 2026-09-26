@@ -13,9 +13,15 @@ if str(_BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(_BACKEND_DIR))
 
 from agent.llm import DEFAULT_MODEL, LLM  # noqa: E402
+from agent.pricing.loader import calculate_cost  # noqa: E402
 from openai import OpenAI  # noqa: E402
 
 from .config import get_settings
+
+# Every turn is charged in credits priced from models.csv. Raises KeyError at
+# startup if DEFAULT_MODEL isn't in there, rather than mid-turn after the
+# model has already answered.
+calculate_cost(DEFAULT_MODEL, 0, 0, 0)
 
 _llm: LLM | None = None
 

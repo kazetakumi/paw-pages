@@ -149,7 +149,7 @@ export default function PetFeed() {
 
   if (!record) {
     return (
-      <Shell name="" title="" width="pet">
+      <Shell name="" credits={null} title="" width="pet">
         <PetHeadSkeleton tab="Feed" />
         <div className="sect">
           <h2>History</h2>
@@ -172,7 +172,7 @@ export default function PetFeed() {
   const { pet } = record;
 
   return (
-    <Shell name={record.handler.name} title={pet.name} width="pet">
+    <Shell name={record.handler.name} credits={record.handler.credits} title={pet.name} width="pet">
       <Link className="back" to="/dashboard">
         &larr; Dashboard
       </Link>

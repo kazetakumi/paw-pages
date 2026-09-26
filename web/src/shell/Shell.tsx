@@ -218,14 +218,25 @@ function SettingsRow({
   );
 }
 
+/** Null until the handler loads. */
+function CreditsLine({ credits }: { credits: number | null }) {
+  return (
+    <div className="credits-line">
+      {credits == null ? <Bone w={130} /> : `${credits} credits · refills at midnight`}
+    </div>
+  );
+}
+
 /** Always visible, desktop only. Collapses to width 0 rather than unmounting,
  *  so the transition can animate. */
 export function Sidebar({
   name,
+  credits,
   active,
   collapsed,
 }: {
   name: string;
+  credits: number | null;
   active?: "account";
   collapsed: boolean;
 }) {
@@ -242,6 +253,7 @@ export function Sidebar({
         <ConvoList />
       </div>
       <div className="sidebar-bottom">
+        <CreditsLine credits={credits} />
         <SettingsRow name={name} active={active === "account"} />
       </div>
     </aside>
@@ -254,11 +266,13 @@ export function Sidebar({
  *  design's script. */
 export function Drawer({
   name,
+  credits,
   active,
   open,
   onClose,
 }: {
   name: string;
+  credits: number | null;
   active?: "account";
   open: boolean;
   onClose: () => void;
@@ -287,6 +301,7 @@ export function Drawer({
           <ConvoList onNavigate={onClose} />
         </div>
         <div className="drawer-bottom">
+          <CreditsLine credits={credits} />
           <SettingsRow name={name} active={active === "account"} onNavigate={onClose} />
         </div>
       </aside>
@@ -373,12 +388,14 @@ export function DashboardLinkHeader({
  *  is a fixed thread + composer rather than a scrolling page. */
 export function Shell({
   name,
+  credits,
   title,
   active,
   width = "wide",
   children,
 }: {
   name: string;
+  credits: number | null;
   title: string;
   active?: "account";
   width?: PageWidth;
@@ -391,10 +408,11 @@ export function Shell({
   return (
     <div className={isDesktop ? "shell-desktop" : "shell-mobile"}>
       {isDesktop ? (
-        <Sidebar name={name} active={active} collapsed={collapsed} />
+        <Sidebar name={name} credits={credits} active={active} collapsed={collapsed} />
       ) : (
         <Drawer
           name={name}
+          credits={credits}
           active={active}
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}

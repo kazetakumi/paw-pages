@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   getConversation,
   getMe,
+  OutOfCredits,
   sendChatMessage,
   Unauthorized,
   type ConversationTurn,
@@ -277,6 +278,7 @@ export default function Home() {
   const [draft, setDraft] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
 
@@ -286,7 +288,10 @@ export default function Home() {
 
   useEffect(() => {
     getMe()
-      .then(setHandler)
+      .then((me) => {
+        setHandler(me);
+        setCredits(me.credits);
+      })
       .catch((error) => {
         if (!(error instanceof Unauthorized)) throw error;
       });
@@ -331,6 +336,7 @@ export default function Home() {
 
   // Blank until the handler loads; the sidebar and greeting show bones meanwhile.
   const name = handler?.name ?? "";
+  const outOfCredits = credits !== null && credits <= 0;
 
   function appendAssistantDelta(id: string, delta: string) {
     setTurns((t) =>
@@ -351,9 +357,10 @@ export default function Home() {
 
   async function send() {
     const text = draft.trim();
-    if (!text || isSending) return;
+    if (!text || isSending || outOfCredits) return;
     setDraft("");
-    setTurns((t) => [...t, { id: crypto.randomUUID(), role: "user", text }]);
+    const userId = crypto.randomUUID();
+    setTurns((t) => [...t, { id: userId, role: "user", text }]);
 
     const assistantId = crypto.randomUUID();
     setTurns((t) => [...t, { id: assistantId, role: "assistant", blocks: [{ kind: "p", text: "" }] }]);
@@ -363,9 +370,17 @@ export default function Home() {
       await sendChatMessage(conversationId, text, (event) => {
         if (event.type === "conversation") setConversationId(event.id);
         else if (event.type === "text.delta") appendAssistantDelta(assistantId, event.text);
+        else setCredits(event.credits);
       });
     } catch (error) {
       if (error instanceof Unauthorized) throw error;
+      if (error instanceof OutOfCredits) {
+        // Nothing was sent: take the turn back off the thread, the text back into the box.
+        setTurns((t) => t.filter((turn) => turn.id !== userId && turn.id !== assistantId));
+        setDraft(text);
+        setCredits(0);
+        return;
+      }
       setAssistantText(assistantId, "Something went wrong. Try again.");
     } finally {
       setIsSending(false);
@@ -384,9 +399,9 @@ export default function Home() {
   return (
     <div className={isDesktop ? "shell-desktop" : "shell-mobile"}>
       {isDesktop ? (
-        <Sidebar name={name} collapsed={collapsed} />
+        <Sidebar name={name} credits={credits} collapsed={collapsed} />
       ) : (
-        <Drawer name={name} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <Drawer name={name} credits={credits} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       )}
       <div className="main">
         {isDesktop ? (
@@ -454,6 +469,7 @@ export default function Home() {
                     rows={1}
                     placeholder="Ask Paw Pages, or log something new"
                     value={draft}
+                    disabled={outOfCredits}
                     onChange={(e) => setDraft(e.target.value)}
                     onKeyDown={onKeyDown}
                   />
@@ -464,7 +480,7 @@ export default function Home() {
                     <button
                       className={draft.trim() ? "send-btn ready" : "send-btn"}
                       aria-label="Send message"
-                      disabled={isSending}
+                      disabled={isSending || outOfCredits}
                       onClick={send}
                     >
                       <SendIcon />
@@ -472,7 +488,9 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="disclaimer">
-                  Paw Pages can misread details — check important dates before confirming.
+                  {outOfCredits
+                    ? "You’ve used today’s credits. They refill to 100 at midnight — come back tomorrow."
+                    : "Paw Pages can misread details — check important dates before confirming."}
                 </div>
               </div>
             </div>

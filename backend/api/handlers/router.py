@@ -33,12 +33,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["handlers"])
 
 # The two counts need no `where handler_id = ...`: the same policies that
-# filter pawpages_handlers filter pets and entries.
+# filter pawpages_handlers filter pets and entries. credits runs the day's
+# refill first -- a write, but one self-contained statement, so it commits
+# on its own even on the reader pool's connection, which has no transaction.
 _ME_COLUMNS = """id::text, name, created_at::date as joined_on,
        date_of_birth, gender, nationality,
        extract(year from age(date_of_birth))::int as age,
        (select count(*) from pawpages_pets) as pet_count,
-       (select count(*) from pawpages_entries) as entry_count"""
+       (select count(*) from pawpages_entries) as entry_count,
+       pawpages_refill_credits() as credits"""
 
 
 async def _read_me(conn: asyncpg.Connection, email: str) -> MeOut:

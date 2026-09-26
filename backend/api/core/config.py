@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # The chat loop's model calls -- see backend/agent/llm.py.
     openai_api_key: str
 
+    # Credits charged = OpenAI cost in credits (1 = $0.0001) times this.
+    # 1.0 passes cost straight through; raise it once credits are sold.
+    credit_markup: float = 1.0
+
     # Postgres connection string (transaction pooler) -- every authenticated
     # request opens a transaction on this and runs under RLS, never service_role.
     database_url: str

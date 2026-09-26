@@ -320,7 +320,7 @@ function AccountMobile({ account, you, about, archived, data, danger, signout }:
 
 const sinceLine = (account: Handler) => `Keeping records since ${formatDate(account.joined_on)}`;
 const countsLine = (account: Handler) =>
-  `${plural(account.pet_count, "pet", "pets")} · ${plural(account.entry_count, "entry", "entries")}`;
+  `${plural(account.pet_count, "pet", "pets")} · ${plural(account.entry_count, "entry", "entries")} · ${plural(account.credits, "credit", "credits")}`;
 const since = (account: Handler) => `${sinceLine(account)} · ${countsLine(account)}`;
 
 export default function Account() {
@@ -357,7 +357,7 @@ export default function Account() {
       </div>
     );
     return (
-      <Shell name="" title="Account" active="account" width="account">
+      <Shell name="" credits={null} title="Account" active="account" width="account">
         <div className="account" aria-busy="true">
           <Link className="back" to="/dashboard">
             &larr; Dashboard
@@ -486,7 +486,7 @@ export default function Account() {
   );
 
   return (
-    <Shell name={account.name} title="Account" active="account" width="account">
+    <Shell name={account.name} credits={account.credits} title="Account" active="account" width="account">
       <Layout
         account={account}
         you={rowsFor(credentials(account))}
