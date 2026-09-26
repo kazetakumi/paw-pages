@@ -12,6 +12,7 @@ from core.config import get_settings
 from handlers.router import router as handlers_router
 from core.logging import configure_logging
 from db.pool import close_pool, init_pool
+from entries.router import router as entries_router
 from pets.router import router as pets_router
 from uploads.router import router as uploads_router
 
@@ -63,6 +64,7 @@ async def log_unhandled_exception(request: Request, exc: Exception) -> JSONRespo
 app.include_router(auth_router)
 app.include_router(conversations_router)
 app.include_router(handlers_router)
+app.include_router(entries_router)
 app.include_router(pets_router)
 app.include_router(uploads_router)
 

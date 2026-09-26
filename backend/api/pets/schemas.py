@@ -1,7 +1,31 @@
 from datetime import date
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
+
+# Mirrors of the checks on pawpages_pets, so a bad field comes back named.
+Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+Species = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=40)]
+Breed = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
+Colour = Annotated[str, StringConstraints(strip_whitespace=True, max_length=60)]
+
+
+class PetPatch(BaseModel):
+    """Only the fields sent are touched; null clears one."""
+
+    name: Name | None = None
+    species: Species | None = None
+    breed: Breed | None = None
+    sex: Literal["male", "female"] | None = None
+    date_of_birth: date | None = None
+    dob_is_approx: bool | None = None
+    colour: Colour | None = None
+    is_public: bool | None = None
+
+
+class ArchiveIn(BaseModel):
+    reason: Literal["passed_away", "rehomed", "other"]
 
 
 class PetOut(BaseModel):
@@ -32,6 +56,12 @@ class DueItem(BaseModel):
     is_overdue: bool
     happened_on: date
     vet: str | None
+
+
+class PetRecord(PetOut):
+    """A pet as its own page opens: what it owes, before its history."""
+
+    due_items: list[DueItem]
 
 
 class PetCard(PetOut):
