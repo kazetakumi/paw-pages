@@ -16,6 +16,7 @@ import {
   PlusIcon,
   Sidebar,
 } from "../shell/Shell";
+import { Bone } from "../shell/Skeleton";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../shell/shell.css";
 import "../home/home.css";
@@ -167,7 +168,49 @@ function LedgerCardEl({ card }: { card: CardData }) {
   );
 }
 
-function TurnEl({ turn }: { turn: Turn }) {
+const SPINNER = ["·", "✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳", "✢"];
+const VERBS = [
+  "Thinking",
+  "Sniffing around",
+  "Fetching",
+  "Pawing through records",
+  "Rummaging",
+  "Wagging",
+  "Burrowing",
+  "Herding thoughts",
+  "Purring",
+  "Chasing tails",
+];
+
+/** Proof of life while a reply is on its way: a turning glyph, a verb that
+ *  changes every few seconds, and how long it has been so far. */
+function Thinking() {
+  const [ticks, setTicks] = useState(0);
+  const [start] = useState(() => Math.floor(Math.random() * VERBS.length));
+
+  useEffect(() => {
+    const timer = setInterval(() => setTicks((n) => n + 1), 120);
+    return () => clearInterval(timer);
+  }, []);
+
+  const seconds = Math.floor((ticks * 120) / 1000);
+  const verb = VERBS[(start + Math.floor(seconds / 3)) % VERBS.length];
+  return (
+    <div className="thinking" role="status" aria-label="Working on a reply">
+      <span className="glyph" aria-hidden="true">
+        {SPINNER[ticks % SPINNER.length]}
+      </span>
+      <span aria-hidden="true">{verb}…</span>
+      {seconds > 0 && (
+        <span className="secs" aria-hidden="true">
+          {seconds}s
+        </span>
+      )}
+    </div>
+  );
+}
+
+function TurnEl({ turn, working }: { turn: Turn; working: boolean }) {
   if (turn.role === "user") {
     return (
       <div className="turn user">
@@ -179,8 +222,13 @@ function TurnEl({ turn }: { turn: Turn }) {
     <div className="turn assistant">
       <div className="assistant-text">
         {turn.blocks.map((block, i) =>
-          block.kind === "p" ? <p key={i}>{block.text}</p> : <LedgerCardEl key={i} card={block.card} />,
+          block.kind === "card" ? (
+            <LedgerCardEl key={i} card={block.card} />
+          ) : (
+            block.text && <p key={i}>{block.text}</p>
+          ),
         )}
+        {working && <Thinking />}
       </div>
     </div>
   );
@@ -281,7 +329,8 @@ export default function Home() {
     if (el) el.scrollTop = el.scrollHeight;
   }, [turns]);
 
-  if (!handler) return null;
+  // Blank until the handler loads; the sidebar and greeting show bones meanwhile.
+  const name = handler?.name ?? "";
 
   function appendAssistantDelta(id: string, delta: string) {
     setTurns((t) =>
@@ -335,9 +384,9 @@ export default function Home() {
   return (
     <div className={isDesktop ? "shell-desktop" : "shell-mobile"}>
       {isDesktop ? (
-        <Sidebar name={handler.name} collapsed={collapsed} />
+        <Sidebar name={name} collapsed={collapsed} />
       ) : (
-        <Drawer name={handler.name} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <Drawer name={name} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       )}
       <div className="main">
         {isDesktop ? (
@@ -363,7 +412,7 @@ export default function Home() {
                 className="icon-btn"
                 aria-label="New chat"
                 onClick={() => {
-                  setTurns(initialTurns(handler.name));
+                  if (handler) setTurns(initialTurns(handler.name));
                   setConversationId(null);
                 }}
               >
@@ -379,8 +428,16 @@ export default function Home() {
           <div className="chat-view">
             <div className="thread-wrap" ref={threadRef}>
               <div className="thread">
-                {turns.map((turn) => (
-                  <TurnEl key={turn.id} turn={turn} />
+                {!handler && (
+                  <div className="turn assistant" aria-busy="true">
+                    <div className="assistant-text">
+                      <Bone w="60%" h={14} />
+                    </div>
+                  </div>
+                )}
+                {turns.map((turn, i) => (
+                  // The reply being streamed is always the last turn.
+                  <TurnEl key={turn.id} turn={turn} working={isSending && i === turns.length - 1} />
                 ))}
               </div>
             </div>

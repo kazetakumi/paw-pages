@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { listConversations, Unauthorized, type ConversationSummary } from "../api";
 import { initials } from "./initials";
+import { Bone } from "./Skeleton";
 import { useIsDesktop } from "./useIsDesktop";
 import "./shell.css";
 
@@ -211,7 +212,7 @@ function SettingsRow({
       onClick={onNavigate}
     >
       <span className="settings-avatar">{initials(name)}</span>
-      <span className="settings-name">{name}</span>
+      <span className="settings-name">{name || <Bone w={90} />}</span>
       <GearIcon />
     </Link>
   );

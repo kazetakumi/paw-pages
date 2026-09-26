@@ -9,6 +9,7 @@ describe("a session that has run out", () => {
     server.use(
       http.get("http://localhost:8000/me", () => new HttpResponse(null, { status: 401 })),
       http.get("http://localhost:8000/dashboard", () => new HttpResponse(null, { status: 401 })),
+      http.get("http://localhost:8000/conversations", () => new HttpResponse(null, { status: 401 })),
     );
 
     renderRoute("/home");

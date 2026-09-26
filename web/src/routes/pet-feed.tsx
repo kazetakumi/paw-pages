@@ -14,7 +14,9 @@ import {
 import { Attention } from "../entries/due";
 import { formatDate, formatDayMonth, summaryOf } from "../pets/pet";
 import { PetAvatar } from "../pets/PetAvatar";
+import { PetHeadSkeleton } from "../pets/PetHeadSkeleton";
 import { Shell } from "../shell/Shell";
+import { Bone } from "../shell/Skeleton";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
 import "../pets/pet-profile.css";
@@ -145,7 +147,28 @@ export default function PetFeed() {
     setEntries((shown) => shown.map((one) => (one.id === entry.id ? entry : one)));
   }
 
-  if (!record) return null;
+  if (!record) {
+    return (
+      <Shell name="" title="" width="pet">
+        <PetHeadSkeleton tab="Feed" />
+        <div className="sect">
+          <h2>History</h2>
+          <span className="line" />
+        </div>
+        <div className="hist">
+          {[0, 1, 2].map((i) => (
+            <div className="ent" key={i}>
+              <Bone w={80} />
+              <span>
+                <Bone w="45%" h={15} />
+                <Bone w="75%" />
+              </span>
+            </div>
+          ))}
+        </div>
+      </Shell>
+    );
+  }
   const { pet } = record;
 
   return (

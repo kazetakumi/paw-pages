@@ -12,6 +12,7 @@ import {
 import { formatDate, summaryOf } from "../pets/pet";
 import { PetAvatar } from "../pets/PetAvatar";
 import { Shell } from "../shell/Shell";
+import { Bone } from "../shell/Skeleton";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
 
@@ -161,6 +162,41 @@ function Archived({ board }: { board: Dashboard }) {
   );
 }
 
+/** The head and three blank pet cards, in the shapes the real ones take. */
+function DashboardSkeleton({ isDesktop }: { isDesktop: boolean }) {
+  return (
+    <div className="dashboard" aria-busy="true">
+      <div className="head">
+        <div>
+          <Bone w={150} h={28} />
+          <Bone w={260} />
+        </div>
+      </div>
+      <div className="sect">
+        <h2>Pets</h2>
+        <span className="line" />
+      </div>
+      <div className="pets" data-layout={isDesktop ? "desktop" : "mobile"}>
+        {[0, 1, 2].map((i) => (
+          <div className="pet" key={i}>
+            <span className="top">
+              <Bone className="av" />
+              <span>
+                <Bone w={90} h={16} />
+                <Bone w={140} />
+              </span>
+            </span>
+            <span className="foot">
+              <Bone w="70%" />
+              <Bone w="55%" />
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [record, setRecord] = useState<{ handler: Handler; board: Dashboard } | null>(null);
   const isDesktop = useIsDesktop();
@@ -176,7 +212,13 @@ export default function Dashboard() {
       });
   }, []);
 
-  if (!record) return null;
+  if (!record) {
+    return (
+      <Shell name="" title="Dashboard">
+        <DashboardSkeleton isDesktop={isDesktop} />
+      </Shell>
+    );
+  }
   const { board } = record;
 
   return (

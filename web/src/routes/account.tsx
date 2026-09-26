@@ -19,6 +19,7 @@ import {
 import { formatDate, initial } from "../pets/pet";
 import { REASONS } from "../pets/archiveReasons";
 import { Shell } from "../shell/Shell";
+import { Bone } from "../shell/Skeleton";
 import { initials } from "../shell/initials";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
@@ -344,7 +345,38 @@ export default function Account() {
       });
   }, []);
 
-  if (!account) return null;
+  if (!account) {
+    const rows = (labels: string[]) => (
+      <div className="card">
+        {labels.map((label) => (
+          <div className="row" key={label}>
+            <span className="k">{label}</span>
+            <Bone w={160} />
+          </div>
+        ))}
+      </div>
+    );
+    return (
+      <Shell name="" title="Account" active="account" width="account">
+        <div className="account" aria-busy="true">
+          <Link className="back" to="/dashboard">
+            &larr; Dashboard
+          </Link>
+          <div className="head">
+            <Bone className="av" />
+            <div>
+              <Bone w={180} h={28} />
+              <Bone w={280} />
+            </div>
+          </div>
+          <Section title="You" />
+          {rows(["Name", "Email", "Password"])}
+          <Section title="About you" />
+          {rows(["Date of birth", "Gender", "Nationality"])}
+        </div>
+      </Shell>
+    );
+  }
 
   const rowsFor = (list: Detail[]): Row[] =>
     list.map((detail) => ({

@@ -8,6 +8,7 @@ import {
 } from "../api";
 import { formatDate } from "../pets/pet";
 import { PublicPetAvatar } from "../pets/PetAvatar";
+import { Bone } from "../shell/Skeleton";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/public.css";
 
@@ -216,7 +217,38 @@ export default function PublicPage() {
       .catch(() => setState("gone"));
   }, [slug]);
 
-  if (state === null) return null;
+  if (state === null) {
+    return (
+      <div className="pubpage" data-layout={isDesktop ? "desktop" : "mobile"} aria-busy="true">
+        <div className="doc">
+          <div className="kicker">Pet record</div>
+          <div className="idblock">
+            <Bone className="av" />
+            <div>
+              <Bone w={160} h={30} />
+              <Bone w={200} />
+            </div>
+          </div>
+          <div className="recwrap">
+            <div className="sect">
+              <h2>Record</h2>
+              <span className="line" />
+            </div>
+            <div className="rec">
+              {[0, 1, 2].map((i) => (
+                <div className="r" key={i}>
+                  <Bone w={80} />
+                  <span>
+                    <Bone w="60%" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (state === "gone") {
     // The one answer to a slug that is private, archived or absent alike.
     return (

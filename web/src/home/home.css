@@ -35,6 +35,27 @@
   margin-bottom: 0;
 }
 
+/* ---- the "still working" line under a reply that is being written ---- */
+.thinking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--data);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--stamp);
+}
+.assistant-text p + .thinking {
+  margin-top: 10px;
+}
+.thinking .glyph {
+  width: 1em;
+  text-align: center;
+}
+.thinking .secs {
+  color: var(--faint);
+}
+
 /* ---- inline ledger card: the same editorial identity as the ledger/stamp
    elsewhere, dropped straight into the conversation. ---- */
 .ledger-card {

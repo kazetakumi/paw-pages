@@ -4,9 +4,11 @@ import { getMe, getPet, Unauthorized, type Handler, type Pet } from "../api";
 import { ageOf, capitalised, formatDate, summaryOf } from "../pets/pet";
 import { ArchivePanel } from "../pets/ArchivePanel";
 import { PetAvatar } from "../pets/PetAvatar";
+import { PetHeadSkeleton } from "../pets/PetHeadSkeleton";
 import { PhotoControl } from "../pets/PhotoControl";
 import { PublicPageSwitch } from "../pets/PublicPageSwitch";
 import { Shell } from "../shell/Shell";
+import { Bone } from "../shell/Skeleton";
 import { useIsDesktop } from "../shell/useIsDesktop";
 import "../pets/pets.css";
 import "../pets/pet-profile.css";
@@ -60,7 +62,25 @@ export default function PetAbout() {
       });
   }, [id]);
 
-  if (!record) return null;
+  if (!record) {
+    return (
+      <Shell name="" title="" width="pet">
+        <PetHeadSkeleton tab="About" />
+        <div className="sect">
+          <h2>Identity</h2>
+          <span className="line" />
+        </div>
+        <div className="card ident">
+          {["Species", "Breed", "Sex", "Date of birth", "Colour"].map((label) => (
+            <div className="row" key={label}>
+              <span className="k">{label}</span>
+              <Bone w={120} />
+            </div>
+          ))}
+        </div>
+      </Shell>
+    );
+  }
   const { handler, pet } = record;
   const onChanged = (saved: Pet) => setRecord({ handler, pet: saved });
 
