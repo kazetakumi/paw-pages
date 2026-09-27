@@ -67,6 +67,11 @@
   font-size: 14px;
   color: var(--ink-2);
 }
+.landing[data-layout="mobile"] .tlink {
+  display: inline-block;
+  padding: 11px 0;
+  margin: -11px 0;
+}
 .landing .tlink:hover {
   color: var(--ink);
 }
@@ -182,6 +187,7 @@
   margin-top: 20px;
 }
 .landing[data-layout="mobile"] .fine {
+  font-size: 11px;
   text-align: center;
   margin-top: 14px;
 }
@@ -601,11 +607,11 @@
   padding: 20px 18px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
 }
 .landing[data-layout="mobile"] footer .brand {
   margin-bottom: 4px;
 }
 .landing[data-layout="mobile"] footer a {
   font-size: 13px;
+  padding: 12px 0;
 }

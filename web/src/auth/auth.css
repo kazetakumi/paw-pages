@@ -222,12 +222,32 @@
 .auth[data-layout="mobile"] .lab {
   font-size: 11px;
   letter-spacing: 0.12em;
+  gap: 20px;
+  margin-bottom: 12px;
 }
 .auth[data-layout="mobile"] .lab .aux {
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
+/* Small links keep their look and get an invisible hit area centred on them;
+   Show/Forgot stop at 40px tall so they don't reach over the input below. */
+.auth[data-layout="mobile"] :is(.lab .aux, .alt a) {
+  position: relative;
+}
+.auth[data-layout="mobile"] :is(.lab .aux, .alt a)::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+.auth[data-layout="mobile"] .lab .aux::before {
+  height: max(100%, 40px);
+}
 .auth[data-layout="mobile"] .field input {
-  padding: 8px 0;
+  padding: 12px 0;
   font-size: 16px;
 }
 .auth[data-layout="mobile"] .hint {
