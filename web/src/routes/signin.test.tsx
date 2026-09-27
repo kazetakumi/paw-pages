@@ -75,7 +75,7 @@ describe("signing in", () => {
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
 
     expect(
-      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+      await screen.findByPlaceholderText("Ask or log something"),
     ).toBeInTheDocument();
     expect(window.localStorage.length).toBe(0);
     expect(document.cookie).toBe("");

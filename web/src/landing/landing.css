@@ -67,6 +67,11 @@
   font-size: 14px;
   color: var(--ink-2);
 }
+.landing[data-layout="mobile"] .tlink {
+  display: inline-block;
+  padding: 11px 0;
+  margin: -11px 0;
+}
 .landing .tlink:hover {
   color: var(--ink);
 }
@@ -130,7 +135,7 @@
   margin-bottom: 20px;
 }
 .landing[data-layout="mobile"] .eyebrow {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   margin-bottom: 12px;
 }
@@ -182,6 +187,7 @@
   margin-top: 20px;
 }
 .landing[data-layout="mobile"] .fine {
+  font-size: 11px;
   text-align: center;
   margin-top: 14px;
 }
@@ -344,7 +350,7 @@
   color: var(--faint);
 }
 .landing[data-layout="mobile"] .shead .no {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 .landing h2 {
@@ -408,7 +414,7 @@
 }
 .landing[data-layout="mobile"] .li .d {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   margin-bottom: 3px;
 }
 .landing .li .t {
@@ -445,7 +451,7 @@
   margin-top: 6px;
 }
 .landing[data-layout="mobile"] .li .tag {
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   margin-top: 5px;
 }
@@ -601,11 +607,11 @@
   padding: 20px 18px;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
 }
 .landing[data-layout="mobile"] footer .brand {
   margin-bottom: 4px;
 }
 .landing[data-layout="mobile"] footer a {
   font-size: 13px;
+  padding: 12px 0;
 }

@@ -50,7 +50,7 @@ describe("a reply on the chat screen", () => {
 
     renderRoute("/home");
 
-    await userEvent.type(await screen.findByPlaceholderText(/ask paw pages/i), "Which pets do I have?{Enter}");
+    await userEvent.type(await screen.findByPlaceholderText(/ask or log/i), "Which pets do I have?{Enter}");
 
     const item = await screen.findByRole("listitem");
     expect(item).toHaveTextContent("Simba — a female grey Persian cat.");
@@ -76,7 +76,7 @@ describe("credits on the chat screen", () => {
     renderRoute("/home");
 
     expect(await screen.findByText(/^63 credits/)).toBeInTheDocument();
-    await userEvent.type(screen.getByPlaceholderText(/ask paw pages/i), "Biscuit had a bath{Enter}");
+    await userEvent.type(screen.getByPlaceholderText(/ask or log/i), "Biscuit had a bath{Enter}");
     expect(await screen.findByText(/^55 credits/)).toBeInTheDocument();
   });
 
@@ -87,7 +87,7 @@ describe("credits on the chat screen", () => {
     renderRoute("/home");
 
     expect(await screen.findByText(/used today’s credits/i)).toHaveTextContent(/come back tomorrow/i);
-    expect(screen.getByPlaceholderText(/ask paw pages/i)).toBeDisabled();
+    expect(screen.getByPlaceholderText(/ask or log/i)).toBeDisabled();
     expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
   });
 
@@ -102,7 +102,7 @@ describe("credits on the chat screen", () => {
 
     renderRoute("/home");
 
-    const box = await screen.findByPlaceholderText(/ask paw pages/i);
+    const box = await screen.findByPlaceholderText(/ask or log/i);
     await userEvent.type(box, "Biscuit had a bath{Enter}");
 
     expect(await screen.findByText(/used today’s credits/i)).toBeInTheDocument();
