@@ -297,7 +297,8 @@
 /* ============ mobile: topbar + off-canvas drawer ========================= */
 .shell-mobile {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--paper);
@@ -330,8 +331,8 @@
   gap: 2px;
 }
 .shell-mobile .icon-btn {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 9px;
 }
 .shell-mobile .icon-btn svg {
@@ -345,6 +346,20 @@
 .shell-mobile .btn-chat {
   font-size: 12.5px;
   padding: 7px 12px;
+}
+/* Controls drawn smaller than a fingertip keep their look and get an
+   invisible hit area of at least 44px, centred on them. */
+.shell-mobile :is(.btn-chat, .back, .tab, .mini, .act, .out button, .pub .sw, .pub .cp, .photo .rm) {
+  position: relative;
+}
+.shell-mobile :is(.btn-chat, .back, .tab, .mini, .act, .out button, .pub .sw, .pub .cp, .photo .rm)::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 .shell-mobile .btn-chat svg {
   width: 14px;

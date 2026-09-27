@@ -2,6 +2,7 @@
 
 .auth {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--paper);
 }
 .auth .device {
@@ -21,6 +22,7 @@
 /* mobile: one full-height column, the sheet centred down it */
 .auth[data-layout="mobile"] .device {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -218,7 +220,7 @@
   margin-bottom: 19px;
 }
 .auth[data-layout="mobile"] .lab {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 .auth[data-layout="mobile"] .lab .aux {

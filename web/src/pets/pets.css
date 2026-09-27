@@ -328,7 +328,7 @@
   padding: 13px 15px;
 }
 .shell-mobile .row .k {
-  font-size: 9.5px;
+  font-size: 11px;
 }
 .shell-mobile .row .v {
   font-size: 15px;
@@ -658,7 +658,7 @@
   display: block;
 }
 .shell-mobile .dashboard .lrow .when {
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   display: block;
   margin-top: 9px;
@@ -670,13 +670,13 @@
   right: 13px;
   bottom: 12px;
   transform: rotate(-5deg);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.13em;
   padding: 4px 9px 3px;
   gap: 7px;
 }
 .shell-mobile .dashboard .lrow .stamp .days {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
 }
 
@@ -715,7 +715,7 @@
   border-top: 1px solid var(--rule-2);
 }
 .shell-mobile .fline {
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.04em;
 }
 .shell-mobile .fline + .fline {
@@ -846,11 +846,28 @@
   color: var(--faint);
   font-size: 13px;
 }
+/* The native picker stays in the tab order but out of sight; its label is
+   the button people see. */
 .photo .file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.photo .pick {
   font-family: var(--body);
   font-size: 13.5px;
-  color: var(--ink-2);
-  max-width: 100%;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  background: #fff;
+  padding: 11px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.photo .pick:hover,
+.photo .file:focus-visible + .pick {
+  border-color: var(--ink);
 }
 .photo .rm {
   background: none;

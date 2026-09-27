@@ -43,6 +43,9 @@ export function PhotoControl({ pet, onChanged }: { pet: Pet; onChanged: (pet: Pe
           {...(error ? { "aria-invalid": true, "aria-describedby": `${INPUT}-problem` } : {})}
           onChange={chosen}
         />
+        <label className="pick" htmlFor={INPUT}>
+          {pet.has_photo ? "Replace photo" : "Choose photo"}
+        </label>
         {pet.has_photo && (
           <button className="rm" type="button" onClick={() => removePhoto(pet.id).then(onChanged)}>
             Remove photo

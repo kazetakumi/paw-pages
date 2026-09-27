@@ -310,12 +310,15 @@
   font-size: 15px;
 }
 .shell-mobile .account .arow .why {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.05em;
 }
 .shell-mobile .account .blk {
   padding: 18px 16px;
   margin-bottom: 34px;
+}
+.shell-mobile .account .act {
+  font-size: 11px;
 }
 .shell-mobile .account .out {
   text-align: center;

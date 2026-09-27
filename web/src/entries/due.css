@@ -163,7 +163,7 @@
   display: block;
 }
 .shell-mobile .lrow .when {
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   display: block;
   margin-top: 9px;
@@ -175,13 +175,13 @@
   right: 13px;
   bottom: 12px;
   transform: rotate(-5deg);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.13em;
   padding: 4px 9px 3px;
   gap: 7px;
 }
 .shell-mobile .lrow .stamp .days {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
 }
 
@@ -264,7 +264,7 @@
   margin-bottom: 34px;
 }
 .shell-mobile .due .dt {
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.09em;
   margin-bottom: 6px;
 }
@@ -282,7 +282,7 @@
   gap: 8px;
 }
 .shell-mobile .due .stamp .days {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
 }
 .shell-mobile .due .dacts {

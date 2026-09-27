@@ -130,7 +130,7 @@
   margin-bottom: 20px;
 }
 .landing[data-layout="mobile"] .eyebrow {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   margin-bottom: 12px;
 }
@@ -344,7 +344,7 @@
   color: var(--faint);
 }
 .landing[data-layout="mobile"] .shead .no {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: 0.12em;
 }
 .landing h2 {
@@ -408,7 +408,7 @@
 }
 .landing[data-layout="mobile"] .li .d {
   display: block;
-  font-size: 10.5px;
+  font-size: 11px;
   margin-bottom: 3px;
 }
 .landing .li .t {
@@ -445,7 +445,7 @@
   margin-top: 6px;
 }
 .landing[data-layout="mobile"] .li .tag {
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: 0.06em;
   margin-top: 5px;
 }

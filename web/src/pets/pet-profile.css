@@ -228,7 +228,7 @@
   margin-top: 8px;
 }
 .shell-mobile .tag {
-  font-size: 9.5px;
+  font-size: 11px;
   padding: 3px 7px;
 }
 .shell-mobile .ent.over .when {
@@ -237,7 +237,7 @@
 }
 .shell-mobile .more {
   padding: 14px 16px;
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 .shell-mobile .danger {
@@ -260,7 +260,7 @@
   padding: 13px 16px;
 }
 .shell-mobile .ident .row .k {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.09em;
 }
 .shell-mobile .ident .row .v {
@@ -284,6 +284,7 @@
 /* The photo control rides along as the identity card's last row; its value
    column just needs its picker, remove link and hint to sit in a line. */
 .ident .row.photo .v {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -314,7 +315,9 @@
   padding: 9px 11px;
   gap: 10px;
 }
-.shell-mobile .pub .url .u {
+.shell-mobile .pub .url .u,
+.shell-mobile .pub .url .cp,
+.shell-mobile .photo .rm {
   font-size: 11px;
 }
 .shell-mobile .pub .shows {

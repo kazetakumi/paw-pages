@@ -14,7 +14,6 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
 }
 
 .turn.user {
@@ -339,7 +338,9 @@
 /* ============ desktop sizing ============ */
 .shell-desktop .thread {
   max-width: 720px;
-  margin: 0 auto;
+  /* auto top margin sits a short thread at the bottom; unlike
+     justify-content: flex-end, a long one still scrolls up to its start */
+  margin: auto auto 0;
   padding: 14px 24px 16px;
   display: flex;
   flex-direction: column;
@@ -453,6 +454,7 @@
 
 /* ============ mobile sizing ============ */
 .shell-mobile .thread {
+  margin-top: auto;
   padding: 10px 16px 10px;
   display: flex;
   flex-direction: column;
@@ -481,18 +483,18 @@
   font-size: 14px;
 }
 .shell-mobile .ledger-card .when {
-  font-size: 10.5px;
+  font-size: 11px;
 }
 .shell-mobile .ledger-card.over .when {
   display: none;
 }
 .shell-mobile .card-stamp {
   align-self: flex-start;
-  font-size: 10.5px;
+  font-size: 11px;
   padding: 4px 8px 3px;
 }
 .shell-mobile .card-stamp .days {
-  font-size: 9px;
+  font-size: 11px;
 }
 .shell-mobile .artifacts-in {
   padding: 6px 16px 40px;
@@ -523,11 +525,11 @@
   font-size: 11.5px;
 }
 .shell-mobile .art-card .fsub {
-  font-size: 10px;
+  font-size: 11px;
 }
 .shell-mobile .composer-area {
   flex: none;
-  padding: 6px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  padding: 6px 12px 10px;
 }
 .shell-mobile .composer {
   gap: 5px;
@@ -540,16 +542,16 @@
 .shell-mobile .composer-plus,
 .shell-mobile .mic-btn,
 .shell-mobile .send-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
 }
 .shell-mobile .composer-plus svg {
   width: 16px;
   height: 16px;
 }
 .shell-mobile .composer textarea {
-  font-size: 14px;
-  padding: 6px 2px;
+  font-size: 16px;
+  padding: 9px 2px;
   max-height: 140px;
 }
 .shell-mobile .composer-right {
@@ -564,7 +566,7 @@
   height: 15px;
 }
 .shell-mobile .disclaimer {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.02em;
   padding: 8px 0 1px;
 }
