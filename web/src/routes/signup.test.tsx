@@ -82,7 +82,7 @@ describe("signing up", () => {
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     expect(
-      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+      await screen.findByPlaceholderText("Ask or log something"),
     ).toBeInTheDocument();
   });
 

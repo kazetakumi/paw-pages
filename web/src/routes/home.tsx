@@ -470,7 +470,7 @@ export default function Home() {
                   <textarea
                     ref={textareaRef}
                     rows={1}
-                    placeholder="Ask Paw Pages, or log something new"
+                    placeholder="Ask or log something"
                     value={draft}
                     disabled={outOfCredits}
                     onChange={(e) => setDraft(e.target.value)}

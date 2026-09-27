@@ -97,7 +97,7 @@ describe("the landing page", () => {
     // landing page never flashes past on the way to the home screen.
     expect(container).toBeEmptyDOMElement();
     expect(
-      await screen.findByPlaceholderText("Ask Paw Pages, or log something new"),
+      await screen.findByPlaceholderText("Ask or log something"),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Tell it what happened/)).toBeNull();
   });
